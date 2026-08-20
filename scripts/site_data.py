@@ -9,11 +9,21 @@ from collections import defaultdict
 from common import DATA
 import re
 from series import build_series
+from vndb_build import PLATFORM_JA
 
 # 訳が用意できていない英語のままの語は絞り込み候補に出さない
 is_en = lambda t: bool(re.fullmatch(r"[\x20-\x7e]+", t or ""))
 
 OUT = os.path.join(DATA, "site")
+
+# 機種のグループ（VNDBのコード基準）
+PLAT_GROUP = [
+    ("据置ゲーム機", {"ps1", "ps2", "ps3", "ps4", "ps5", "swi", "sw2", "xbo", "xxs",
+                   "xb3", "sat", "drc", "nes", "sfc", "pce"}),
+    ("携帯ゲーム機", {"psp", "psv", "nds", "n3d", "gba", "gbc"}),
+    ("PC", {"win", "mac", "lin", "p88", "p98", "x68", "fmt", "fm7", "msx", "dos", "x1s"}),
+    ("スマートフォン", {"and", "ios", "mob"}),
+]
 HOME = ("Switch", "PS", "ニンテンドー", "Xbox")
 
 
@@ -107,6 +117,15 @@ def main():
         if p in pl_ix:
             g_pl[vid].add(pl_ix[p])
 
+    code_of = {v: k for k, v in PLATFORM_JA.items()}
+
+    def plat_group(label):
+        code = code_of.get(label, label)
+        for name, codes in PLAT_GROUP:
+            if code in codes:
+                return name
+        return "その他"
+
     items = []
     for vid, title, latin, rel, plat, dev, rating, votes, img, cvst in games:
         items.append({
@@ -133,7 +152,8 @@ def main():
         "vocab": {
             "cv": [{"n": c, "u": slug.get(("cv", c))} for c in cvs],
             "tag": [{"n": t, "u": slug.get(("tag", t))} for t in tags],
-            "platform": [{"n": p, "u": slug.get(("platform", p))} for p in plats],
+            "platform": [{"n": p, "u": slug.get(("platform", p)),
+                          "g": plat_group(p)} for p in plats],
             "staff": [{"n": nm, "r": (roles or "").split(",")[0],
                        "u": person[sid][0]} for sid, nm, roles in staff],
             "publisher": [{"n": p, "u": slug.get(("publisher", p))} for p in pubs],
@@ -151,9 +171,40 @@ def main():
         "items": {vid: sorted(g_tr[vid]) for vid in vids if g_tr.get(vid)},
     }
 
+    # 入力補完と横断検索のための索引。検索欄を触ったときだけ読み込む
+    sug = []
+    for it in items:
+        sug.append({"t": "作品", "n": it["t"], "k": it["l"], "u": it["u"]})
+    cv_latin = dict(con.execute(
+        "SELECT cv, MAX(cv_latin) FROM characters WHERE cv IS NOT NULL GROUP BY cv"))
+    cv_url = {c: slug.get(("cv", c)) for c in cvs}
+    for i, c in enumerate(cvs):
+        sug.append({"t": "声優", "n": c, "u": cv_url[c], "i": i, "k": cv_latin.get(c)})
+    st_latin = dict(con.execute(
+        "SELECT sid, MAX(name_latin) FROM staff_credits GROUP BY sid"))
+    for sid, nm, roles in staff:
+        sug.append({"t": "スタッフ", "n": nm, "u": person[sid][0],
+                    "r": (roles or "").split(",")[0], "k": st_latin.get(sid)})
+    vid_ix = {it["v"]: i for i, it in enumerate(items)}
+    chv = defaultdict(set)
+    for cid, vid_ in con.execute(
+            """SELECT cid, vid FROM characters
+               WHERE vid IN (%s) AND role IN ('主人公','攻略対象')""" % ph, vids):
+        if vid_ in vid_ix:
+            chv[cid].add(vid_ix[vid_])
+    for cid, nm, cvn, clat in con.execute(
+            """SELECT cid, MAX(name), MAX(cv), MAX(name_latin) FROM characters
+               WHERE vid IN (%s) AND role IN ('主人公','攻略対象') AND name IS NOT NULL
+               GROUP BY cid""" % ph, vids):
+        u = slug.get(("character", cid))
+        if u:
+            sug.append({"t": "キャラ", "n": nm, "u": u, "c": cvn, "k": clat,
+                        "v": sorted(chv.get(cid, []))})
+
     os.makedirs(OUT, exist_ok=True)
     written = []
-    for name, obj in (("index.json", index), ("traits.json", traits_file)):
+    for name, obj in (("index.json", index), ("traits.json", traits_file),
+                      ("suggest.json", sug)):
         body = json.dumps(obj, ensure_ascii=False, separators=(",", ":")).encode()
         path = os.path.join(OUT, name)
         open(path, "wb").write(body)
@@ -166,7 +217,9 @@ def main():
     for name, raw, gz in written:
         print("  %-12s %7.1f KB  (gzip %6.1f KB)" % (name, raw / 1024, gz / 1024))
     print()
-    print("  初回ロードは index.json のみ。属性で絞り込むとき traits.json を追加取得する")
+    print("  初回ロードは index.json のみ。")
+    print("  検索欄に触れたとき suggest.json（%d件）、属性で絞るとき traits.json を追加取得する"
+          % len(sug))
     print("-> %s" % OUT)
     con.close()
 

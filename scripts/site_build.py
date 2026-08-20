@@ -717,10 +717,9 @@ def main():
     # ---------------- assets / sitemap / robots ----------------
     assets_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
     shutil.copytree(assets_src, os.path.join(OUT, "assets"))
-    shutil.copy(os.path.join(DATA, "site", "index.json"),
-                os.path.join(OUT, "assets", "index.json"))
-    shutil.copy(os.path.join(DATA, "site", "traits.json"),
-                os.path.join(OUT, "assets", "traits.json"))
+    for name in ("index.json", "traits.json", "suggest.json"):
+        shutil.copy(os.path.join(DATA, "site", name),
+                    os.path.join(OUT, "assets", name))
 
     # 404（Cloudflare Pages は /404.html を自動で使う）
     nf = ['<h1>ページが見つかりません</h1>',

@@ -9,9 +9,10 @@
         "http.server",
         "8765",
         "--directory",
-        "docs"
+        "/tmp/otome-serve"
       ],
-      "port": 8765
+      "port": 8765,
+      "url": "http://localhost:8765"
     }
   ]
 }

@@ -94,3 +94,39 @@ footer.site .src{margin:6px 0}
   .q{width:100%;margin-left:0}
   .q input{width:100%}
 }
+
+/* ---------- 検索パネル ---------- */
+.search-panel{background:var(--card);border:1px solid var(--line);border-radius:10px;
+  padding:18px 18px 14px;margin:0 0 18px}
+.sp-title{font-size:16px;margin:0 0 12px;padding:0 0 8px;border-bottom:2px solid var(--accent)}
+.sp-modes{display:flex;flex-wrap:wrap;gap:6px 18px;margin-bottom:10px;font-size:14px}
+.sp-modes .radio{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.sp-box{position:relative;margin-bottom:12px}
+.sp-box input{width:100%;padding:11px 14px;font-size:16px;border:1px solid var(--rule-strong,var(--line));
+  border-radius:6px;background:var(--bg);color:var(--ink)}
+.sp-box input:focus{outline:2px solid var(--accent);outline-offset:1px}
+.sp-sug{position:absolute;z-index:20;left:0;right:0;top:100%;margin:4px 0 0;padding:0;
+  list-style:none;background:var(--card);border:1px solid var(--line);border-radius:8px;
+  box-shadow:0 8px 24px rgba(0,0,0,.14);max-height:340px;overflow:auto}
+.sp-sug li{border-bottom:1px solid var(--line)}
+.sp-sug li:last-child{border-bottom:none}
+.sp-sug li.on{background:var(--chip)}
+.sp-sug a{display:flex;align-items:center;gap:10px;padding:9px 12px;text-decoration:none;color:inherit}
+.sp-sug b{font-weight:600;font-size:14.5px}
+.sp-sug small{color:var(--muted);font-size:12px;margin-left:auto;white-space:nowrap}
+.k{flex:none;font-size:11px;padding:2px 7px;border-radius:99px;background:var(--chip);color:var(--ink2)}
+.k-作品{background:#dfe7f5;color:#28406b}
+.k-声優{background:#f3e0e9;color:#7a3a58}
+.k-キャラ{background:#e2eee6;color:#2f5b46}
+.k-スタッフ{background:#f0ead9;color:#6b5a2c}
+@media (prefers-color-scheme:dark){
+  .k-作品{background:#25324a;color:#bcd0f0}
+  .k-声優{background:#3b2733;color:#e6b7cd}
+  .k-キャラ{background:#22362b;color:#a7d4ba}
+  .k-スタッフ{background:#3a3325;color:#dccb9d}
+}
+.sp-more{margin:0 0 10px}
+.sp-more summary{cursor:pointer;font-size:14px;color:var(--accent2);padding:4px 0}
+.sp-more .filters{margin-top:8px}
+ul.cards .why{color:var(--accent2);font-weight:600}
+ul.cards .more{color:var(--muted);font-size:13px;padding:10px}
