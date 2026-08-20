@@ -15,8 +15,8 @@ GitHub Pages で配信する。
 手順は 2 つ。**両方**やること。
 
 ```bash
-# 1. データのバックアップ（data/ と scripts/ を tar.gz で backups/ へ）
-./scripts/backup.sh "何をしようとしているか"
+# 1. データのバックアップ
+python3 scripts/backup.py "何をしようとしているか"
 ```
 
 ```bash
@@ -24,17 +24,35 @@ GitHub Pages で配信する。
 git switch -c feat/やること
 ```
 
-`backup.sh` は同時に `backup/<日時>` の git タグも打つので、
+`backup.py` は同時に `backup/<日時>` の git タグも打つので、
 「バックアップ時点のサイトの状態」も commit ハッシュで特定できる。
 
 戻したくなったら:
 
 ```bash
-./scripts/restore.sh
+python3 scripts/restore.py
 ```
 
-引数なしで一覧、`./scripts/restore.sh 20260820_144006` で復元。
+引数なしで一覧、`python3 scripts/restore.py 20260820_221308` で復元。
 復元前に現状も自動退避されるので、やり直しは効く。
+
+### バックアップを肥大させない仕組み
+
+`data/` は 35MB の DB のように「たまにしか変わらない大物」が容量の大半を占める。
+毎回まるごと固めると 1 回 18MB 積み上がるので、こうしている。
+
+- 1MB 超のファイルは内容の SHA1 を名前にした共有プール（`backups/pool/`）に 1 個だけ置き、
+  スナップショットからは参照するだけ。**DB を作り直していなければ 2 回目以降は 0 バイト。**
+- スナップショット本体には小さいファイル（`scripts/` と `data/site/` など）だけ入る。約 700KB。
+- 大物まで戻せるのは直近 3 世代。それより古いスナップショットも残るが、
+  復元できるのは構造とスクリプトだけになる（DB は再生成する）。
+- `backups/` 全体が 200MB を超えそうなら、大物の保持世代を自動で減らす。
+
+既定値は環境変数で変えられる。
+
+```bash
+BACKUP_KEEP=30 BACKUP_KEEP_FULL=3 BACKUP_MAX_MB=200 python3 scripts/backup.py "やること"
+```
 
 ## バージョン管理の方針（GitHub）
 
@@ -52,7 +70,7 @@ git switch -c feat/やること
 | `docs/` | 生成された静的サイト（GitHub Pages の配信元） | する |
 | `data/` | DB・jsonl・xlsx・サイト用 JSON | **しない**（要バックアップ） |
 | `vndb/`, `raw/` | VNDB ダンプと中間データ（再取得可能） | しない |
-| `backups/` | `backup.sh` の出力（最新 10 件を保持） | しない |
+| `backups/` | `backup.py` の出力（スナップショット 30 件＋共有プール） | しない |
 
 `data/` は git に入っていないので、消えたら再生成しか手がない。
 だから「大きな変更の前のバックアップ」が効いてくる。
