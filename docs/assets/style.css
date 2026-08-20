@@ -130,3 +130,84 @@ footer.site .src{margin:6px 0}
 .sp-more .filters{margin-top:8px}
 ul.cards .why{color:var(--accent2);font-weight:600}
 ul.cards .more{color:var(--muted);font-size:13px;padding:10px}
+
+/* ---------- カテゴリ導線（全ページ共通） ---------- */
+.site-nav{max-width:900px;margin:0 auto;padding:0 20px 4px;display:flex;gap:6px;
+  flex-wrap:wrap;font-size:14px}
+.site-nav a{padding:4px 12px;border:1px solid var(--line);border-radius:99px;
+  background:var(--card);color:var(--ink2);text-decoration:none}
+.site-nav a:hover{border-color:var(--accent);color:var(--accent2)}
+
+/* ---------- カテゴリ索引ページ（/cv/ /maker/ …） ---------- */
+.idx{margin:16px 0}
+.idx-tools{position:sticky;top:0;z-index:10;display:flex;gap:10px;align-items:center;
+  padding:10px 0;background:var(--bg)}
+.idx-filter{flex:1;min-width:0;padding:10px 13px;font-size:16px;border:1px solid var(--line);
+  border-radius:6px;background:var(--card);color:var(--ink)}
+.idx-filter:focus{outline:2px solid var(--accent);outline-offset:1px}
+.idx-count{color:var(--muted);font-size:13px;white-space:nowrap}
+.idx-jump{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
+.idx-jump a{padding:4px 11px;border:1px solid var(--line);border-radius:99px;
+  background:var(--card);color:var(--ink2);font-size:13px;text-decoration:none}
+.idx-jump a:hover{border-color:var(--accent);color:var(--accent2)}
+.idx-sec h2{display:flex;align-items:baseline;gap:10px;scroll-margin-top:66px}
+.idx-n{font-size:12px;font-weight:400;color:var(--muted)}
+.idx-empty{color:var(--muted);font-size:14px;margin:20px 0}
+
+.idx-names{list-style:none;padding:0;margin:0;display:grid;gap:1px;
+  grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.idx-names a{display:flex;align-items:baseline;gap:6px;padding:6px 8px;border-radius:6px;
+  text-decoration:none;color:inherit;font-size:14.5px}
+.idx-names a:hover{background:var(--chip)}
+.idx-names span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.idx-names i{font-style:normal;font-size:11.5px;color:var(--muted);white-space:nowrap}
+.idx-names small{margin-left:auto;flex:none;font-size:12px;color:var(--muted)}
+
+.idx-chips{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:6px}
+.idx-chips a{display:inline-flex;align-items:baseline;gap:6px;padding:4px 12px;
+  border-radius:99px;background:var(--chip);color:var(--ink2);
+  font-size:13.5px;text-decoration:none}
+.idx-chips a:hover{background:var(--accent);color:#fff}
+.idx-chips small{font-size:11px;opacity:.7}
+
+/* ---------- /browse/ ---------- */
+ul.browse{list-style:none;padding:0;display:grid;gap:12px;
+  grid-template-columns:repeat(auto-fill,minmax(250px,1fr))}
+ul.browse a{display:flex;flex-direction:column;gap:2px;padding:14px 16px;height:100%;
+  background:var(--card);border:1px solid var(--line);border-radius:8px;
+  text-decoration:none;color:inherit}
+ul.browse a:hover{border-color:var(--accent)}
+ul.browse b{font-size:15.5px}
+ul.browse .idx-n{font-size:12px}
+ul.browse small{color:var(--muted);font-size:12.5px;line-height:1.6}
+
+/* ---------- 候補から選ぶ絞り込み（選択肢が多い項目） ---------- */
+.combo{position:relative;flex:1;min-width:170px}
+.combo .cb-text{width:100%;padding:8px 26px 8px 10px;font-size:14px;
+  border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
+.combo .cb-text.on{border-color:var(--accent);font-weight:600}
+.combo .cb-clear{position:absolute;right:2px;top:50%;transform:translateY(-50%);
+  border:none;background:none;color:var(--muted);cursor:pointer;font-size:15px;
+  line-height:1;padding:5px 7px}
+.combo .cb-clear:hover{color:var(--accent2)}
+.combo .cb-list{position:absolute;z-index:30;left:0;top:100%;min-width:100%;max-width:min(360px,80vw);
+  margin:4px 0 0;padding:0;list-style:none;background:var(--card);
+  border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.14);
+  max-height:280px;overflow:auto}
+.combo .cb-list li{padding:7px 12px;font-size:14px;cursor:pointer;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.combo .cb-list li.on{background:var(--chip)}
+.combo .cb-list .cb-more{color:var(--muted);font-size:12px;cursor:default;background:none}
+.idx-link{font-size:13px;color:var(--muted);margin:10px 0 0}
+
+@media (max-width:560px){
+  .site-nav{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none}
+  .site-nav::-webkit-scrollbar{display:none}
+  .site-nav a{flex:none}
+  .idx-names{grid-template-columns:1fr}
+  .combo{min-width:44%}
+}
+
+/* 選択肢の文字数で幅が暴れないようにする（シリーズ名が長い） */
+.filters select{flex:1 1 170px;min-width:150px;max-width:280px}

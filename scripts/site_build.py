@@ -19,6 +19,13 @@ HOME = ("Switch", "PS", "ニンテンドー", "Xbox")
 
 e = lambda s: html.escape(str(s), quote=True) if s is not None else ""
 
+# 全ページ共通のカテゴリ導線。索引ページ（/cv/ /maker/ …）への入口を常設する。
+# ここに無いと索引ページを作っても誰も辿り着けないので layout() に組み込む。
+NAV = '<nav class="site-nav" aria-label="カテゴリ">%s</nav>' % "".join(
+    '<a href="%s">%s</a>' % (u, t) for t, u in
+    [("探す", "/browse/"), ("声優", "/cv/"), ("メーカー", "/maker/"),
+     ("シリーズ", "/series/"), ("タグ", "/tag/"), ("キャラ属性", "/trait/")])
+
 # 訳が用意できていない英語のままの語は表示しない（サイトは日本語で統一する）
 is_en = lambda t: bool(re.fullmatch(r"[\x20-\x7e]+", t or ""))
 ja_only = lambda xs: [x for x in xs if x and not is_en(x)]
@@ -60,6 +67,7 @@ def layout(title, desc, canonical, body, jsonld=None, breadcrumb=None, og_image=
   <a class="brand" href="/">%(site)s</a>
   <form class="q" action="/" method="get"><input type="search" name="q" placeholder="作品・声優で探す" aria-label="検索"></form>
 </header>
+%(nav)s
 %(crumb)s
 <main>
 %(body)s
@@ -76,7 +84,7 @@ def layout(title, desc, canonical, body, jsonld=None, breadcrumb=None, og_image=
 </body>
 </html>""" % dict(title=e(title), desc=e(desc), canon=e(canonical), site=e(SITE_NAME),
                   sitedesc=e(SITE_DESC), ld=ld, crumb=crumb, body=body, repo=e(REPO_URL),
-                  basepath=json.dumps(BASE_PATH),
+                  basepath=json.dumps(BASE_PATH), nav=NAV,
                   robots="" if PUBLISH else '<meta name="robots" content="noindex,nofollow">\n',
                   notice=('<p class="ad-notice">当サイトはアフィリエイト広告を利用しています</p>'
                           if PUBLISH else
@@ -124,6 +132,147 @@ def card_list(items):
                ('<small class="ex">%s</small>' % e(extra)) if extra else ""))
     out.append("</ul>")
     return "\n".join(out)
+
+
+# ---------------------------------------------------------------- 索引ページ
+
+# カテゴリ索引の定義。この並びがそのまま /browse/ の並びになる。
+#   (kind, URL, 短い名前, 見せ方, 見出し, 説明(件数を1つ埋める), /browse/ での一言)
+CATS = [
+    ("cv", "/cv/", "声優", "kana", "声優から探す",
+     "出演作のある声優 %d人の一覧。五十音の行から辿るか、絞り込み欄に名前を入れて探せます。",
+     "名前の五十音から、担当作の一覧へ。"),
+    ("maker", "/maker/", "メーカー", "cards", "メーカーから探す",
+     "乙女ゲームを開発したメーカー %d社の一覧。作品数の多い順に並べています。",
+     "オトメイト・クインロゼなど、開発元ごとの作品一覧へ。"),
+    ("series", "/series/", "シリーズ", "cards", "シリーズから探す",
+     "続編・ファンディスクのあるシリーズ %d件の一覧。各ページで発売順（＝遊ぶ順）に並べています。",
+     "どれから遊べばよいかを発売順で確認。"),
+    ("publisher", "/publisher/", "発売元", "cards", "発売元から探す",
+     "乙女ゲームを発売したブランド・パブリッシャー %d社の一覧。",
+     "販売しているブランドごとの作品一覧へ。"),
+    ("staff", "/staff/", "スタッフ", "kana", "スタッフから探す",
+     "シナリオ・原画・音楽などで参加したスタッフ %d人の一覧。",
+     "ライター・イラストレーターの参加作を辿る。"),
+    ("tag", "/tag/", "タグ", "chips", "タグから探す",
+     "作品の傾向をあらわすタグ %d件の一覧。該当作品の多い順に並べています。",
+     "ジャンル・題材・システムから絞り込む。"),
+    ("trait", "/trait/", "キャラ属性", "bycat", "キャラ属性から探す",
+     "キャラクターの性格・外見・役柄などの属性 %d件の一覧。分類ごとにまとめています。",
+     "「ツンデレ」「幼なじみ」など、好みの属性から。"),
+    ("platform", "/platform/", "機種", "chips", "機種から探す",
+     "収録作品が遊べる機種 %d件の一覧。",
+     "Switch・PS・PSP など、持っている機種から。"),
+]
+CAT_OF = {c[0]: c for c in CATS}
+
+# 五十音の行。読みはスラッグ（ヘボン式ローマ字）の頭文字から機械的に決める。
+# 「鳥海 浩輔 → toriumi-… → た行」のように、漢字表記でも行が引ける。
+KANA_ROWS = [("a", "あ行"), ("ka", "か行"), ("sa", "さ行"), ("ta", "た行"),
+             ("na", "な行"), ("ha", "は行"), ("ma", "ま行"), ("ya", "や行"),
+             ("ra", "ら行"), ("wa", "わ行"), ("etc", "数字・記号")]
+_ROW_OF = {}
+for _cs, _r in [("aiueo", "a"), ("kgq", "ka"), ("szj", "sa"), ("td", "ta"),
+                ("n", "na"), ("hfbpv", "ha"), ("m", "ma"), ("y", "ya"),
+                ("rl", "ra"), ("w", "wa")]:
+    for _c in _cs:
+        _ROW_OF[_c] = _r
+
+
+def kana_row(key):
+    """ローマ字スラッグの頭から五十音の行を決める。ch/ts は「ち・つ」なので た行"""
+    k = (key or "").lower()
+    if k[:2] in ("ch", "ts"):
+        return "ta"
+    if k[:1] == "c":           # cinderella → シンデレラ
+        return "sa"
+    return _ROW_OF.get(k[:1], "etc")
+
+
+def slug_key(url):
+    """/cv/toriumi-kousuke-s45/ → toriumi-kousuke（絞り込みの照合と行分けに使う）"""
+    return re.sub(r"-[sv]\d+$", "", url.strip("/").split("/")[-1])
+
+
+def idx_cards(entries):
+    """代表作のカバー付きカード（メーカー・発売元・シリーズ）"""
+    out = ['<ul class="cards idx-cards">']
+    for it in entries:
+        thumb = ('<img src="%s" alt="" loading="lazy" width="90">' % e(it["img"])
+                 if it.get("img") else '<span class="noimg"></span>')
+        rep_ = ('<small>%s</small>' % e(it["rep"])) if it.get("rep") else ""
+        out.append('<li data-k="%s"><a href="%s">%s<span class="meta"><b>%s</b>'
+                   '<small>%d作品</small>%s</span></a></li>'
+                   % (e(it["k"]), e(it["url"]), thumb, e(it["label"]), it["n"], rep_))
+    out.append("</ul>")
+    return "\n".join(out)
+
+
+def idx_names(entries):
+    """名前だけを詰めて並べる（声優・スタッフ）"""
+    out = ['<ul class="idx-names">']
+    for it in entries:
+        sub = ('<i>%s</i>' % e(it["sub"])) if it.get("sub") else ""
+        out.append('<li data-k="%s"><a href="%s"><span>%s</span>%s<small>%d</small></a></li>'
+                   % (e(it["k"]), e(it["url"]), e(it["label"]), sub, it["n"]))
+    out.append("</ul>")
+    return "\n".join(out)
+
+
+def idx_chips(entries):
+    out = ['<ul class="idx-chips">']
+    for it in entries:
+        out.append('<li data-k="%s"><a href="%s">%s<small>%d</small></a></li>'
+                   % (e(it["k"]), e(it["url"]), e(it["label"]), it["n"]))
+    out.append("</ul>")
+    return "\n".join(out)
+
+
+def idx_kana(entries):
+    """五十音の行ごとの節に分ける。行内はローマ字読み順"""
+    by = defaultdict(list)
+    for it in entries:
+        by[kana_row(it["k"])].append(it)
+    jump, secs = [], []
+    for rid, rname in KANA_ROWS:
+        rows = sorted(by.get(rid, []), key=lambda x: x["k"])
+        if not rows:
+            continue
+        jump.append('<a href="#r-%s">%s</a>' % (rid, e(rname)))
+        secs.append('<section class="idx-sec" id="r-%s" data-sec>'
+                    '<h2>%s<span class="idx-n">%d</span></h2>%s</section>'
+                    % (rid, e(rname), len(rows), idx_names(rows)))
+    return ('<nav class="idx-jump" aria-label="五十音">%s</nav>' % "".join(jump)
+            + "\n".join(secs))
+
+
+def idx_bycat(entries):
+    """分類ごとの節に分ける（キャラ属性）"""
+    by = defaultdict(list)
+    for it in entries:
+        by[it.get("cat") or "その他"].append(it)
+    out = []
+    for cat in sorted(by, key=lambda c: -len(by[c])):
+        rows = sorted(by[cat], key=lambda x: -x["n"])
+        out.append('<section class="idx-sec" data-sec>'
+                   '<h2>%s<span class="idx-n">%d</span></h2>%s</section>'
+                   % (e(cat), len(rows), idx_chips(rows)))
+    return "\n".join(out)
+
+
+def idx_wrap(inner, placeholder, reading=False):
+    """索引の本体を、ページ内絞り込み欄つきの箱に入れる（絞り込みは app.js）。
+
+    reading=True は「スラッグが名前の読み（ヘボン式）である」カテゴリ。
+    人名やメーカー名はローマ字からかなを起こして照合できるが、
+    タグや属性のスラッグは英訳なので、起こしても雑音にしかならない。"""
+    return ('<div class="idx" data-idx%s>\n'
+            '<div class="idx-tools">'
+            '<input type="search" class="idx-filter" autocomplete="off" '
+            'placeholder="%s" aria-label="絞り込み">'
+            '<span class="idx-count" aria-live="polite"></span></div>\n'
+            '%s\n</div>' % (" data-reading" if reading else "", e(placeholder), inner))
+
 
 
 # ---------------------------------------------------------------- 本体
@@ -202,6 +351,21 @@ def main():
         shutil.rmtree(OUT)
     os.makedirs(OUT)
     urls = []
+    idx = defaultdict(list)   # kind -> 索引ページに載せる項目
+
+    def cat_crumbs(kind, lab):
+        """パンくずに「声優」「メーカー」などの層を挟み、索引ページへ戻れるようにする"""
+        c = CAT_OF.get(kind)
+        return [(SITE_NAME, "/")] + ([(c[2], c[1])] if c else []) + [(lab, None)]
+
+    def rep_game(gs):
+        """代表作。カバー画像があるものを優先し、その中で票数の多いもの。
+        評価より票数を見るのは「知られている作品」を出したいから"""
+        gs = [g for g in gs if g]
+        if not gs:
+            return None
+        return sorted(gs, key=lambda g: (cover_of(g) is not None, g["votecount"] or 0),
+                      reverse=True)[0]
 
     def brief(g):
         return "%s（%s）" % (g["title"], (g["platforms"] or "").split(" / ")[0])
@@ -436,8 +600,12 @@ def main():
                       for i, it in enumerate(items[:50])]}
             write(url, layout("%s｜%s" % (heading_fmt % lab, SITE_NAME),
                               desc_fmt % (lab, len(items)), BASE_URL + url,
-                              "\n".join(body), [ld], [(SITE_NAME, "/"), (lab, None)]))
+                              "\n".join(body), [ld], cat_crumbs(kind, lab)))
             urls.append((url, None))
+            rg = rep_game([games.get(r["vid"]) for r in rows])
+            idx[kind].append(dict(url=url, label=lab, n=len(items), k=slug_key(url),
+                                  img=cover_of(rg) if rg else None,
+                                  rep=("代表作: %s" % rg["title"]) if rg else None))
             made += 1
         return made
 
@@ -507,8 +675,12 @@ def main():
                                    "url": BASE_URL + it[0], "name": it[1]}
                                   for i, it in enumerate((cast_items + staff_items)[:50])]}
         write(url, layout("%s｜%s" % (head, SITE_NAME), desc, BASE_URL + url,
-                          "\n".join(body), [ld], [(SITE_NAME, "/"), (lab, None)]))
+                          "\n".join(body), [ld], cat_crumbs(kind, lab)))
         urls.append((url, None))
+        idx[kind].append(dict(
+            url=url, label=lab, n=total, k=slug_key(url),
+            sub=("・".join(sorted({c["role"] for c in sc_by_sid.get(sid, [])})[:2])
+                 if kind == "staff" and sid else None)))
         return True
 
     n_cv = n_staff = 0
@@ -555,13 +727,16 @@ def main():
             continue
         items.sort(key=lambda x: (x[2] or "0000"), reverse=True)
         url = slug[(k, key)]
-        d = "「%s」のキャラクターが登場する乙女ゲーム %d作品の一覧。" % (tr, len(items))
+        # items はキャラ単位（1作品に該当キャラが複数いれば複数行）なので、
+        # 作品数として数えるときは作品URLで重複を落とす
+        nw = len({i[0] for i in items})
+        d = "「%s」のキャラクターが登場する乙女ゲーム %d作品の一覧。" % (tr, nw)
         body = ['<h1>「%s」のキャラクターがいる乙女ゲーム</h1>' % e(tr),
                 '<p class="lead">%s（%s）</p>' % (e(d), e(cat)), card_list(items)]
         write(url, layout("「%s」のキャラクターがいる乙女ゲーム｜%s" % (tr, SITE_NAME),
-                          d, BASE_URL + url, "\n".join(body), None,
-                          [(SITE_NAME, "/"), (tr, None)]))
+                          d, BASE_URL + url, "\n".join(body), None, cat_crumbs("trait", tr)))
         urls.append((url, None))
+        idx["trait"].append(dict(url=url, label=tr, n=nw, k=slug_key(url), cat=cat))
         n_tr += 1
 
     # ---------------- キャラクターページ ----------------
@@ -685,9 +860,76 @@ def main():
                                   for i, it in enumerate(items)]}
         write(url, layout("「%s」シリーズの乙女ゲーム 発売順一覧｜%s" % (v["name"], SITE_NAME),
                           d, BASE_URL + url, "\n".join(body), [ld],
-                          [(SITE_NAME, "/"), (v["name"], None)]))
+                          cat_crumbs("series", v["name"])))
         urls.append((url, None))
+        first = next((games[m] for m in v["members"] if cover_of(games[m])),
+                     games[v["members"][0]])
+        idx["series"].append(dict(
+            url=url, label=v["name"], n=len(items), k=slug_key(url), img=cover_of(first),
+            # シリーズ名と1作目が同じ名前のことが多いので、違うときだけ添える
+            rep=("1作目: %s" % first["title"]) if first["title"] != v["name"] else None))
         n_ser += 1
+
+    # ---------------- カテゴリ索引ページ（/cv/ /maker/ …）と /browse/ ----------------
+    # 個別ページは山ほどあるのに、そこへ辿り着く一覧が無かった。
+    # ドロップダウンで727人から選ばせる代わりに、五十音・カード・チップで見せる。
+    def index_page(kind):
+        _, path, short, style, heading, desc_fmt, _blurb = CAT_OF[kind]
+        ents = idx.get(kind, [])
+        if not ents:
+            return 0
+        desc = desc_fmt % len(ents)
+        # スラッグが名前の読みになっているカテゴリだけローマ字入力を効かせる
+        is_reading = kind in ("cv", "staff", "maker", "publisher", "series")
+        by_n = sorted(ents, key=lambda x: (-x["n"], x["k"]))
+        inner = []
+        if style == "kana":
+            # 目的の無い人向けに、まず作品数の多い順を出してから五十音に落とす
+            inner.append('<section class="idx-sec idx-top" data-top>'
+                         '<h2>作品数の多い%s</h2>%s</section>'
+                         % (e(short), idx_names(by_n[:30])))
+            inner.append(idx_kana(ents))
+        elif style == "cards":
+            inner.append(idx_cards(by_n))
+        elif style == "chips":
+            inner.append(idx_chips(by_n))
+        else:
+            inner.append(idx_bycat(ents))
+        body = ["<h1>%s</h1>" % e(heading),
+                '<p class="lead">%s</p>' % e(desc),
+                idx_wrap("\n".join(inner),
+                         "%sの名前で絞り込む（かな%sも可）"
+                         % (short, "・ローマ字" if is_reading else ""), is_reading)]
+        ld = {"@context": "https://schema.org", "@type": "ItemList", "name": heading,
+              "numberOfItems": len(ents),
+              "itemListElement": [{"@type": "ListItem", "position": i + 1,
+                                   "url": BASE_URL + it["url"], "name": it["label"]}
+                                  for i, it in enumerate(by_n[:50])]}
+        write(path, layout("%s｜%s" % (heading, SITE_NAME), desc, BASE_URL + path,
+                           "\n".join(body), [ld],
+                           [(SITE_NAME, "/"), ("探す", "/browse/"), (short, None)]))
+        urls.append((path, None))
+        return len(ents)
+
+    n_idx = sum(1 for c in CATS if index_page(c[0]))
+
+    bl = []
+    for kind, path, short, style, heading, desc_fmt, blurb in CATS:
+        n = len(idx.get(kind, []))
+        if n:
+            bl.append('<li><a href="%s"><b>%s</b><span class="idx-n">%d件</span>'
+                      '<small>%s</small></a></li>' % (e(path), e(heading), n, e(blurb)))
+    bdesc = ("乙女ゲームを声優・メーカー・シリーズ・タグ・キャラ属性から探すための入口。"
+             "それぞれの一覧ページから、該当する作品の一覧へ辿れます。")
+    bbody = ["<h1>乙女ゲームを探す</h1>",
+             '<p class="lead">%s</p>' % e(bdesc),
+             '<ul class="browse">%s</ul>' % "".join(bl),
+             '<p class="ext">作品名・声優名・キャラクター名をまとめて調べたいときは'
+             '<a href="/">トップの検索</a>が早いです。</p>']
+    write("/browse/", layout("乙女ゲームを探す｜%s" % SITE_NAME, bdesc,
+                             BASE_URL + "/browse/", "\n".join(bbody), None,
+                             [(SITE_NAME, "/"), ("探す", None)]))
+    urls.append(("/browse/", None))
 
     # ---------------- トップ（検索） ----------------
     today = datetime.date.today().isoformat()
@@ -699,6 +941,10 @@ def main():
             '<p class="lead">%s 家庭用ゲーム%d作品・声優%d人を収録。</p>' % (e(SITE_DESC), len(games), n_cv),
             '<div id="app"><noscript><p>絞り込みにはJavaScriptが必要です。'
             '下の新着一覧と各ページはそのままご覧いただけます。</p></noscript></div>',
+            '<p class="ext">一覧から辿るなら '
+            '<a href="/cv/">声優</a>・<a href="/maker/">メーカー</a>・'
+            '<a href="/series/">シリーズ</a>・<a href="/tag/">タグ</a>・'
+            '<a href="/trait/">キャラ属性</a>（<a href="/browse/">すべての入口</a>）。</p>',
             ]
     if upcoming:
         body += ["<h2>発売予定</h2>",
@@ -761,6 +1007,7 @@ def main():
     print("  メーカー   %5d" % n_maker)
     print("  発売元    %5d" % n_pub)
     print("  機種      %5d" % n_plat)
+    print("  索引ページ %5d" % (n_idx + 1))
     print("  トップ        1")
     print("  ------------------")
     print("  合計      %5d ページ" % len(urls))

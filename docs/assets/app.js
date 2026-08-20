@@ -4,26 +4,9 @@
 
    照合はすべて事前に正規化した文字列に対して行う。
    かな・カナ・漢字・ローマ字のどれで入力しても引けるようにしている。 */
-(function () {
-  var BP = window.BASE_PATH || '';
-  var root = document.getElementById('app');
-  if (!root) return;
-
-  var DATA = null, TRAITS = null, SUGGEST = null;
-  var CHAR_OF = null;          // 作品の添字 → その作品のキャラ（事前に作る索引）
-  var TODAY = new Date().toISOString().slice(0, 10);
-
-  function el(tag, attrs, kids) {
-    var n = document.createElement(tag);
-    for (var k in (attrs || {})) {
-      if (k === 'text') n.textContent = attrs[k];
-      else n.setAttribute(k, attrs[k]);
-    }
-    (kids || []).forEach(function (c) { n.appendChild(c); });
-    return n;
-  }
-  function option(v, t) { var o = el('option', { value: v }); o.textContent = t; return o; }
-  function val(id) { var n = document.getElementById(id); return n ? n.value : ''; }
+/* 表記ゆれの吸収。トップの検索と、索引ページのページ内絞り込みの
+   両方から使うのでファイルの先頭に出してある。 */
+var OD = (function () {
 
   /* ---------------- 表記ゆれの吸収 ---------------- */
 
@@ -151,6 +134,144 @@
     return norm(out);
   }
 
+  return { norm: norm, readingOf: readingOf };
+})();
+
+(function () {
+  var BP = window.BASE_PATH || '';
+  var norm = OD.norm, readingOf = OD.readingOf;
+  var root = document.getElementById('app');
+  if (!root) return;
+
+  var DATA = null, TRAITS = null, SUGGEST = null;
+  var CHAR_OF = null;          // 作品の添字 → その作品のキャラ（事前に作る索引）
+  var TODAY = new Date().toISOString().slice(0, 10);
+
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    for (var k in (attrs || {})) {
+      if (k === 'text') n.textContent = attrs[k];
+      else n.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function (c) { n.appendChild(c); });
+    return n;
+  }
+  function option(v, t) { var o = el('option', { value: v }); o.textContent = t; return o; }
+  function val(id) { var n = document.getElementById(id); return n ? n.value : ''; }
+
+  /* ---------------- 候補から選ぶ絞り込み ----------------
+     声優727・スタッフ808・タグ287・キャラ属性333 は <select> では探せない。
+     入力で候補を絞って選ぶ形にする。選んだ結果は hidden に入れ、その id を
+     元の <select> と同じにしてあるので、render() 側は書き換えずに済む。 */
+
+  function combo(id, label, listFn, nameFn, onOpen) {
+    var wrap = el('div', { class: 'combo' });
+    var txt = el('input', { type: 'text', class: 'cb-text', autocomplete: 'off',
+                            placeholder: label + '：すべて', 'aria-label': label });
+    var hid = el('input', { type: 'hidden', id: id });
+    var clr = el('button', { type: 'button', class: 'cb-clear', hidden: 'hidden',
+                             'aria-label': label + 'の指定を外す', text: '×' });
+    var list = el('ul', { class: 'cb-list', hidden: 'hidden' });
+    [txt, hid, clr, list].forEach(function (x) { wrap.appendChild(x); });
+
+    var shown = [], pos = -1, ready = !onOpen;
+
+    // 照合用の文字列は1度だけ作る。声優・スタッフは prepare() で作り済み
+    function key(v) {
+      if (v._n === undefined) v._n = norm(nameFn(v));
+      return v;
+    }
+    function nameAt(i) { var a = listFn()[i]; return a ? nameFn(a) : ''; }
+    function close() { list.hidden = true; list.innerHTML = ''; shown = []; pos = -1; }
+
+    function pick(i, quiet) {
+      hid.value = (i === '' ? '' : String(i));
+      txt.value = (i === '' ? '' : nameAt(i));
+      txt.classList[i === '' ? 'remove' : 'add']('on');
+      clr.hidden = (i === '');
+      close();
+      if (!quiet) render();
+    }
+    function setPos(n) {
+      Array.prototype.forEach.call(list.children, function (li, x) {
+        li.className = (x === n ? 'on' : '');
+      });
+      pos = n;
+    }
+    function open() {
+      var arr = listFn(), q = norm(txt.value), out = [];
+      for (var i = 0; i < arr.length && out.length <= 60; i++) {
+        var v = key(arr[i]);
+        if (!q || v._n.indexOf(q) >= 0 || (v._k && v._k.indexOf(q) >= 0) ||
+            (v._r && v._r.indexOf(q) >= 0)) out.push(i);
+      }
+      var more = out.length > 60;
+      shown = out.slice(0, 60);
+      pos = -1;
+      list.innerHTML = '';
+      if (!shown.length) {
+        list.appendChild(el('li', { class: 'cb-more', text: '該当なし' }));
+        list.hidden = false;
+        return;
+      }
+      shown.forEach(function (i, n) {
+        var li = el('li', { text: nameAt(i) });
+        li.addEventListener('mouseenter', function () { setPos(n); });
+        li.addEventListener('mousedown', function (ev) { ev.preventDefault(); pick(i); });
+        list.appendChild(li);
+      });
+      if (more) {
+        list.appendChild(el('li', { class: 'cb-more', text: '…さらに入力して絞り込んでください' }));
+      }
+      list.hidden = false;
+    }
+    function want() {                 // キャラ属性は初回に traits.json を読む
+      if (ready) { open(); return; }
+      ready = true;
+      onOpen(open);
+    }
+
+    txt.addEventListener('focus', want);
+    txt.addEventListener('input', want);
+    txt.addEventListener('blur', function () {
+      // 候補のクリックが先に走るよう、閉じるのは少し待つ
+      setTimeout(function () {
+        close();
+        txt.value = (hid.value === '' ? '' : nameAt(+hid.value));
+      }, 150);
+    });
+    txt.addEventListener('keydown', function (ev) {
+      if (ev.key === 'ArrowDown') {
+        ev.preventDefault();
+        if (list.hidden) want(); else setPos(Math.min(pos + 1, shown.length - 1));
+      } else if (ev.key === 'ArrowUp') {
+        ev.preventDefault(); setPos(Math.max(pos - 1, 0));
+      } else if (ev.key === 'Enter') {
+        ev.preventDefault(); if (pos >= 0) pick(shown[pos]);
+      } else if (ev.key === 'Escape') {
+        close(); txt.blur();
+      }
+    });
+    clr.addEventListener('mousedown', function (ev) {
+      ev.preventDefault(); pick(''); txt.focus();
+    });
+
+    return { node: wrap, clear: function () { pick('', true); } };
+  }
+
+  // 索引ページへの導線。絞り込みで見つからないときはこちらから辿る
+  function indexLinks() {
+    var p = el('p', { class: 'idx-link' });
+    p.appendChild(document.createTextNode('一覧から探す: '));
+    [['声優', '/cv/'], ['スタッフ', '/staff/'], ['メーカー', '/maker/'],
+     ['発売元', '/publisher/'], ['シリーズ', '/series/'], ['タグ', '/tag/'],
+     ['キャラ属性', '/trait/']].forEach(function (x, i) {
+      if (i) p.appendChild(document.createTextNode('・'));
+      p.appendChild(el('a', { href: BP + x[1], text: x[0] }));
+    });
+    return p;
+  }
+
   /* ---------------- 組み立て ---------------- */
 
   function build() {
@@ -204,19 +325,21 @@
     var det = el('details', { class: 'sp-more' });
     det.appendChild(el('summary', { text: '詳しく絞り込む' }));
     var row2 = el('div', { class: 'filters' });
-    var cv = el('select', { id: 'f-cv' }); cv.appendChild(option('', '声優：すべて'));
-    (DATA.vocab.cv || []).forEach(function (p, i) { cv.appendChild(option(i, p.n)); });
-    var sf = el('select', { id: 'f-staff' }); sf.appendChild(option('', 'スタッフ：すべて'));
-    (DATA.vocab.staff || []).forEach(function (p, i) {
-      sf.appendChild(option(i, p.n + (p.r ? '（' + p.r + '）' : '')));
-    });
+    var cv = combo('f-cv', '声優', function () { return DATA.vocab.cv || []; },
+                   function (p) { return p.n; });
+    var sf = combo('f-staff', 'スタッフ', function () { return DATA.vocab.staff || []; },
+                   function (p) { return p.n + (p.r ? '（' + p.r + '）' : ''); });
+    var tg = combo('f-tag', 'タグ', function () { return DATA.vocab.tag || []; },
+                   function (p) { return p.n; });
+    var tr = combo('f-trait', 'キャラ属性',
+                   function () { return TRAITS ? TRAITS.vocab : []; },
+                   function (t) { return t.c + '：' + t.n; }, loadTraits);
+    // 発売元は134件で、選択肢を眺めて選べる範囲なので <select> のまま残す
     var pb = el('select', { id: 'f-pub' }); pb.appendChild(option('', '発売元：すべて'));
     (DATA.vocab.publisher || []).forEach(function (p, i) { pb.appendChild(option(i, p.n)); });
-    var tg = el('select', { id: 'f-tag' }); tg.appendChild(option('', 'タグ：すべて'));
-    (DATA.vocab.tag || []).forEach(function (p, i) { tg.appendChild(option(i, p.n)); });
-    var tr = el('select', { id: 'f-trait' }); tr.appendChild(option('', 'キャラ属性：すべて'));
-    [cv, sf, pb, tg, tr].forEach(function (x) { row2.appendChild(x); });
+    [cv.node, sf.node, pb, tg.node, tr.node].forEach(function (x) { row2.appendChild(x); });
     det.appendChild(row2);
+    det.appendChild(indexLinks());
     panel.appendChild(det);
 
     var rs = el('button', { type: 'button', id: 'f-reset', class: 'reset' });
@@ -235,12 +358,12 @@
     });
     q.addEventListener('keydown', onKey);
     document.addEventListener('click', function (ev) { if (!box.contains(ev.target)) hideSug(); });
-    tr.addEventListener('focus', loadTraits, { once: true });
-    [pl, se, yr, st, cv, sf, pb, tg, tr].forEach(function (x) {
+    [pl, se, yr, st, pb].forEach(function (x) {
       x.addEventListener('change', render);
     });
     rs.addEventListener('click', function () {
-      [q, pl, se, yr, cv, sf, pb, tg, tr].forEach(function (x) { x.value = ''; });
+      [q, pl, se, yr, pb].forEach(function (x) { x.value = ''; });
+      [cv, sf, tg, tr].forEach(function (c) { c.clear(); });
       st.value = 'new';
       document.getElementById('m-all').checked = true;
       hideSug(); render();
@@ -250,14 +373,10 @@
 
   /* ---------------- 追加読み込みと索引づくり ---------------- */
 
-  function loadTraits() {
-    var sel = document.getElementById('f-trait');
-    fetch(BP + '/assets/traits.json').then(function (r) { return r.json(); }).then(function (j) {
-      TRAITS = j;
-      sel.innerHTML = '';
-      sel.appendChild(option('', 'キャラ属性：すべて'));
-      j.vocab.forEach(function (t, i) { sel.appendChild(option(i, t.c + '：' + t.n)); });
-    });
+  function loadTraits(done) {
+    if (TRAITS) { done && done(); return; }
+    fetch(BP + '/assets/traits.json').then(function (r) { return r.json(); })
+      .then(function (j) { TRAITS = j; done && done(); });
   }
 
   function prepare() {
@@ -487,4 +606,68 @@
       if (i) { i.value = p; render(); clearInterval(t); }
     }, 50);
   }
+})();
+
+/* カテゴリ索引ページ（/cv/ /maker/ /series/ …）のページ内絞り込み。
+   項目はサーバ側で書き出した実体のHTMLなので、JSが無くても一覧は読める。
+   照合はトップと同じ OD.norm / OD.readingOf を使い、
+   漢字表記の名前でも、かな・カタカナ・ローマ字で引けるようにする。 */
+(function () {
+  var box = document.querySelector('[data-idx]');
+  if (!box) return;
+  var input = box.querySelector('.idx-filter');
+  var count = box.querySelector('.idx-count');
+  if (!input) return;
+
+  var items = [].slice.call(box.querySelectorAll('li[data-k]'));
+  var secs = [].slice.call(box.querySelectorAll('[data-sec]'));
+  var tops = [].slice.call(box.querySelectorAll('[data-top]'));
+  var jump = box.querySelector('.idx-jump');
+  var empty = document.createElement('p');
+  empty.className = 'idx-empty';
+  empty.hidden = true;
+  box.appendChild(empty);
+
+  // スラッグが名前の読みでないカテゴリ（タグ・属性は英訳）では
+  // ローマ字からかなを起こさない。起こしても雑音にしかならないため
+  var useReading = box.hasAttribute('data-reading');
+  items.forEach(function (li) {
+    var k = li.getAttribute('data-k') || '';
+    li._n = OD.norm(li.textContent);   // 表示名（漢字・かな）
+    li._k = OD.norm(k);                // スラッグ
+    li._r = useReading ? OD.readingOf(k) : '';   // ローマ字から起こしたかな
+    // 冒頭の抜粋は本編と同じ項目の再掲なので、件数には数えない
+    li._dup = tops.some(function (t) { return t.contains(li); });
+  });
+
+  var timer = null;
+  function apply() {
+    var q = OD.norm(input.value);
+    var hits = 0;
+    items.forEach(function (li) {
+      var on = !q || li._n.indexOf(q) >= 0 || li._k.indexOf(q) >= 0 ||
+               (li._r && li._r.indexOf(q) >= 0);
+      li.hidden = !on;
+      if (on && !li._dup) hits++;
+    });
+    // 絞り込み中は「作品数の多い順」の抜粋と五十音の飛び先を隠す（重複して紛らわしいため）
+    tops.forEach(function (x) { x.hidden = !!q; });
+    if (jump) jump.hidden = !!q;
+    secs.forEach(function (sec) {
+      var vis = [].slice.call(sec.querySelectorAll('li[data-k]'))
+                  .some(function (li) { return !li.hidden; });
+      sec.hidden = !vis;
+    });
+    count.textContent = q ? hits + '件' : '';
+    empty.hidden = !(q && hits <= 0);
+    if (!empty.hidden) empty.textContent = '「' + input.value + '」に当てはまるものはありませんでした。';
+  }
+
+  input.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(apply, 100);
+  });
+  // 「?q=」で開いたときにも効かせる
+  var p = new URLSearchParams(location.search).get('q');
+  if (p) { input.value = p; apply(); }
 })();
