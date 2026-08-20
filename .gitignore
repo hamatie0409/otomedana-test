@@ -1,0 +1,10 @@
+# 再生成できるもの（ダンプ・中間データ）は含めない
+vndb/
+data/
+backups/
+raw/
+__pycache__/
+*.pyc
+.DS_Store
+
+# site/ は GitHub Pages で配信するためコミットする
