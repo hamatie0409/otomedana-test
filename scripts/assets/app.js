@@ -542,19 +542,21 @@ var OD = (function () {
     li._n = OD.norm(li.textContent);   // 表示名（漢字・かな）
     li._k = OD.norm(k);                // スラッグ
     li._r = useReading ? OD.readingOf(k) : '';   // ローマ字から起こしたかな
-    // 冒頭の抜粋は本編と同じ項目の再掲なので、件数には数えない
-    li._dup = tops.some(function (t) { return t.contains(li); });
+    // 同じ人が複数の節に出ることがある（冒頭の抜粋、複数の役割を持つスタッフ）。
+    // 件数はリンク先で重複を落として数える
+    var a = li.querySelector('a');
+    li._u = (a && a.getAttribute('href')) || '';
   });
 
   var timer = null;
   function apply() {
     var q = OD.norm(input.value);
-    var hits = 0;
+    var seen = {}, hits = 0;
     items.forEach(function (li) {
       var on = !q || li._n.indexOf(q) >= 0 || li._k.indexOf(q) >= 0 ||
                (li._r && li._r.indexOf(q) >= 0);
       li.hidden = !on;
-      if (on && !li._dup) hits++;
+      if (on && !seen[li._u]) { seen[li._u] = 1; hits++; }
     });
     // 絞り込み中は「作品数の多い順」の抜粋と五十音の飛び先を隠す（重複して紛らわしいため）
     tops.forEach(function (x) { x.hidden = !!q; });

@@ -153,9 +153,10 @@ CATS = [
     ("publisher", "/publisher/", "発売元", "cards", "発売元から探す",
      "乙女ゲームを発売したブランド・パブリッシャー %d社の一覧。",
      "販売しているブランドごとの作品一覧へ。"),
-    ("staff", "/staff/", "スタッフ", "kana", "スタッフから探す",
-     "シナリオ・原画・音楽などで参加したスタッフ %d人の一覧。",
-     "ライター・イラストレーターの参加作を辿る。"),
+    ("staff", "/staff/", "スタッフ", "byrole", "スタッフから探す",
+     "乙女ゲームに参加したスタッフ %d人の一覧。担当した役割ごとにまとめています。"
+     "複数の役割を持つ人は、それぞれの役割に出てきます。",
+     "シナリオ・原画・音楽など、役割ごとに辿る。"),
     ("tag", "/tag/", "タグ", "chips", "タグから探す",
      "作品の傾向をあらわすタグ %d件の一覧。該当作品の多い順に並べています。",
      "ジャンル・題材・システムから絞り込む。"),
@@ -245,6 +246,29 @@ def idx_kana(entries):
                     '<h2>%s<span class="idx-n">%d</span></h2>%s</section>'
                     % (rid, e(rname), len(rows), idx_names(rows)))
     return ('<nav class="idx-jump" aria-label="五十音">%s</nav>' % "".join(jump)
+            + "\n".join(secs))
+
+
+def idx_byrole(entries):
+    """役割ごとの節に分ける（スタッフ）。
+
+    1人が複数の役割を持つことがあるので、entries を役割の数だけ展開する。
+    節の中に出す件数は「その役割での参加作品数」で、人物ページの合計とは違う。"""
+    by = defaultdict(list)
+    for it in entries:
+        for role, n in sorted((it.get("roles") or {}).items()):
+            row = dict(it)
+            row["n"] = n
+            by[role].append(row)
+    jump, secs = [], []
+    for i, role in enumerate(sorted(by, key=lambda r: -len(by[r])), 1):
+        rows = sorted(by[role], key=lambda x: (-x["n"], x["k"]))
+        rid = "role-%d" % i
+        jump.append('<a href="#%s">%s</a>' % (rid, e(role)))
+        secs.append('<section class="idx-sec" id="%s" data-sec>'
+                    '<h2>%s<span class="idx-n">%d人</span></h2>%s</section>'
+                    % (rid, e(role), len(rows), idx_names(rows)))
+    return ('<nav class="idx-jump" aria-label="役割">%s</nav>' % "".join(jump)
             + "\n".join(secs))
 
 
@@ -679,10 +703,14 @@ def main():
         write(url, layout("%s｜%s" % (head, SITE_NAME), desc, BASE_URL + url,
                           "\n".join(body), [ld], cat_crumbs(kind, lab)))
         urls.append((url, None))
-        idx[kind].append(dict(
-            url=url, label=lab, n=total, k=slug_key(url),
-            sub=("・".join(sorted({c["role"] for c in sc_by_sid.get(sid, [])})[:2])
-                 if kind == "staff" and sid else None)))
+        ent = dict(url=url, label=lab, n=total, k=slug_key(url))
+        if kind == "staff" and sid:
+            # 役割ごとの参加作品数。索引ではこちらを件数として出す
+            by_role = defaultdict(set)
+            for c in sc_by_sid.get(sid, []):
+                by_role[c["role"]].add(c["vid"])
+            ent["roles"] = {r: len(v) for r, v in by_role.items()}
+        idx[kind].append(ent)
         return True
 
     n_cv = n_staff = 0
@@ -895,6 +923,8 @@ def main():
             inner.append(idx_cards(by_n))
         elif style == "chips":
             inner.append(idx_chips(by_n))
+        elif style == "byrole":
+            inner.append(idx_byrole(ents))
         else:
             inner.append(idx_bycat(ents))
         body = ["<h1>%s</h1>" % e(heading),
