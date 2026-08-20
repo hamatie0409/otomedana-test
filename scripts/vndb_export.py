@@ -32,6 +32,9 @@ CREATE TABLE characters (
     cv TEXT, cv_latin TEXT, personality TEXT, appearance TEXT, char_role TEXT
 );
 DROP TABLE IF EXISTS traits; DROP TABLE IF EXISTS vn_tags; DROP TABLE IF EXISTS relations;
+DROP TABLE IF EXISTS staff_credits;
+CREATE TABLE staff_credits (vid TEXT REFERENCES games(vid), sid TEXT, role TEXT,
+                            name TEXT, name_latin TEXT);
 CREATE TABLE traits (cid TEXT, vid TEXT, name TEXT, category TEXT, trait TEXT);
 CREATE TABLE vn_tags (vid TEXT REFERENCES games(vid), tag TEXT, category TEXT);
 CREATE TABLE relations (vid TEXT REFERENCES games(vid), related_vid TEXT, type TEXT, official INTEGER);
@@ -48,6 +51,9 @@ CREATE INDEX idx_l_lang ON languages(language);
 CREATE INDEX idx_tr_trait ON traits(trait);
 CREATE INDEX idx_vt_tag ON vn_tags(tag);
 CREATE INDEX idx_rel_vid ON relations(vid);
+CREATE INDEX idx_sc_vid ON staff_credits(vid);
+CREATE INDEX idx_sc_sid ON staff_credits(sid);
+CREATE INDEX idx_sc_name ON staff_credits(name);
 """
 
 
@@ -129,6 +135,9 @@ def main():
             con.execute("INSERT INTO vn_tags VALUES (?,?,?)", (r["vid"], t, "内容"))
         for t in r.get("tags_tech", []):
             con.execute("INSERT INTO vn_tags VALUES (?,?,?)", (r["vid"], t, "技術"))
+        for c in r.get("staff_credits", []):
+            con.execute("INSERT INTO staff_credits VALUES (?,?,?,?,?)",
+                        (r["vid"], c["sid"], c["role"], c["name"], c["latin"]))
         for rel in r.get("relations", []):
             con.execute("INSERT INTO relations VALUES (?,?,?,?)",
                         (r["vid"], rel["vid"], rel["type"], 1 if rel["official"] else 0))

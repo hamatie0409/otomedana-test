@@ -15,9 +15,10 @@ MAXLEN = 60                       # スラッグの最大長
 HOME = ("Switch", "PS", "ニンテンドー", "Xbox")
 
 # しきい値（これ未満は独立ページを作らない）
-MIN_WORKS = {"cv": 2, "tag": 3, "trait": 3, "maker": 2, "platform": 1, "game": 1}
+MIN_WORKS = {"cv": 2, "staff": 2, "tag": 3, "trait": 3, "maker": 2,
+             "platform": 1, "game": 1}
 
-DIR = {"game": "game", "cv": "cv", "tag": "tag",
+DIR = {"game": "game", "cv": "cv", "staff": "staff", "tag": "tag",
        "trait": "trait", "platform": "platform", "maker": "maker"}
 
 SCHEMA = """
@@ -33,6 +34,8 @@ CREATE TABLE slugs (
 );
 CREATE UNIQUE INDEX idx_slug_url ON slugs(url);
 CREATE INDEX idx_slug_kind ON slugs(kind, key);
+DROP TABLE IF EXISTS person_pages;
+CREATE TABLE person_pages (sid TEXT PRIMARY KEY, url TEXT, label TEXT, kind TEXT);
 DROP TABLE IF EXISTS slug_aliases;
 CREATE TABLE slug_aliases (alias TEXT, canonical TEXT);
 CREATE INDEX idx_alias ON slug_aliases(alias);
@@ -83,6 +86,7 @@ def main():
 
     rows = []          # (kind, key, slug, label, n, is_page)
     alias_rows = []    # (別名義, 代表名)
+    person_rows = []   # (sid, url, label, kind)
     used = set()
 
     def add(kind, key, base, label, n, ident=None):
@@ -122,13 +126,31 @@ def main():
         e["names"].append((n, name))
         e["latin"] = e["latin"] or sid_latin.get(sid) or latin
     merged = sum(1 for e in bysid.values() if len(e["names"]) > 1)
+    cv_sids = set()
     for sid, e in sorted(bysid.items(), key=lambda kv: -kv[1]["n"]):
         label = max(e["names"])[1]          # 一番多く使われている名義を代表にする
         add("cv", label, slugify(e["latin"]), label, e["n"], ident=sid)
+        if e["n"] >= MIN_WORKS["cv"]:
+            cv_sids.add(sid)
+            person_rows.append((sid, rows[-1][3], label, "cv"))
         for _, alt in e["names"]:           # 別名義も同じページを指すよう記録
             if alt != label:
                 alias_rows.append((alt, label))
     print("  声優の別名義を統合: %d人（%d名義）" % (merged, sum(len(e["names"]) for e in bysid.values() if len(e["names"]) > 1)))
+
+    # ---------- スタッフ（声優ページがある人は作らない＝1人物1ページ） ----------
+    st = con.execute("""SELECT sid, MAX(name), MAX(name_latin), COUNT(DISTINCT vid) n
+                        FROM staff_credits WHERE vid IN (%s)
+                        GROUP BY sid ORDER BY n DESC""" % ph, L).fetchall()
+    n_skip = 0
+    for sid, name, latin, n in st:
+        if sid in cv_sids:
+            n_skip += 1
+            continue          # 声優ページ側にスタッフ参加も載せる
+        add("staff", sid, slugify(latin), name, n, ident=sid)
+        if n >= MIN_WORKS["staff"]:
+            person_rows.append((sid, rows[-1][3], name, "staff"))
+    print("  スタッフ %d人（うち %d人は声優ページに統合）" % (len(st), n_skip))
 
     # ---------- タグ（英語原文からスラッグ） ----------
     tag_en = {}
@@ -182,12 +204,13 @@ def main():
     con.executescript(SCHEMA)
     con.executemany("INSERT INTO slugs VALUES (?,?,?,?,?,?,?)", rows)
     con.executemany("INSERT INTO slug_aliases VALUES (?,?)", alias_rows)
+    con.executemany("INSERT OR IGNORE INTO person_pages VALUES (?,?,?,?)", person_rows)
     con.commit()
 
     print()
     print("=== 生成したスラッグ ===")
     total = 0
-    for kind in ("game", "cv", "trait", "tag", "maker", "platform"):
+    for kind in ("game", "cv", "staff", "trait", "tag", "maker", "platform"):
         allc = sum(1 for r in rows if r[0] == kind)
         page = sum(1 for r in rows if r[0] == kind and r[6])
         total += page
@@ -200,7 +223,7 @@ def main():
     print("URL重複: %d件" % dup)
     print()
     print("=== 例 ===")
-    for kind in ("game", "cv", "tag", "trait", "platform", "maker"):
+    for kind in ("game", "cv", "staff", "tag", "trait", "platform", "maker"):
         for k, u, lab in con.execute(
                 "SELECT key,url,label FROM slugs WHERE kind=? AND is_page=1 ORDER BY n_works DESC LIMIT 2",
                 (kind,)):

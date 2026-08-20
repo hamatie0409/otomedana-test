@@ -27,6 +27,10 @@
     DATA.vocab.platform.forEach(function (p, i) { pl.appendChild(option(i, p.n)); });
     var cv = el('select', { id: 'f-cv' }); cv.appendChild(option('', '声優'));
     DATA.vocab.cv.forEach(function (p, i) { cv.appendChild(option(i, p.n)); });
+    var sf = el('select', { id: 'f-staff' }); sf.appendChild(option('', 'スタッフ'));
+    (DATA.vocab.staff || []).forEach(function (p, i) {
+      sf.appendChild(option(i, p.n + (p.r ? '（' + p.r + '）' : '')));
+    });
     var tg = el('select', { id: 'f-tag' }); tg.appendChild(option('', 'タグ'));
     DATA.vocab.tag.forEach(function (p, i) { tg.appendChild(option(i, p.n)); });
     var tr = el('select', { id: 'f-trait' }); tr.appendChild(option('', 'キャラ属性'));
@@ -40,17 +44,17 @@
     var rs = el('button', { type: 'button', id: 'f-reset', class: 'reset' });
     rs.textContent = '条件をクリア';
 
-    [q, pl, cv, tg, tr, yr, st, rs].forEach(function (x) { f.appendChild(x); });
+    [q, pl, cv, sf, tg, tr, yr, st, rs].forEach(function (x) { f.appendChild(x); });
     root.appendChild(f);
     root.appendChild(el('p', { class: 'count', id: 'f-count' }));
     root.appendChild(el('ul', { class: 'cards', id: 'f-out' }));
 
     tr.addEventListener('focus', loadTraits, { once: true });
-    [q, pl, cv, tg, tr, yr, st].forEach(function (x) {
+    [q, pl, cv, sf, tg, tr, yr, st].forEach(function (x) {
       x.addEventListener('input', render); x.addEventListener('change', render);
     });
     rs.addEventListener('click', function () {
-      [q, pl, cv, tg, tr, yr].forEach(function (x) { x.value = ''; });
+      [q, pl, cv, sf, tg, tr, yr].forEach(function (x) { x.value = ''; });
       st.value = 'new'; render();
     });
     render();
@@ -70,7 +74,7 @@
   function render() {
     var v = function (id) { return document.getElementById(id).value; };
     var q = v('f-q').toLowerCase(), pl = v('f-plat'), cv = v('f-cv'),
-        tg = v('f-tag'), tr = v('f-trait'), yr = v('f-year');
+        sf = v('f-staff'), tg = v('f-tag'), tr = v('f-trait'), yr = v('f-year');
     var out = DATA.items.filter(function (it) {
       if (q) {
         var hit = (it.t || '').toLowerCase().indexOf(q) >= 0 ||
@@ -80,10 +84,17 @@
             var n = DATA.vocab.cv[i]; return n && n.n.toLowerCase().indexOf(q) >= 0;
           });
         }
+        if (!hit) {                        // スタッフ名でも引けるようにする
+          hit = (it.s || []).some(function (i) {
+            var n = (DATA.vocab.staff || [])[i];
+            return n && n.n.toLowerCase().indexOf(q) >= 0;
+          });
+        }
         if (!hit) return false;
       }
       if (pl !== '' && it.p.indexOf(+pl) < 0) return false;
       if (cv !== '' && it.c.indexOf(+cv) < 0) return false;
+      if (sf !== '' && (it.s || []).indexOf(+sf) < 0) return false;
       if (tg !== '' && it.k.indexOf(+tg) < 0) return false;
       if (tr !== '' && TRAITS) {
         var x = TRAITS.items[it.v];

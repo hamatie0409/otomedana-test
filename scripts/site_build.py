@@ -159,6 +159,15 @@ def main():
     rels = defaultdict(list)
     for r in con.execute("SELECT * FROM relations WHERE vid IN (%s)" % ph, vids):
         rels[r["vid"]].append(r)
+    sc_by_vid = defaultdict(list)
+    sc_by_sid = defaultdict(list)
+    for r in con.execute("SELECT * FROM staff_credits WHERE vid IN (%s)" % ph, vids):
+        sc_by_vid[r["vid"]].append(r)
+        sc_by_sid[r["sid"]].append(r)
+    person = {sid: (url, label, kind) for sid, url, label, kind in
+              con.execute("SELECT sid, url, label, kind FROM person_pages")}
+    sid_of_cv = {label: sid for sid, (u, label, k) in person.items() if k == "cv"}
+
     alias_of = defaultdict(list)
     for a, c in con.execute("SELECT alias,canonical FROM slug_aliases"):
         alias_of[c].append(a)
@@ -266,8 +275,20 @@ def main():
                          % (e(c["role"] or ""), e(c["name"] or ""), cv))
             b.append("</table></section>")
 
-        if g["staff"]:
-            b.append('<section><h2>スタッフ</h2><p>%s</p></section>' % e(g["staff"]))
+        if sc_by_vid[vid]:
+            byrole = defaultdict(list)
+            for c in sc_by_vid[vid]:
+                u = person.get(c["sid"], (None,))[0]
+                byrole[c["role"]].append(
+                    '<a href="%s">%s</a>' % (e(u), e(c["name"])) if u else e(c["name"]))
+            ORDER_R = ["シナリオ", "原画", "キャラクターデザイン", "音楽", "主題歌",
+                       "監督", "翻訳", "編集", "QA"]
+            keys = [r for r in ORDER_R if r in byrole] + \
+                   [r for r in byrole if r not in ORDER_R]
+            b.append('<section id="staff"><h2>スタッフ</h2><table class="facts">')
+            for r in keys:
+                b.append("<tr><th>%s</th><td>%s</td></tr>" % (e(r), "・".join(byrole[r])))
+            b.append("</table></section>")
 
         tg = [t for t in gtags[vid] if ("tag", t) in slug and npages[("tag", t)][1]]
         if tg:
@@ -365,9 +386,85 @@ def main():
             made += 1
         return made
 
-    n_cv = listing("cv", "%s が出演する乙女ゲーム",
-                   "%s が声を担当した乙女ゲーム %d作品の一覧。キャラクター名・発売日・機種と、買えるお店へのリンクをまとめています。",
-                   "SELECT DISTINCT vid, name FROM characters WHERE cv = ?", "name")
+    def person_page(kind, key, url, lab, n):
+        """1人物1ページ。出演（声優）とスタッフ参加の両方を載せる"""
+        sid = key if kind == "staff" else sid_of_cv.get(key)
+        body = []
+        cast_items, staff_items = [], []
+
+        if kind == "cv":
+            keys = [key] + alias_of.get(key, [])
+            for r in con.execute(
+                    "SELECT DISTINCT vid, name FROM characters WHERE cv IN (%s)"
+                    % ",".join("?" * len(keys)), keys):
+                g = games.get(r["vid"])
+                if g:
+                    cast_items.append((slug[("game", g["vid"])], g["title"],
+                                       ja_date(g["released"]),
+                                       (g["platforms"] or "").split(" / ")[0],
+                                       g["image_url"], r["name"]))
+        if sid:
+            seen = {}
+            for c in sc_by_sid.get(sid, []):
+                g = games.get(c["vid"])
+                if not g:
+                    continue
+                seen.setdefault(c["vid"], []).append(c["role"])
+            for v2, roles in seen.items():
+                g = games[v2]
+                staff_items.append((slug[("game", v2)], g["title"], ja_date(g["released"]),
+                                    (g["platforms"] or "").split(" / ")[0],
+                                    g["image_url"], "・".join(sorted(set(roles)))))
+
+        cast_items.sort(key=lambda x: (x[2] or ""), reverse=True)
+        staff_items.sort(key=lambda x: (x[2] or ""), reverse=True)
+        total = len({i[0] for i in cast_items} | {i[0] for i in staff_items})
+        if not total:
+            return False
+
+        roles_txt = "・".join(sorted({c["role"] for c in sc_by_sid.get(sid, [])})) if sid else ""
+        if kind == "cv":
+            head = "%s が出演する乙女ゲーム" % lab
+            desc = ("%s が声を担当した乙女ゲーム %d作品の一覧。"
+                    "キャラクター名・発売日・機種と、買えるお店へのリンクをまとめています。"
+                    % (lab, len(cast_items)))
+        else:
+            head = "%s が手がけた乙女ゲーム" % lab
+            desc = ("%s（%s）が参加した乙女ゲーム %d作品の一覧。"
+                    % (lab, roles_txt or "スタッフ", len(staff_items)))
+        body.append("<h1>%s</h1>" % e(head))
+        body.append('<p class="lead">%s</p>' % e(desc))
+        if kind == "cv" and roles_txt:
+            body.append('<p class="alias">スタッフとしての参加: %s</p>' % e(roles_txt))
+        if alias_of.get(key):
+            body.append('<p class="alias">別名義: %s</p>' % e("、".join(alias_of[key])))
+        if cast_items:
+            if staff_items:
+                body.append("<h2>出演</h2>")
+            body.append(card_list(cast_items))
+        if staff_items:
+            body.append("<h2>スタッフとしての参加</h2>")
+            body.append(card_list(staff_items))
+
+        ld = {"@context": "https://schema.org", "@type": "ItemList", "name": head,
+              "numberOfItems": total,
+              "itemListElement": [{"@type": "ListItem", "position": i + 1,
+                                   "url": BASE_URL + it[0], "name": it[1]}
+                                  for i, it in enumerate((cast_items + staff_items)[:50])]}
+        write(url, layout("%s｜%s" % (head, SITE_NAME), desc, BASE_URL + url,
+                          "\n".join(body), [ld], [(SITE_NAME, "/"), (lab, None)]))
+        urls.append((url, None))
+        return True
+
+    n_cv = n_staff = 0
+    for (k, key), (n, is_page) in npages.items():
+        if k in ("cv", "staff") and is_page:
+            if person_page(k, key, slug[(k, key)], label[(k, key)], n):
+                if k == "cv":
+                    n_cv += 1
+                else:
+                    n_staff += 1
+
     n_tag = listing("tag", "「%s」の乙女ゲーム",
                     "「%s」に該当する乙女ゲーム %d作品の一覧。",
                     "SELECT DISTINCT vid FROM vn_tags WHERE tag = ?")
@@ -468,6 +565,7 @@ def main():
     print()
     print("  作品      %5d" % len(games))
     print("  声優      %5d" % n_cv)
+    print("  スタッフ   %5d" % n_staff)
     print("  キャラ属性 %5d" % n_tr)
     print("  タグ      %5d" % n_tag)
     print("  メーカー   %5d" % n_maker)

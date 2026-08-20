@@ -50,7 +50,21 @@ def main():
     # 別名義 → 代表名
     alias = dict(con.execute("SELECT alias, canonical FROM slug_aliases"))
 
-    g_cv, g_tag, g_tr, g_pl = (defaultdict(set) for _ in range(4))
+    # スタッフ（人物ページを持つ人だけを絞り込み候補にする）
+    person = {sid: (url, label) for sid, url, label in
+              con.execute("SELECT sid, url, label FROM person_pages")}
+    st_rows = con.execute("""SELECT sid, MAX(name), COUNT(DISTINCT vid) n,
+                                    GROUP_CONCAT(DISTINCT role)
+                             FROM staff_credits WHERE vid IN (%s)
+                             GROUP BY sid HAVING n >= 2 ORDER BY n DESC""" % ph, vids).fetchall()
+    staff = [(sid, nm, roles) for sid, nm, n, roles in st_rows if sid in person]
+    st_ix = {sid: i for i, (sid, _, _) in enumerate(staff)}
+
+    g_cv, g_tag, g_tr, g_pl, g_st = (defaultdict(set) for _ in range(5))
+    for vid, sid in con.execute(
+            "SELECT vid, sid FROM staff_credits WHERE vid IN (%s)" % ph, vids):
+        if sid in st_ix:
+            g_st[vid].add(st_ix[sid])
     for vid, cv in con.execute("""SELECT vid, cv FROM characters
                                   WHERE cv IS NOT NULL AND vid IN (%s)""" % ph, vids):
         cv = alias.get(cv, cv)
@@ -78,6 +92,7 @@ def main():
             "p": sorted(g_pl.get(vid, [])),
             "c": sorted(g_cv.get(vid, [])),
             "k": sorted(g_tag.get(vid, [])),
+            "s": sorted(g_st.get(vid, [])),
             "d": dev,
             "g": rating,
             "n": votes,
@@ -91,6 +106,8 @@ def main():
             "cv": [{"n": c, "u": slug.get(("cv", c))} for c in cvs],
             "tag": [{"n": t, "u": slug.get(("tag", t))} for t in tags],
             "platform": [{"n": p, "u": slug.get(("platform", p))} for p in plats],
+            "staff": [{"n": nm, "r": (roles or "").split(",")[0],
+                       "u": person[sid][0]} for sid, nm, roles in staff],
         },
         "items": items,
     }
@@ -111,8 +128,8 @@ def main():
         open(path, "wb").write(body)
         written.append((name, len(body), len(gzip.compress(body, 9))))
 
-    print("作品 %d件 / 語彙 声優%d・タグ%d・属性%d・機種%d"
-          % (len(items), len(cvs), len(tags), len(trs), len(plats)))
+    print("作品 %d件 / 語彙 声優%d・スタッフ%d・タグ%d・属性%d・機種%d"
+          % (len(items), len(cvs), len(staff), len(tags), len(trs), len(plats)))
     print()
     for name, raw, gz in written:
         print("  %-12s %7.1f KB  (gzip %6.1f KB)" % (name, raw / 1024, gz / 1024))

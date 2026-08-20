@@ -228,8 +228,10 @@ def main():
 
     # --- 声優（vn_seiyuu: vid, cid, aid） ---
     alias = {}
+    alias_sid = {}
     for r in read("staff_alias"):
         alias[r["aid"]] = (r["name"], r["latin"])
+        alias_sid[r["aid"]] = r["id"]        # 名義 → 人物ID
 
     cv = defaultdict(dict)      # vid -> cid -> (name, latin)
     for r in read("vn_seiyuu"):
@@ -285,13 +287,21 @@ def main():
 
     # --- ⑦ スタッフ ---
     vstaff = defaultdict(lambda: defaultdict(list))
+    credits = defaultdict(list)
     for r in read("vn_staff"):
-        if r["id"] in vns:
-            nm = alias.get(r["aid"], (None, None))[0]
-            if nm:
-                role = STAFF_ROLE_JA.get(r["role"], r["role"])
-                if nm not in vstaff[r["id"]][role]:
-                    vstaff[r["id"]][role].append(nm)
+        if r["id"] not in vns or r["role"] == "staff":
+            continue          # "staff" は総称なので個別ページの対象にしない
+        nm, latin = alias.get(r["aid"], (None, None))
+        sid = alias_sid.get(r["aid"])
+        if not nm or not sid:
+            continue
+        role = STAFF_ROLE_JA.get(r["role"], r["role"])
+        if nm not in vstaff[r["id"]][role]:
+            vstaff[r["id"]][role].append(nm)
+        key = (sid, role)
+        if key not in {(c["sid"], c["role"]) for c in credits[r["id"]]}:
+            credits[r["id"]].append(
+                {"sid": sid, "role": role, "name": nm, "latin": latin})
 
     # --- ⑩ 日本語版Wikipedia ---
     ext = {}
@@ -351,6 +361,7 @@ def main():
         v["relations"] = [{"vid": rv, "type": rt, "official": ro}
                           for rv, rt, ro in relmap.get(vid, [])]
         v["staff"] = {k: vs for k, vs in vstaff.get(vid, {}).items() if k != "スタッフ"}
+        v["staff_credits"] = credits.get(vid, [])
         v["jawiki"] = vjawiki.get(vid)
         v["jawiki_url"] = ("https://ja.wikipedia.org/wiki/" +
                            urllib.parse.quote(vjawiki[vid].replace(" ", "_"))) if vjawiki.get(vid) else None
