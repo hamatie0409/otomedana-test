@@ -7,6 +7,7 @@
 import os, json, gzip, sqlite3
 from collections import defaultdict
 from common import DATA
+from series import build_series
 
 OUT = os.path.join(DATA, "site")
 HOME = ("Switch", "PS", "ニンテンドー", "Xbox")
@@ -60,6 +61,25 @@ def main():
     staff = [(sid, nm, roles) for sid, nm, n, roles in st_rows if sid in person]
     st_ix = {sid: i for i, (sid, _, _) in enumerate(staff)}
 
+    # シリーズ
+    ser = build_series(con, set(vids))
+    ser_list = sorted(ser.items(), key=lambda kv: -len(kv[1]["members"]))
+    ser_ix = {k: i for i, (k, _) in enumerate(ser_list)}
+    g_ser = {}
+    for k, v in ser.items():
+        for m in v["members"]:
+            g_ser[m] = ser_ix[k]
+
+    # 発売元
+    pubs, pub_ix = vocab("publisher", """SELECT TRIM(value) FROM games,
+        json_each('["' || REPLACE(REPLACE(publishers,'"','')," / ",'","') || '"]')
+        WHERE vid IN (%s) AND publishers <> '' GROUP BY 1 ORDER BY COUNT(*) DESC""")
+    g_pub = defaultdict(set)
+    for vid, pv in con.execute("SELECT vid, publishers FROM games WHERE vid IN (%s)" % ph, vids):
+        for d in (pv or "").split(" / "):
+            if d.strip() in pub_ix:
+                g_pub[vid].add(pub_ix[d.strip()])
+
     g_cv, g_tag, g_tr, g_pl, g_st = (defaultdict(set) for _ in range(5))
     for vid, sid in con.execute(
             "SELECT vid, sid FROM staff_credits WHERE vid IN (%s)" % ph, vids):
@@ -93,6 +113,8 @@ def main():
             "c": sorted(g_cv.get(vid, [])),
             "k": sorted(g_tag.get(vid, [])),
             "s": sorted(g_st.get(vid, [])),
+            "b": sorted(g_pub.get(vid, [])),
+            "e": g_ser.get(vid),
             "d": dev,
             "g": rating,
             "n": votes,
@@ -108,6 +130,9 @@ def main():
             "platform": [{"n": p, "u": slug.get(("platform", p))} for p in plats],
             "staff": [{"n": nm, "r": (roles or "").split(",")[0],
                        "u": person[sid][0]} for sid, nm, roles in staff],
+            "publisher": [{"n": p, "u": slug.get(("publisher", p))} for p in pubs],
+            "series": [{"n": v["name"], "u": slug.get(("series", k)),
+                        "c": len(v["members"])} for k, v in ser_list],
         },
         "items": items,
     }
@@ -128,8 +153,9 @@ def main():
         open(path, "wb").write(body)
         written.append((name, len(body), len(gzip.compress(body, 9))))
 
-    print("作品 %d件 / 語彙 声優%d・スタッフ%d・タグ%d・属性%d・機種%d"
-          % (len(items), len(cvs), len(staff), len(tags), len(trs), len(plats)))
+    print("作品 %d件 / 語彙 声優%d・スタッフ%d・シリーズ%d・発売元%d・タグ%d・属性%d・機種%d"
+          % (len(items), len(cvs), len(staff), len(ser_list), len(pubs),
+             len(tags), len(trs), len(plats)))
     print()
     for name, raw, gz in written:
         print("  %-12s %7.1f KB  (gzip %6.1f KB)" % (name, raw / 1024, gz / 1024))

@@ -8,6 +8,7 @@ import os, re, json, html, shutil, sqlite3, datetime
 from collections import defaultdict
 from common import DATA, ROOT
 
+from series import build_series
 from site_config import (SITE_NAME, SITE_DESC, SITE_URL, REPO_URL, SCOPE_NOTE,
                          PUBLISH, BASE_PATH)
 
@@ -168,6 +169,12 @@ def main():
               con.execute("SELECT sid, url, label, kind FROM person_pages")}
     sid_of_cv = {label: sid for sid, (u, label, k) in person.items() if k == "cv"}
 
+    series = build_series(con, set(games))
+    series_of = {}
+    for key, v in series.items():
+        for m in v["members"]:
+            series_of[m] = key
+
     alias_of = defaultdict(list)
     for a, c in con.execute("SELECT alias,canonical FROM slug_aliases"):
         alias_of[c].append(a)
@@ -219,10 +226,18 @@ def main():
         rows = [("機種", " / ".join('<a href="%s">%s</a>' % (e(slug[("platform", p)]), e(p))
                                     for p in gplats[vid] if ("platform", p) in slug)),
                 ("発売日", e(ja_date(g["released"]) or "—")),
+                ("シリーズ", ('<a href="%s">%s</a>' % (
+                    e(slug[("series", series_of[vid])]),
+                    e(series[series_of[vid]]["name"]))
+                    if vid in series_of else "—")),
                 ("メーカー", " / ".join(
                     '<a href="%s">%s</a>' % (e(slug[("maker", d)]), e(d))
                     if ("maker", d) in slug and npages[("maker", d)][1] else e(d)
                     for d in (g["developers"] or "").split(" / ") if d)),
+                ("発売元", " / ".join(
+                    '<a href="%s">%s</a>' % (e(slug[("publisher", d)]), e(d))
+                    if ("publisher", d) in slug and npages[("publisher", d)][1] else e(d)
+                    for d in (g["publishers"] or "").split(" / ")[:6] if d) or "—"),
                 ("プレイ時間", e(g["length"] or "—")),
                 ("対応言語", e(g["languages"] or "—")),
                 ("年齢制限", e(("%s歳以上" % g["minage"]) if g["minage"] else "—")),
@@ -471,6 +486,9 @@ def main():
     n_plat = listing("platform", "%s の乙女ゲーム",
                      "%s で遊べる乙女ゲーム %d作品の一覧。",
                      "SELECT DISTINCT vid FROM platforms WHERE platform = ?")
+    n_pub = listing("publisher", "%s が発売した乙女ゲーム",
+                    "%s が発売した乙女ゲーム %d作品の一覧。",
+                    "SELECT vid FROM games WHERE publishers LIKE '%' || ? || '%'")
     n_maker = listing("maker", "%s の乙女ゲーム",
                       "%s が開発した乙女ゲーム %d作品の一覧。",
                       "SELECT vid FROM games WHERE developers LIKE '%' || ? || '%'")
@@ -503,6 +521,36 @@ def main():
                           [(SITE_NAME, "/"), (tr, None)]))
         urls.append((url, None))
         n_tr += 1
+
+    # ---------------- シリーズページ（発売順＝プレイ順） ----------------
+    n_ser = 0
+    for key, v in series.items():
+        if not npages.get(("series", key), (0, 0))[1]:
+            continue
+        url = slug[("series", key)]
+        items = []
+        for m in v["members"]:
+            g = games[m]
+            items.append((slug[("game", m)], g["title"], ja_date(g["released"]),
+                          (g["platforms"] or "").split(" / ")[0], g["image_url"],
+                          ("★ %.2f" % g["rating"]) if g["rating"] else None))
+        d = ("「%s」シリーズの乙女ゲーム %d作品を発売順に並べた一覧。"
+             "どれから遊べばよいか分かるように、続編・前日譚・ファンディスクをまとめています。"
+             % (v["name"], len(items)))
+        body = ["<h1>「%s」シリーズの乙女ゲーム</h1>" % e(v["name"]),
+                '<p class="lead">%s</p>' % e(d),
+                "<h2>発売順</h2>", card_list(items)]
+        ld = {"@context": "https://schema.org", "@type": "ItemList",
+              "name": "「%s」シリーズ" % v["name"], "numberOfItems": len(items),
+              "itemListOrder": "https://schema.org/ItemListOrderAscending",
+              "itemListElement": [{"@type": "ListItem", "position": i + 1,
+                                   "url": BASE_URL + it[0], "name": it[1]}
+                                  for i, it in enumerate(items)]}
+        write(url, layout("「%s」シリーズの乙女ゲーム 発売順一覧｜%s" % (v["name"], SITE_NAME),
+                          d, BASE_URL + url, "\n".join(body), [ld],
+                          [(SITE_NAME, "/"), (v["name"], None)]))
+        urls.append((url, None))
+        n_ser += 1
 
     # ---------------- トップ（検索） ----------------
     today = datetime.date.today().isoformat()
@@ -568,7 +616,9 @@ def main():
     print("  スタッフ   %5d" % n_staff)
     print("  キャラ属性 %5d" % n_tr)
     print("  タグ      %5d" % n_tag)
+    print("  シリーズ   %5d" % n_ser)
     print("  メーカー   %5d" % n_maker)
+    print("  発売元    %5d" % n_pub)
     print("  機種      %5d" % n_plat)
     print("  トップ        1")
     print("  ------------------")

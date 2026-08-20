@@ -9,6 +9,7 @@ import os, re, sqlite3, unicodedata
 from collections import defaultdict, Counter
 from common import DATA, ROOT
 from vndb_build import PLATFORM_JA
+from series import build_series
 
 DB_DUMP = os.path.join(ROOT, "vndb", "db")
 MAXLEN = 60                       # スラッグの最大長
@@ -16,10 +17,11 @@ HOME = ("Switch", "PS", "ニンテンドー", "Xbox")
 
 # しきい値（これ未満は独立ページを作らない）
 MIN_WORKS = {"cv": 2, "staff": 2, "tag": 3, "trait": 3, "maker": 2,
-             "platform": 1, "game": 1}
+             "publisher": 2, "series": 2, "platform": 1, "game": 1}
 
 DIR = {"game": "game", "cv": "cv", "staff": "staff", "tag": "tag",
-       "trait": "trait", "platform": "platform", "maker": "maker"}
+       "trait": "trait", "platform": "platform", "maker": "maker",
+       "publisher": "publisher", "series": "series"}
 
 SCHEMA = """
 DROP TABLE IF EXISTS slugs;
@@ -188,18 +190,27 @@ def main():
         code = code_of.get(label, label)
         add("platform", label, READABLE.get(code, slugify(code) or slugify(label)), label, n)
 
+    # ---------- シリーズ（関連作品のグラフから判定） ----------
+    ser = build_series(con, set(home))
+    for key, v in sorted(ser.items(), key=lambda kv: -len(kv[1]["members"])):
+        add("series", key, slugify(v["latin"] or v["name"]), v["name"],
+            len(v["members"]), ident=key)
+    print("  シリーズ %d件（所属 %d作品）"
+          % (len(ser), sum(len(v["members"]) for v in ser.values())))
+
     # ---------- メーカー ----------
     prod_latin = {}
     for r in read("producers"):
         if r["latin"]:
             prod_latin[r["name"]] = r["latin"]
-    mk = Counter()
-    for (dev,) in con.execute("SELECT developers FROM games WHERE vid IN (%s)" % ph, L):
-        for d in (dev or "").split(" / "):
-            if d.strip():
-                mk[d.strip()] += 1
-    for name, n in mk.most_common():
-        add("maker", name, slugify(prod_latin.get(name)), name, n)
+    for kind, col in (("maker", "developers"), ("publisher", "publishers")):
+        cnt = Counter()
+        for (val,) in con.execute("SELECT %s FROM games WHERE vid IN (%s)" % (col, ph), L):
+            for d in (val or "").split(" / "):
+                if d.strip():
+                    cnt[d.strip()] += 1
+        for name, n in cnt.most_common():
+            add(kind, name, slugify(prod_latin.get(name)), name, n)
 
     con.executescript(SCHEMA)
     con.executemany("INSERT INTO slugs VALUES (?,?,?,?,?,?,?)", rows)
@@ -210,7 +221,8 @@ def main():
     print()
     print("=== 生成したスラッグ ===")
     total = 0
-    for kind in ("game", "cv", "staff", "trait", "tag", "maker", "platform"):
+    for kind in ("game", "cv", "staff", "trait", "tag", "series", "maker",
+                 "publisher", "platform"):
         allc = sum(1 for r in rows if r[0] == kind)
         page = sum(1 for r in rows if r[0] == kind and r[6])
         total += page
@@ -223,7 +235,8 @@ def main():
     print("URL重複: %d件" % dup)
     print()
     print("=== 例 ===")
-    for kind in ("game", "cv", "staff", "tag", "trait", "platform", "maker"):
+    for kind in ("game", "cv", "staff", "tag", "trait", "series", "maker",
+                 "publisher", "platform"):
         for k, u, lab in con.execute(
                 "SELECT key,url,label FROM slugs WHERE kind=? AND is_page=1 ORDER BY n_works DESC LIMIT 2",
                 (kind,)):
