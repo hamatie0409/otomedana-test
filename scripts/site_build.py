@@ -169,6 +169,10 @@ CATS = [
 ]
 CAT_OF = {c[0]: c for c in CATS}
 
+# スタッフ索引に出す役割と、その並び順。作品づくりの流れに沿って並べる。
+# ここに無い役割（QA・翻訳・編集）はDBには持つが索引ページには出さない。
+STAFF_ROLES = ["シナリオ", "原画", "キャラクターデザイン", "監督", "主題歌", "音楽"]
+
 # 五十音の行。読みはスラッグ（ヘボン式ローマ字）の頭文字から機械的に決める。
 # 「鳥海 浩輔 → toriumi-… → た行」のように、漢字表記でも行が引ける。
 KANA_ROWS = [("a", "あ行"), ("ka", "か行"), ("sa", "さ行"), ("ta", "た行"),
@@ -253,7 +257,8 @@ def idx_byrole(entries):
     """役割ごとの節に分ける（スタッフ）。
 
     1人が複数の役割を持つことがあるので、entries を役割の数だけ展開する。
-    節の中に出す件数は「その役割での参加作品数」で、人物ページの合計とは違う。"""
+    節の中に出す件数は「その役割での参加作品数」で、人物ページの合計とは違う。
+    節の並びは STAFF_ROLES で決め打ちする（人数順にすると意味の薄い並びになる）。"""
     by = defaultdict(list)
     for it in entries:
         for role, n in sorted((it.get("roles") or {}).items()):
@@ -261,7 +266,9 @@ def idx_byrole(entries):
             row["n"] = n
             by[role].append(row)
     jump, secs = [], []
-    for i, role in enumerate(sorted(by, key=lambda r: -len(by[r])), 1):
+    for i, role in enumerate(STAFF_ROLES, 1):
+        if role not in by:
+            continue
         rows = sorted(by[role], key=lambda x: (-x["n"], x["k"]))
         rid = "role-%d" % i
         jump.append('<a href="#%s">%s</a>' % (rid, e(role)))
@@ -704,11 +711,14 @@ def main():
                           "\n".join(body), [ld], cat_crumbs(kind, lab)))
         urls.append((url, None))
         ent = dict(url=url, label=lab, n=total, k=slug_key(url))
-        if kind == "staff" and sid:
+        if kind == "staff":
             # 役割ごとの参加作品数。索引ではこちらを件数として出す
             by_role = defaultdict(set)
-            for c in sc_by_sid.get(sid, []):
-                by_role[c["role"]].add(c["vid"])
+            for c in (sc_by_sid.get(sid, []) if sid else []):
+                if c["role"] in STAFF_ROLES:
+                    by_role[c["role"]].add(c["vid"])
+            if not by_role:
+                return True      # QA・翻訳・編集だけの人はページは作るが索引には出さない
             ent["roles"] = {r: len(v) for r, v in by_role.items()}
         idx[kind].append(ent)
         return True
