@@ -7,4 +7,4 @@ __pycache__/
 *.pyc
 .DS_Store
 
-# site/ は GitHub Pages で配信するためコミットする
+# docs/ は GitHub Pages で配信するためコミットする

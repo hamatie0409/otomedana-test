@@ -11,7 +11,8 @@ from common import DATA, ROOT
 from site_config import (SITE_NAME, SITE_DESC, SITE_URL, REPO_URL, SCOPE_NOTE,
                          PUBLISH, BASE_PATH)
 
-OUT = os.path.join(ROOT, "site")
+# GitHub Pages は リポジトリ直下 か docs/ からしか配信できないため docs/ に出す
+OUT = os.path.join(ROOT, "docs")
 BASE_URL = SITE_URL + BASE_PATH
 HOME = ("Switch", "PS", "ニンテンドー", "Xbox")
 
