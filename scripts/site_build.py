@@ -23,8 +23,8 @@ e = lambda s: html.escape(str(s), quote=True) if s is not None else ""
 # ここに無いと索引ページを作っても誰も辿り着けないので layout() に組み込む。
 NAV = '<nav class="site-nav" aria-label="カテゴリ">%s</nav>' % "".join(
     '<a href="%s">%s</a>' % (u, t) for t, u in
-    [("探す", "/browse/"), ("声優", "/cv/"), ("メーカー", "/maker/"),
-     ("シリーズ", "/series/"), ("タグ", "/tag/"), ("キャラ属性", "/trait/")])
+    [("声優", "/cv/"), ("メーカー", "/maker/"), ("シリーズ", "/series/"),
+     ("タグ", "/tag/"), ("キャラ属性", "/trait/")])
 
 # 訳が用意できていない英語のままの語は表示しない（サイトは日本語で統一する）
 is_en = lambda t: bool(re.fullmatch(r"[\x20-\x7e]+", t or ""))
@@ -65,7 +65,6 @@ def layout(title, desc, canonical, body, jsonld=None, breadcrumb=None, og_image=
 %(notice)s
 <header class="site">
   <a class="brand" href="/">%(site)s</a>
-  <form class="q" action="/" method="get"><input type="search" name="q" placeholder="作品・声優で探す" aria-label="検索"></form>
 </header>
 %(nav)s
 %(crumb)s
@@ -136,8 +135,8 @@ def card_list(items):
 
 # ---------------------------------------------------------------- 索引ページ
 
-# カテゴリ索引の定義。この並びがそのまま /browse/ の並びになる。
-#   (kind, URL, 短い名前, 見せ方, 見出し, 説明(件数を1つ埋める), /browse/ での一言)
+# カテゴリ索引の定義。この並びがそのままトップの「カテゴリから探す」の並びになる。
+#   (kind, URL, 短い名前, 見せ方, 見出し, 説明(件数を1つ埋める), トップでの一言)
 CATS = [
     ("cv", "/cv/", "声優", "kana", "声優から探す",
      "出演作のある声優 %d人の一覧。五十音の行から辿るか、絞り込み欄に名前を入れて探せます。",
@@ -870,7 +869,7 @@ def main():
             rep=("1作目: %s" % first["title"]) if first["title"] != v["name"] else None))
         n_ser += 1
 
-    # ---------------- カテゴリ索引ページ（/cv/ /maker/ …）と /browse/ ----------------
+    # ---------------- カテゴリ索引ページ（/cv/ /maker/ …） ----------------
     # 個別ページは山ほどあるのに、そこへ辿り着く一覧が無かった。
     # ドロップダウンで727人から選ばせる代わりに、五十音・カード・チップで見せる。
     def index_page(kind):
@@ -907,29 +906,21 @@ def main():
                                   for i, it in enumerate(by_n[:50])]}
         write(path, layout("%s｜%s" % (heading, SITE_NAME), desc, BASE_URL + path,
                            "\n".join(body), [ld],
-                           [(SITE_NAME, "/"), ("探す", "/browse/"), (short, None)]))
+                           [(SITE_NAME, "/"), (short, None)]))
         urls.append((path, None))
         return len(ents)
 
     n_idx = sum(1 for c in CATS if index_page(c[0]))
 
+    # カテゴリの入口カード。トップに置く（検索中は app.js が section ごと隠す）
     bl = []
     for kind, path, short, style, heading, desc_fmt, blurb in CATS:
         n = len(idx.get(kind, []))
         if n:
             bl.append('<li><a href="%s"><b>%s</b><span class="idx-n">%d件</span>'
                       '<small>%s</small></a></li>' % (e(path), e(heading), n, e(blurb)))
-    bdesc = ("乙女ゲームを声優・メーカー・シリーズ・タグ・キャラ属性から探すための入口。"
-             "それぞれの一覧ページから、該当する作品の一覧へ辿れます。")
-    bbody = ["<h1>乙女ゲームを探す</h1>",
-             '<p class="lead">%s</p>' % e(bdesc),
-             '<ul class="browse">%s</ul>' % "".join(bl),
-             '<p class="ext">作品名・声優名・キャラクター名をまとめて調べたいときは'
-             '<a href="/">トップの検索</a>が早いです。</p>']
-    write("/browse/", layout("乙女ゲームを探す｜%s" % SITE_NAME, bdesc,
-                             BASE_URL + "/browse/", "\n".join(bbody), None,
-                             [(SITE_NAME, "/"), ("探す", None)]))
-    urls.append(("/browse/", None))
+    browse = ('<section id="browse"><h2>カテゴリから探す</h2>'
+              '<ul class="browse">%s</ul></section>' % "".join(bl))
 
     # ---------------- トップ（検索） ----------------
     today = datetime.date.today().isoformat()
@@ -939,12 +930,9 @@ def main():
     upcoming.sort(key=lambda g: g["released"])
     body = ['<h1>%s</h1>' % e(SITE_NAME),
             '<p class="lead">%s 家庭用ゲーム%d作品・声優%d人を収録。</p>' % (e(SITE_DESC), len(games), n_cv),
-            '<div id="app"><noscript><p>絞り込みにはJavaScriptが必要です。'
-            '下の新着一覧と各ページはそのままご覧いただけます。</p></noscript></div>',
-            '<p class="ext">一覧から辿るなら '
-            '<a href="/cv/">声優</a>・<a href="/maker/">メーカー</a>・'
-            '<a href="/series/">シリーズ</a>・<a href="/tag/">タグ</a>・'
-            '<a href="/trait/">キャラ属性</a>（<a href="/browse/">すべての入口</a>）。</p>',
+            '<div id="app"><noscript><p>検索にはJavaScriptが必要です。'
+            '下のカテゴリ一覧と新着はそのままご覧いただけます。</p></noscript></div>',
+            browse,
             ]
     if upcoming:
         body += ["<h2>発売予定</h2>",
@@ -963,7 +951,9 @@ def main():
     # ---------------- assets / sitemap / robots ----------------
     assets_src = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
     shutil.copytree(assets_src, os.path.join(OUT, "assets"))
-    for name in ("index.json", "traits.json", "suggest.json"):
+    # traits.json はキャラ属性の絞り込みをトップから外したので配らない
+    # （属性から辿るのは /trait/ の索引ページの役目）
+    for name in ("index.json", "suggest.json"):
         shutil.copy(os.path.join(DATA, "site", name),
                     os.path.join(OUT, "assets", name))
 
@@ -1007,7 +997,7 @@ def main():
     print("  メーカー   %5d" % n_maker)
     print("  発売元    %5d" % n_pub)
     print("  機種      %5d" % n_plat)
-    print("  索引ページ %5d" % (n_idx + 1))
+    print("  索引ページ %5d" % n_idx)
     print("  トップ        1")
     print("  ------------------")
     print("  合計      %5d ページ" % len(urls))

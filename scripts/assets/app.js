@@ -1,9 +1,11 @@
-/* トップページの検索と絞り込み。
-   index.json だけで動き、検索欄に触れたとき suggest.json、
-   キャラ属性で絞るときだけ traits.json を追加で読む。
+/* トップページの検索と、索引ページのページ内絞り込み。
+   index.json だけで動き、検索欄に触れたとき suggest.json を追加で読む。
 
    照合はすべて事前に正規化した文字列に対して行う。
-   かな・カナ・漢字・ローマ字のどれで入力しても引けるようにしている。 */
+   かな・カナ・漢字・ローマ字のどれで入力しても引けるようにしている。
+
+   検索結果は50件ずつ。条件が何も無いあいだは結果を出さず、
+   カテゴリの入口と新着だけが見えている状態を初期表示にしている。 */
 /* 表記ゆれの吸収。トップの検索と、索引ページのページ内絞り込みの
    両方から使うのでファイルの先頭に出してある。 */
 var OD = (function () {
@@ -143,7 +145,7 @@ var OD = (function () {
   var root = document.getElementById('app');
   if (!root) return;
 
-  var DATA = null, TRAITS = null, SUGGEST = null;
+  var DATA = null, SUGGEST = null;
   var CHAR_OF = null;          // 作品の添字 → その作品のキャラ（事前に作る索引）
   var TODAY = new Date().toISOString().slice(0, 10);
 
@@ -158,119 +160,6 @@ var OD = (function () {
   }
   function option(v, t) { var o = el('option', { value: v }); o.textContent = t; return o; }
   function val(id) { var n = document.getElementById(id); return n ? n.value : ''; }
-
-  /* ---------------- 候補から選ぶ絞り込み ----------------
-     声優727・スタッフ808・タグ287・キャラ属性333 は <select> では探せない。
-     入力で候補を絞って選ぶ形にする。選んだ結果は hidden に入れ、その id を
-     元の <select> と同じにしてあるので、render() 側は書き換えずに済む。 */
-
-  function combo(id, label, listFn, nameFn, onOpen) {
-    var wrap = el('div', { class: 'combo' });
-    var txt = el('input', { type: 'text', class: 'cb-text', autocomplete: 'off',
-                            placeholder: label + '：すべて', 'aria-label': label });
-    var hid = el('input', { type: 'hidden', id: id });
-    var clr = el('button', { type: 'button', class: 'cb-clear', hidden: 'hidden',
-                             'aria-label': label + 'の指定を外す', text: '×' });
-    var list = el('ul', { class: 'cb-list', hidden: 'hidden' });
-    [txt, hid, clr, list].forEach(function (x) { wrap.appendChild(x); });
-
-    var shown = [], pos = -1, ready = !onOpen;
-
-    // 照合用の文字列は1度だけ作る。声優・スタッフは prepare() で作り済み
-    function key(v) {
-      if (v._n === undefined) v._n = norm(nameFn(v));
-      return v;
-    }
-    function nameAt(i) { var a = listFn()[i]; return a ? nameFn(a) : ''; }
-    function close() { list.hidden = true; list.innerHTML = ''; shown = []; pos = -1; }
-
-    function pick(i, quiet) {
-      hid.value = (i === '' ? '' : String(i));
-      txt.value = (i === '' ? '' : nameAt(i));
-      txt.classList[i === '' ? 'remove' : 'add']('on');
-      clr.hidden = (i === '');
-      close();
-      if (!quiet) render();
-    }
-    function setPos(n) {
-      Array.prototype.forEach.call(list.children, function (li, x) {
-        li.className = (x === n ? 'on' : '');
-      });
-      pos = n;
-    }
-    function open() {
-      var arr = listFn(), q = norm(txt.value), out = [];
-      for (var i = 0; i < arr.length && out.length <= 60; i++) {
-        var v = key(arr[i]);
-        if (!q || v._n.indexOf(q) >= 0 || (v._k && v._k.indexOf(q) >= 0) ||
-            (v._r && v._r.indexOf(q) >= 0)) out.push(i);
-      }
-      var more = out.length > 60;
-      shown = out.slice(0, 60);
-      pos = -1;
-      list.innerHTML = '';
-      if (!shown.length) {
-        list.appendChild(el('li', { class: 'cb-more', text: '該当なし' }));
-        list.hidden = false;
-        return;
-      }
-      shown.forEach(function (i, n) {
-        var li = el('li', { text: nameAt(i) });
-        li.addEventListener('mouseenter', function () { setPos(n); });
-        li.addEventListener('mousedown', function (ev) { ev.preventDefault(); pick(i); });
-        list.appendChild(li);
-      });
-      if (more) {
-        list.appendChild(el('li', { class: 'cb-more', text: '…さらに入力して絞り込んでください' }));
-      }
-      list.hidden = false;
-    }
-    function want() {                 // キャラ属性は初回に traits.json を読む
-      if (ready) { open(); return; }
-      ready = true;
-      onOpen(open);
-    }
-
-    txt.addEventListener('focus', want);
-    txt.addEventListener('input', want);
-    txt.addEventListener('blur', function () {
-      // 候補のクリックが先に走るよう、閉じるのは少し待つ
-      setTimeout(function () {
-        close();
-        txt.value = (hid.value === '' ? '' : nameAt(+hid.value));
-      }, 150);
-    });
-    txt.addEventListener('keydown', function (ev) {
-      if (ev.key === 'ArrowDown') {
-        ev.preventDefault();
-        if (list.hidden) want(); else setPos(Math.min(pos + 1, shown.length - 1));
-      } else if (ev.key === 'ArrowUp') {
-        ev.preventDefault(); setPos(Math.max(pos - 1, 0));
-      } else if (ev.key === 'Enter') {
-        ev.preventDefault(); if (pos >= 0) pick(shown[pos]);
-      } else if (ev.key === 'Escape') {
-        close(); txt.blur();
-      }
-    });
-    clr.addEventListener('mousedown', function (ev) {
-      ev.preventDefault(); pick(''); txt.focus();
-    });
-
-    return { node: wrap, clear: function () { pick('', true); } };
-  }
-
-  // 索引ページへの導線。絞り込みで見つからないときはこちらから辿る
-  function indexLinks() {
-    var p = el('p', { class: 'idx-link' });
-    p.appendChild(document.createTextNode('一覧から探す: '));
-    [['声優', '/cv/'], ['スタッフ', '/staff/'], ['メーカー', '/maker/'],
-     ['発売元', '/publisher/'], ['シリーズ', '/series/'], ['タグ', '/tag/'],
-     ['キャラ属性', '/trait/']].forEach(function (x, i) {
-      if (i) p.appendChild(document.createTextNode('・'));
-      p.appendChild(el('a', { href: BP + x[1], text: x[0] }));
-    });
-    return p;
-  }
 
   /* ---------------- 組み立て ---------------- */
 
@@ -308,10 +197,6 @@ var OD = (function () {
       if (!groups[g]) { groups[g] = el('optgroup', { label: g }); pl.appendChild(groups[g]); }
       groups[g].appendChild(option(i, p.n));
     });
-    var se = el('select', { id: 'f-series' }); se.appendChild(option('', 'シリーズ：すべて'));
-    (DATA.vocab.series || []).forEach(function (p, i) {
-      se.appendChild(option(i, p.n + '（' + p.c + '作品）'));
-    });
     var yr = el('select', { id: 'f-year' }); yr.appendChild(option('', '発売年：すべて'));
     ['2021-', '2016-2020', '2011-2015', '-2010'].forEach(function (y) { yr.appendChild(option(y, y)); });
     var st = el('select', { id: 'f-sort' });
@@ -319,36 +204,24 @@ var OD = (function () {
      ['rate', '評価が高い順'], ['pop', '票数が多い順']].forEach(function (o) {
       st.appendChild(option(o[0], o[1]));
     });
-    [pl, se, yr, st].forEach(function (x) { row.appendChild(x); });
+    [pl, yr, st].forEach(function (x) { row.appendChild(x); });
     panel.appendChild(row);
-
-    var det = el('details', { class: 'sp-more' });
-    det.appendChild(el('summary', { text: '詳しく絞り込む' }));
-    var row2 = el('div', { class: 'filters' });
-    var cv = combo('f-cv', '声優', function () { return DATA.vocab.cv || []; },
-                   function (p) { return p.n; });
-    var sf = combo('f-staff', 'スタッフ', function () { return DATA.vocab.staff || []; },
-                   function (p) { return p.n + (p.r ? '（' + p.r + '）' : ''); });
-    var tg = combo('f-tag', 'タグ', function () { return DATA.vocab.tag || []; },
-                   function (p) { return p.n; });
-    var tr = combo('f-trait', 'キャラ属性',
-                   function () { return TRAITS ? TRAITS.vocab : []; },
-                   function (t) { return t.c + '：' + t.n; }, loadTraits);
-    // 発売元は134件で、選択肢を眺めて選べる範囲なので <select> のまま残す
-    var pb = el('select', { id: 'f-pub' }); pb.appendChild(option('', '発売元：すべて'));
-    (DATA.vocab.publisher || []).forEach(function (p, i) { pb.appendChild(option(i, p.n)); });
-    [cv.node, sf.node, pb, tg.node, tr.node].forEach(function (x) { row2.appendChild(x); });
-    det.appendChild(row2);
-    det.appendChild(indexLinks());
-    panel.appendChild(det);
 
     var rs = el('button', { type: 'button', id: 'f-reset', class: 'reset' });
     rs.textContent = '条件をクリア';
     panel.appendChild(rs);
 
     root.appendChild(panel);
-    root.appendChild(el('p', { class: 'count', id: 'f-count' }));
-    root.appendChild(el('ul', { class: 'cards', id: 'f-out' }));
+
+    // 検索結果。条件が何も無いあいだは節ごと隠しておき、
+    // カテゴリの入口と新着だけが見えている状態を初期表示にする
+    var res = el('section', { id: 'f-results', hidden: 'hidden' });
+    res.appendChild(el('h2', { text: '検索結果' }));
+    res.appendChild(el('p', { class: 'count', id: 'f-count' }));
+    res.appendChild(el('ul', { class: 'cards', id: 'f-out' }));
+    res.appendChild(el('nav', { class: 'pager', id: 'f-pager',
+                                'aria-label': '検索結果のページ' }));
+    root.appendChild(res);
 
     // 打鍵のたびに全件を走らせない
     var timer = null;
@@ -358,12 +231,11 @@ var OD = (function () {
     });
     q.addEventListener('keydown', onKey);
     document.addEventListener('click', function (ev) { if (!box.contains(ev.target)) hideSug(); });
-    [pl, se, yr, st, pb].forEach(function (x) {
-      x.addEventListener('change', render);
+    [pl, yr, st].forEach(function (x) {
+      x.addEventListener('change', function () { render(); });
     });
     rs.addEventListener('click', function () {
-      [q, pl, se, yr, pb].forEach(function (x) { x.value = ''; });
-      [cv, sf, tg, tr].forEach(function (c) { c.clear(); });
+      [q, pl, yr].forEach(function (x) { x.value = ''; });
       st.value = 'new';
       document.getElementById('m-all').checked = true;
       hideSug(); render();
@@ -372,12 +244,6 @@ var OD = (function () {
   }
 
   /* ---------------- 追加読み込みと索引づくり ---------------- */
-
-  function loadTraits(done) {
-    if (TRAITS) { done && done(); return; }
-    fetch(BP + '/assets/traits.json').then(function (r) { return r.json(); })
-      .then(function (j) { TRAITS = j; done && done(); });
-  }
 
   function prepare() {
     // 照合用の文字列を1度だけ作る
@@ -519,10 +385,52 @@ var OD = (function () {
     return null;
   }
 
-  function render() {
+  /* ---------------- 絞り込みの実行と表示 ----------------
+     条件が何も無いあいだは検索結果を出さず、カテゴリの入口と新着だけを見せる。
+     結果は50件ずつに切り、下にページ番号を並べる。 */
+
+  var PAGE = 1;
+  var PER = 50;
+
+  // 「検索した」とみなす条件。並び順だけ変えても検索にはしない
+  function active() {
+    return !!(norm(val('f-q')) || val('f-plat') !== '' || val('f-year') !== '');
+  }
+
+  function drawPager(pages) {
+    var nav = document.getElementById('f-pager');
+    nav.innerHTML = '';
+    if (pages <= 1) return;
+    for (var i = 1; i <= pages; i++) {
+      (function (n) {
+        var b = el('button', { type: 'button', text: String(n) });
+        if (n === PAGE) { b.className = 'on'; b.setAttribute('aria-current', 'page'); }
+        b.addEventListener('click', function () {
+          PAGE = n;
+          render(true);
+          document.getElementById('f-results').scrollIntoView(true);
+        });
+        nav.appendChild(b);
+      })(i);
+    }
+  }
+
+  function render(keepPage) {
+    if (!keepPage) PAGE = 1;       // 条件が変わったら1ページ目に戻す
+    var res = document.getElementById('f-results');
+    var br = document.getElementById('browse');
+    var on = active();
+    res.hidden = !on;
+    if (br) br.hidden = on;
+    if (!on) {
+      document.getElementById('f-out').innerHTML = '';
+      document.getElementById('f-pager').innerHTML = '';
+      document.getElementById('f-count').textContent = '';
+      return;
+    }
+
     var q = norm(val('f-q'));
-    var pl = val('f-plat'), cv = val('f-cv'), sf = val('f-staff'), tg = val('f-tag'),
-        tr = val('f-trait'), yr = val('f-year'), se = val('f-series'), pb = val('f-pub');
+    var pl = val('f-plat'), yr = val('f-year');
 
     var m = mode();                 // DOM参照は1回だけ
     var out = [];
@@ -530,15 +438,6 @@ var OD = (function () {
       var it = DATA.items[n], why = null;
       if (q) { why = textMatch(it, q, m); if (!why) continue; }
       if (pl !== '' && it.p.indexOf(+pl) < 0) continue;
-      if (cv !== '' && it.c.indexOf(+cv) < 0) continue;
-      if (sf !== '' && (it.s || []).indexOf(+sf) < 0) continue;
-      if (se !== '' && it.e !== +se) continue;
-      if (pb !== '' && (it.b || []).indexOf(+pb) < 0) continue;
-      if (tg !== '' && it.k.indexOf(+tg) < 0) continue;
-      if (tr !== '' && TRAITS) {
-        var x = TRAITS.items[it.v];
-        if (!x || x.indexOf(+tr) < 0) continue;
-      }
       if (yr) {
         var y = parseInt((it.r || '').slice(0, 4), 10) || 0;
         if (yr === '2021-' && y < 2021) continue;
@@ -562,10 +461,17 @@ var OD = (function () {
       return x > y ? -1 : x < y ? 1 : 0;
     });
 
-    document.getElementById('f-count').textContent = out.length + '件';
+    var pages = Math.max(1, Math.ceil(out.length / PER));
+    if (PAGE > pages) PAGE = pages;
+    var from = (PAGE - 1) * PER;
+    var page = out.slice(from, from + PER);
+    document.getElementById('f-count').textContent = out.length
+      ? '全' + out.length + '件中 ' + (from + 1) + '〜' + (from + page.length) + '件目'
+      : '該当する作品はありませんでした。';
+
     var ul = document.getElementById('f-out');
     var frag = document.createDocumentFragment();
-    out.slice(0, 120).forEach(function (o) {
+    page.forEach(function (o) {
       var it = o.it;
       var a = el('a', { href: BP + it.u });
       if (it.i) a.appendChild(el('img', { src: it.i, alt: '', loading: 'lazy', width: '90' }));
@@ -580,9 +486,9 @@ var OD = (function () {
       a.appendChild(m);
       frag.appendChild(el('li', {}, [a]));
     });
-    if (out.length > 120) frag.appendChild(el('li', { class: 'more', text: '…ほか ' + (out.length - 120) + '件' }));
     ul.innerHTML = '';
     ul.appendChild(frag);
+    drawPager(pages);
   }
 
   fetch(BP + '/assets/index.json').then(function (r) { return r.json(); })

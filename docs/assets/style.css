@@ -21,10 +21,6 @@ main{max-width:900px;margin:0 auto;padding:0 20px 72px}
 header.site{max-width:900px;margin:0 auto;padding:18px 20px;display:flex;
   gap:16px;align-items:center;flex-wrap:wrap}
 .brand{font-weight:700;font-size:20px;text-decoration:none;color:var(--ink)}
-.q{margin-left:auto}
-.q input{padding:8px 12px;border:1px solid var(--line);border-radius:6px;
-  background:var(--card);color:var(--ink);min-width:200px}
-
 .crumb{max-width:900px;margin:0 auto;padding:0 20px}
 .crumb ol{list-style:none;display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0;
   font-size:13px;color:var(--muted)}
@@ -91,8 +87,6 @@ footer.site .src{margin:6px 0}
   h1{font-size:22px}
   ul.cards{grid-template-columns:1fr}
   .filters select,.filters input{flex:1;min-width:44%}
-  .q{width:100%;margin-left:0}
-  .q input{width:100%}
 }
 
 /* ---------- 検索パネル ---------- */
@@ -125,11 +119,7 @@ footer.site .src{margin:6px 0}
   .k-キャラ{background:#22362b;color:#a7d4ba}
   .k-スタッフ{background:#3a3325;color:#dccb9d}
 }
-.sp-more{margin:0 0 10px}
-.sp-more summary{cursor:pointer;font-size:14px;color:var(--accent2);padding:4px 0}
-.sp-more .filters{margin-top:8px}
 ul.cards .why{color:var(--accent2);font-weight:600}
-ul.cards .more{color:var(--muted);font-size:13px;padding:10px}
 
 /* ---------- カテゴリ導線（全ページ共通） ---------- */
 .site-nav{max-width:900px;margin:0 auto;padding:0 20px 4px;display:flex;gap:6px;
@@ -181,24 +171,6 @@ ul.browse b{font-size:15.5px}
 ul.browse .idx-n{font-size:12px}
 ul.browse small{color:var(--muted);font-size:12.5px;line-height:1.6}
 
-/* ---------- 候補から選ぶ絞り込み（選択肢が多い項目） ---------- */
-.combo{position:relative;flex:1;min-width:170px}
-.combo .cb-text{width:100%;padding:8px 26px 8px 10px;font-size:14px;
-  border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
-.combo .cb-text.on{border-color:var(--accent);font-weight:600}
-.combo .cb-clear{position:absolute;right:2px;top:50%;transform:translateY(-50%);
-  border:none;background:none;color:var(--muted);cursor:pointer;font-size:15px;
-  line-height:1;padding:5px 7px}
-.combo .cb-clear:hover{color:var(--accent2)}
-.combo .cb-list{position:absolute;z-index:30;left:0;top:100%;min-width:100%;max-width:min(360px,80vw);
-  margin:4px 0 0;padding:0;list-style:none;background:var(--card);
-  border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.14);
-  max-height:280px;overflow:auto}
-.combo .cb-list li{padding:7px 12px;font-size:14px;cursor:pointer;white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis}
-.combo .cb-list li.on{background:var(--chip)}
-.combo .cb-list .cb-more{color:var(--muted);font-size:12px;cursor:default;background:none}
-.idx-link{font-size:13px;color:var(--muted);margin:10px 0 0}
 
 @media (max-width:560px){
   .site-nav{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
@@ -211,3 +183,13 @@ ul.browse small{color:var(--muted);font-size:12.5px;line-height:1.6}
 
 /* 選択肢の文字数で幅が暴れないようにする（シリーズ名が長い） */
 .filters select{flex:1 1 170px;min-width:150px;max-width:280px}
+
+/* ---------- 検索結果とページャー ---------- */
+#f-results{margin:0}
+#f-results .count{margin:8px 0 12px}
+.pager{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 0}
+.pager button{min-width:40px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;
+  background:var(--card);color:var(--ink2);cursor:pointer;font-size:14px;font-family:inherit}
+.pager button:hover{border-color:var(--accent);color:var(--accent2)}
+.pager button.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
+#browse{margin-top:8px}
