@@ -65,7 +65,62 @@
     ['a','あ'],['i','い'],['u','う'],['e','え'],['o','お'],['n','ん']
   ];
 
-  function romajiToKana(s) {
+
+  // 作品名によく出る英単語の読み。ローマ字変換では「clock → ころく」に
+  // なってしまうため、英単語は辞書で読みを与える。
+  // 日本語のローマ字と紛らわしい語（no / to / de / na など）は入れない。
+  var EN = {
+    the:'ザ', of:'オブ', and:'アンド', with:'ウィズ', for:'フォー', in:'イン', on:'オン',
+    my:'マイ', all:'オール', even:'イーブン', if:'イフ', un:'アン', one:'ワン', ones:'ワンズ',
+    love:'ラブ', lover:'ラバー', lovers:'ラバーズ', loved:'ラブド',
+    wonderful:'ワンダフル', wonder:'ワンダー', world:'ワールド',
+    starry:'スターリー', star:'スター', sky:'スカイ', princess:'プリンセス', prince:'プリンス',
+    tokyo:'トウキョウ', boys:'ボーイズ', boy:'ボーイ', girl:'ガール', girls:'ガールズ',
+    disc:'ディスク', diabolik:'ディアボリック', sweet:'スウィート', side:'サイド',
+    days:'デイズ', day:'デイ', after:'アフター', heart:'ハート', hearts:'ハーツ',
+    spring:'スプリング', summer:'サマー', autumn:'オータム', winter:'ウィンター',
+    amnesia:'アムネシア', dynamic:'ダイナミック', chord:'コード', feat:'フィーチャリング',
+    lost:'ロスト', darling:'ダーリン', honey:'ハニー', dear:'ディア', storm:'ストーム',
+    halloween:'ハロウィン', wedding:'ウェディング', norn:'ノルン', school:'スクール',
+    code:'コード', realize:'リアライズ', mystic:'ミスティック', sweat:'スウェット',
+    tears:'ティアーズ', symphony:'シンフォニー', life:'ライフ', kiss:'キス',
+    engagement:'エンゲージメント', desert:'デザート', vitamin:'ビタミン', cross:'クロス',
+    road:'ロード', supernova:'スーパーノヴァ', club:'クラブ', snow:'スノー',
+    future:'フューチャー', dark:'ダーク', land:'ランド', beyond:'ビヨンド', time:'タイム',
+    black:'ブラック', white:'ホワイト', money:'マネー', glass:'グラス', romeo:'ロミオ',
+    juliet:'ジュリエット', alice:'アリス', bad:'バッド', good:'グッド', marginal:'マージナル',
+    birthday:'バースデー', song:'ソング', eden:'エデン', klap:'クラップ', kind:'カインド',
+    punish:'パニッシュ', another:'アナザー', apple:'アップル', dance:'ダンス',
+    devils:'デビルズ', devil:'デビル', collar:'カラー', malice:'マリス', charade:'シャレード',
+    maniacs:'マニアックス', bustafellows:'バスタフェロウズ', tempest:'テンペスト',
+    clock:'クロック', zero:'ゼロ', marriage:'マリッジ', special:'スペシャル',
+    prologue:'プロローグ', epilogue:'エピローグ', mind:'マインド', backlash:'バックラッシュ',
+    apprentice:'アプレンティス', magician:'マジシャン', double:'ダブル', reaction:'リアクション',
+    beat:'ビート', red:'レッド', blue:'ブルー', green:'グリーン', gold:'ゴールド',
+    silver:'シルバー', moon:'ムーン', sun:'サン', dream:'ドリーム', memory:'メモリー',
+    memories:'メモリーズ', story:'ストーリー', tale:'テイル', magic:'マジック',
+    garden:'ガーデン', rose:'ローズ', blood:'ブラッド', night:'ナイト', king:'キング',
+    queen:'クイーン', knight:'ナイト', angel:'エンジェル', god:'ゴッド', fire:'ファイア',
+    water:'ウォーター', wind:'ウィンド', light:'ライト', shadow:'シャドウ',
+    secret:'シークレット', promise:'プロミス', forever:'フォーエバー', eternal:'エターナル',
+    first:'ファースト', last:'ラスト', new:'ニュー', real:'リアル', root:'ルート',
+    gate:'ゲート', key:'キー', door:'ドア', letter:'レター', message:'メッセージ',
+    voice:'ボイス', sound:'サウンド', music:'ミュージック', party:'パーティー',
+    game:'ゲーム', card:'カード', box:'ボックス', complete:'コンプリート',
+    edition:'エディション', limited:'リミテッド', portable:'ポータブル', twin:'ツイン',
+    pack:'パック', best:'ベスト', plus:'プラス', full:'フル', mini:'ミニ',
+    deluxe:'デラックス', remake:'リメイク', pia:'ピア', vitaminx:'ビタミンエックス',
+    vitaminz:'ビタミンゼット', logical:'ロジカル', record:'レコード', noah:'ノア',
+    mirage:'ミラージュ', mystique:'ミスティーク', vibes:'バイブス', chain:'チェーン',
+    dunk:'ダンク', basketball:'バスケットボール', nursery:'ナーサリー', rhyme:'ライム',
+    memorial:'メモリアル', tennis:'テニス', cinderella:'シンデレラ', happy:'ハッピー',
+    season:'シーズン', drops:'ドロップス', drop:'ドロップ', fortune:'フォーチュン',
+    maria:'マリア', miss:'ミス', debut:'デビュー', wand:'ワンド', arabians:'アラビアンズ',
+    chaos:'カオス', lineage:'リネージュ', destination:'デスティネーション',
+    unlimited:'アンリミテッド', sequel:'シークエル', prince:'プリンス', lost:'ロスト'
+  };
+
+  function romajiWord(s) {
     if (!s) return '';
     s = s.toLowerCase().replace(/[^a-z]/g, '');
     var out = '', i = 0;
@@ -81,6 +136,19 @@
       i++;   // 変換できない文字は捨てる
     }
     return out;
+  }
+
+  // 単語ごとに、英単語なら辞書、そうでなければローマ字として読みを作る
+  function readingOf(s) {
+    if (!s) return '';
+    var ws = s.toLowerCase().match(/[a-z']+/g);
+    if (!ws) return '';
+    var out = '';
+    for (var i = 0; i < ws.length; i++) {
+      var w = ws[i].replace(/'/g, '');
+      out += EN[w] || romajiWord(w);
+    }
+    return norm(out);
   }
 
   /* ---------------- 組み立て ---------------- */
@@ -198,7 +266,7 @@
       it._i = i;
       it._n = norm(it.t);
       it._l = norm(it.l);
-      it._r = romajiToKana(it.l);      // 作品名をかなでも引けるように
+      it._r = readingOf(it.l || it.t); // 原題がラテン文字なら原題から読みを作る
     });
     (DATA.vocab.cv || []).forEach(function (v) { v._n = norm(v.n); });
     (DATA.vocab.staff || []).forEach(function (v) { v._n = norm(v.n); });
@@ -206,7 +274,7 @@
     SUGGEST.forEach(function (s) {
       s._n = norm(s.n);
       s._k = norm(s.k);
-      s._r = romajiToKana(s.k);     // ローマ字から起こしたかな
+      s._r = readingOf(s.k || s.n);  // ローマ字・英単語から起こしたかな
     });
 
     // 声優・スタッフにも読みを渡す（一覧の絞り込みでもかな・ローマ字を効かせる）
