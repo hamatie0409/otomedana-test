@@ -29,7 +29,9 @@ CREATE TABLE games (
 CREATE TABLE characters (
     id INTEGER PRIMARY KEY AUTOINCREMENT, vid TEXT REFERENCES games(vid),
     cid TEXT, name TEXT, name_latin TEXT, role TEXT, sex TEXT,
-    cv TEXT, cv_latin TEXT, personality TEXT, appearance TEXT, char_role TEXT
+    cv TEXT, cv_latin TEXT, personality TEXT, appearance TEXT, char_role TEXT,
+    blood TEXT, birthday TEXT, height INTEGER, weight INTEGER, age INTEGER,
+    image_url TEXT
 );
 DROP TABLE IF EXISTS traits; DROP TABLE IF EXISTS vn_tags; DROP TABLE IF EXISTS relations;
 DROP TABLE IF EXISTS staff_credits;
@@ -114,13 +116,17 @@ def main():
             r.get("rating"),
             r.get("votecount"), r.get("description"), r["url"]))
         for c in r["characters"]:
+            d = c.get("detail") or {}
             con.execute("INSERT INTO characters (vid,cid,name,name_latin,role,sex,cv,cv_latin,"
-                        "personality,appearance,char_role) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                        "personality,appearance,char_role,blood,birthday,height,weight,age,"
+                        "image_url) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                         (r["vid"], c["cid"], c["character"], c["character_latin"],
                          c["role"], c["sex"], c["cv"], c["cv_latin"],
                          " / ".join(c.get("personality", [])),
                          " / ".join(c.get("appearance", [])),
-                         " / ".join(c.get("char_role", []))))
+                         " / ".join(c.get("char_role", [])),
+                         d.get("blood"), d.get("birthday"), d.get("height"),
+                         d.get("weight"), d.get("age"), d.get("image")))
             for t in c.get("traits", []):
                 cat, name = t.split(":", 1)
                 con.execute("INSERT INTO traits VALUES (?,?,?,?,?)",

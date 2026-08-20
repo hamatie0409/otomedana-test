@@ -217,9 +217,28 @@ def main():
         if r["lang"] == "ja" or r["id"] not in cname:
             cname[r["id"]] = (r["name"], r["latin"])
 
-    csex = {}
+    BLOOD = {"a": "A型", "b": "B型", "ab": "AB型", "o": "O型"}
+
+    def birthday(v):
+        """VNDBの誕生日は月日をまとめた数値（920 = 9月20日）"""
+        if not v or v == "0":
+            return None
+        n = int(v)
+        m, d = n // 100, n % 100
+        return "%d月%d日" % (m, d) if 1 <= m <= 12 and 1 <= d <= 31 else None
+
+    cdetail = {}
     for r in read("chars"):
-        csex[r["id"]] = r["sex"]
+        cdetail[r["id"]] = {
+            "sex": r["sex"],
+            "blood": BLOOD.get(r["bloodt"]),
+            "birthday": birthday(r["birthday"]),
+            "height": int(r["height"]) if r["height"] and r["height"] != "0" else None,
+            "weight": int(r["weight"]) if r["weight"] and r["weight"] != "0" else None,
+            "age": int(r["age"]) if r["age"] and r["age"] != "0" else None,
+            "image": img_url(r["image"]),
+        }
+    csex = {k: v["sex"] for k, v in cdetail.items()}
 
     roles = defaultdict(dict)   # vid -> cid -> role
     for r in read("chars_vns"):
@@ -318,7 +337,7 @@ def main():
         jawiki[r["id"]] = r["jawiki"]
     vjawiki = {vid: jawiki.get(q) for vid, q in wdq.items() if jawiki.get(q)}
 
-    ROLE_JA = {"main": "主人公", "primary": "メインキャラ", "side": "サブキャラ", "appears": "登場のみ"}
+    ROLE_JA = {"main": "主人公", "primary": "攻略対象", "side": "サブキャラ", "appears": "登場のみ"}
     ORDER = {"main": 0, "primary": 1, "side": 2, "appears": 3}
 
     for vid, v in vns.items():
@@ -332,6 +351,7 @@ def main():
                 "role": ROLE_JA.get(role, role), "sex": csex.get(cid),
                 "cv": cvn, "cv_latin": cvl,
                 "traits": ["%s:%s" % (g, n) for g, n in tg],
+                "detail": cdetail.get(cid, {}),
                 "personality": [n for g, n in tg if g == "性格"],
                 "appearance": [n for g, n in tg if g in ("髪", "瞳", "外見")],
                 "char_role": [n for g, n in tg if g == "役柄"],

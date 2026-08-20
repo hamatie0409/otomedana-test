@@ -7,7 +7,11 @@
 import os, json, gzip, sqlite3
 from collections import defaultdict
 from common import DATA
+import re
 from series import build_series
+
+# 訳が用意できていない英語のままの語は絞り込み候補に出さない
+is_en = lambda t: bool(re.fullmatch(r"[\x20-\x7e]+", t or ""))
 
 OUT = os.path.join(DATA, "site")
 HOME = ("Switch", "PS", "ニンテンドー", "Xbox")
@@ -31,6 +35,8 @@ def main():
         pages = {key for k, key, p in
                  con.execute("SELECT kind, key, is_page FROM slugs") if k == kind and p}
         keep = [i for i in items if i in pages]
+        if kind in ("tag",):
+            keep = [i for i in keep if not is_en(i)]
         return keep, {v: i for i, v in enumerate(keep)}
 
     cvs, cv_ix = vocab("cv", """SELECT cv FROM characters WHERE cv IS NOT NULL
@@ -45,7 +51,7 @@ def main():
     trs = [r[0] for r in con.execute(
         """SELECT category || ':' || trait FROM traits WHERE vid IN (%s)
            GROUP BY category, trait ORDER BY COUNT(DISTINCT vid) DESC""" % ph, vids)]
-    trs = [t for t in trs if t in tr_pages]
+    trs = [t for t in trs if t in tr_pages and not is_en(t.split(":", 1)[1])]
     tr_ix = {v: i for i, v in enumerate(trs)}
 
     # 別名義 → 代表名

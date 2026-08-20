@@ -17,11 +17,13 @@ HOME = ("Switch", "PS", "ニンテンドー", "Xbox")
 
 # しきい値（これ未満は独立ページを作らない）
 MIN_WORKS = {"cv": 2, "staff": 2, "tag": 3, "trait": 3, "maker": 2,
-             "publisher": 2, "series": 2, "platform": 1, "game": 1}
+             "publisher": 2, "series": 2, "platform": 1, "game": 1,
+             "character": 1}
 
 DIR = {"game": "game", "cv": "cv", "staff": "staff", "tag": "tag",
        "trait": "trait", "platform": "platform", "maker": "maker",
-       "publisher": "publisher", "series": "series"}
+       "publisher": "publisher", "series": "series",
+       "character": "character"}
 
 SCHEMA = """
 DROP TABLE IF EXISTS slugs;
@@ -190,6 +192,16 @@ def main():
         code = code_of.get(label, label)
         add("platform", label, READABLE.get(code, slugify(code) or slugify(label)), label, n)
 
+    # ---------- キャラクター（主人公と攻略対象のみ。サブキャラは作らない） ----------
+    ch = con.execute("""SELECT cid, MAX(name), MAX(name_latin), COUNT(DISTINCT vid) n
+                        FROM characters
+                        WHERE vid IN (%s) AND role IN ('主人公','攻略対象')
+                          AND name IS NOT NULL
+                        GROUP BY cid ORDER BY n DESC, cid""" % ph, L).fetchall()
+    for cid, name, latin, n in ch:
+        add("character", cid, slugify(latin), name, n, ident=cid)
+    print("  キャラクター %d体（主人公・攻略対象のみ）" % len(ch))
+
     # ---------- シリーズ（関連作品のグラフから判定） ----------
     ser = build_series(con, set(home))
     for key, v in sorted(ser.items(), key=lambda kv: -len(kv[1]["members"])):
@@ -221,8 +233,8 @@ def main():
     print()
     print("=== 生成したスラッグ ===")
     total = 0
-    for kind in ("game", "cv", "staff", "trait", "tag", "series", "maker",
-                 "publisher", "platform"):
+    for kind in ("game", "character", "cv", "staff", "trait", "tag", "series",
+                 "maker", "publisher", "platform"):
         allc = sum(1 for r in rows if r[0] == kind)
         page = sum(1 for r in rows if r[0] == kind and r[6])
         total += page
@@ -235,8 +247,8 @@ def main():
     print("URL重複: %d件" % dup)
     print()
     print("=== 例 ===")
-    for kind in ("game", "cv", "staff", "tag", "trait", "series", "maker",
-                 "publisher", "platform"):
+    for kind in ("game", "character", "cv", "staff", "tag", "trait", "series",
+                 "maker", "publisher", "platform"):
         for k, u, lab in con.execute(
                 "SELECT key,url,label FROM slugs WHERE kind=? AND is_page=1 ORDER BY n_works DESC LIMIT 2",
                 (kind,)):

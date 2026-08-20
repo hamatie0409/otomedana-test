@@ -19,6 +19,10 @@ HOME = ("Switch", "PS", "ニンテンドー", "Xbox")
 
 e = lambda s: html.escape(str(s), quote=True) if s is not None else ""
 
+# 訳が用意できていない英語のままの語は表示しない（サイトは日本語で統一する）
+is_en = lambda t: bool(re.fullmatch(r"[\x20-\x7e]+", t or ""))
+ja_only = lambda xs: [x for x in xs if x and not is_en(x)]
+
 
 # ---------------------------------------------------------------- テンプレート
 
@@ -97,7 +101,7 @@ def with_base(content):
     """ルート相対の href/src に BASE_PATH を付ける。外部URL(http〜)は対象外"""
     if not BASE_PATH:
         return content
-    return re.sub(r'(href|src)="/', r'\1="%s/' % BASE_PATH, content)
+    return re.sub(r'(href|src|action)="/', r'\1="%s/' % BASE_PATH, content)
 
 
 def write(path, content):
@@ -168,6 +172,11 @@ def main():
     person = {sid: (url, label, kind) for sid, url, label, kind in
               con.execute("SELECT sid, url, label, kind FROM person_pages")}
     sid_of_cv = {label: sid for sid, (u, label, k) in person.items() if k == "cv"}
+
+    ch_by_cid = defaultdict(list)
+    for r in con.execute("""SELECT * FROM characters WHERE vid IN (%s)
+                            AND role IN ('主人公','攻略対象')""" % ph, vids):
+        ch_by_cid[r["cid"]].append(r)
 
     series = build_series(con, set(games))
     series_of = {}
@@ -286,8 +295,11 @@ def main():
                             if key in alist:
                                 u = slug.get(("cv", canon)); break
                     cv = '<a href="%s">%s</a>' % (e(u), e(c["cv"])) if u else e(c["cv"])
+                cu = slug.get(("character", c["cid"]))
+                nm = ('<a href="%s">%s</a>' % (e(cu), e(c["name"]))
+                      if cu and c["name"] else e(c["name"] or ""))
                 b.append("<tr><td>%s</td><td>%s</td><td>%s</td></tr>"
-                         % (e(c["role"] or ""), e(c["name"] or ""), cv))
+                         % (e(c["role"] or ""), nm, cv))
             b.append("</table></section>")
 
         if sc_by_vid[vid]:
@@ -305,7 +317,8 @@ def main():
                 b.append("<tr><th>%s</th><td>%s</td></tr>" % (e(r), "・".join(byrole[r])))
             b.append("</table></section>")
 
-        tg = [t for t in gtags[vid] if ("tag", t) in slug and npages[("tag", t)][1]]
+        tg = [t for t in ja_only(gtags[vid])
+              if ("tag", t) in slug and npages[("tag", t)][1]]
         if tg:
             b.append('<section><h2>タグ</h2><p class="tags">%s</p></section>' % " ".join(
                 '<a href="%s">%s</a>' % (e(slug[("tag", t)]), e(t)) for t in tg[:20]))
@@ -317,6 +330,21 @@ def main():
                 rg = games[r["related_vid"]]
                 b.append('<li><span class="rt">%s</span> <a href="%s">%s</a></li>'
                          % (e(r["type"]), e(slug[("game", rg["vid"])]), e(rg["title"])))
+            b.append("</ul></section>")
+
+        offs = [r["url"] for r in con.execute(
+            "SELECT DISTINCT url FROM vndb_links WHERE vid=? AND site='website' AND url IS NOT NULL",
+            (vid,))]
+        live = [u for u in offs if "web.archive.org" not in u]
+        arch = [u for u in offs if "web.archive.org" in u]
+        if live or arch:
+            b.append('<section><h2>公式サイト</h2><ul class="links">')
+            for u in live[:4]:
+                b.append('<li><a href="%s" rel="noopener" target="_blank">%s</a></li>'
+                         % (e(u), e(re.sub(r"^https?://(www\.)?", "", u).rstrip("/")[:60])))
+            for u in arch[:2]:
+                b.append('<li><a href="%s" rel="noopener" target="_blank">'
+                         '公式サイト（保存版・Web Archive）</a></li>' % e(u))
             b.append("</ul></section>")
 
         if g["jawiki_url"]:
@@ -361,6 +389,8 @@ def main():
         for (k, key), (n, is_page) in npages.items():
             if k != kind or not is_page:
                 continue
+            if kind == "tag" and is_en(label[(k, key)]):
+                continue          # 訳が無い語はページを作らない
             url = slug[(k, key)]
             lab = label[(k, key)]
             if kind == "cv":
@@ -499,6 +529,8 @@ def main():
         if k != "trait" or not is_page:
             continue
         cat, tr = key.split(":", 1)
+        if is_en(tr):
+            continue              # 訳が無い属性はページを作らない
         rows = con.execute(
             "SELECT DISTINCT vid, name FROM traits WHERE category=? AND trait=?",
             (cat, tr)).fetchall()
@@ -521,6 +553,96 @@ def main():
                           [(SITE_NAME, "/"), (tr, None)]))
         urls.append((url, None))
         n_tr += 1
+
+    # ---------------- キャラクターページ ----------------
+    n_char = 0
+    for (k, key), (n, is_page) in npages.items():
+        if k != "character" or not is_page:
+            continue
+        rows = ch_by_cid.get(key)
+        if not rows:
+            continue
+        c0 = rows[0]
+        name = c0["name"]
+        url = slug[(k, key)]
+
+        # 出演作品（同じキャラが複数作品に出ることがある）
+        apps = []
+        for r in sorted(rows, key=lambda x: (games[x["vid"]]["released"] or "9999")):
+            g = games[r["vid"]]
+            apps.append((slug[("game", g["vid"])], g["title"], ja_date(g["released"]),
+                         (g["platforms"] or "").split(" / ")[0], g["image_url"], r["role"]))
+
+        cvs = sorted({r["cv"] for r in rows if r["cv"]})
+        cv_links = []
+        for nm in cvs:
+            u = slug.get(("cv", nm))
+            if not u:
+                for canon, alist in alias_of.items():
+                    if nm in alist:
+                        u = slug.get(("cv", canon)); break
+            cv_links.append('<a href="%s">%s</a>' % (e(u), e(nm)) if u else e(nm))
+
+        facts = [("声優", " / ".join(cv_links) or "—"),
+                 ("区分", e("・".join(sorted({r["role"] for r in rows})))),
+                 ("誕生日", e(c0["birthday"] or "—")),
+                 ("年齢", e("%d歳" % c0["age"] if c0["age"] else "—")),
+                 ("身長", e("%dcm" % c0["height"] if c0["height"] else "—")),
+                 ("血液型", e(c0["blood"] or "—"))]
+
+        # 属性は traits テーブルから (分類, 属性) の対で引く。
+        # characters.appearance などの平文カラムは分類が混ざっているため使わない
+        bycat = defaultdict(list)
+        for cat, tr in con.execute(
+                "SELECT DISTINCT category, trait FROM traits WHERE cid=?", (key,)):
+            if not is_en(tr):
+                bycat[cat].append(tr)
+
+        def chips(cats):
+            out = []
+            for cat in cats:
+                for v in bycat.get(cat, []):
+                    u = slug.get(("trait", "%s:%s" % (cat, v)))
+                    out.append('<a href="%s">%s</a>' % (e(u), e(v)) if u else
+                               '<span>%s</span>' % e(v))
+            return " ".join(out)
+
+        pers = chips(["性格"])
+        appe = chips(["髪", "瞳", "外見"])
+        role_t = chips(["役柄", "行動", "服装", "持ち物", "境遇"])
+
+        b = ['<article class="chara">', '<div class="hero">']
+        if c0["image_url"]:
+            b.append('<img class="cover" src="%s" alt="%s" width="180">'
+                     % (e(c0["image_url"]), e(name)))
+        b.append("<div>")
+        b.append("<h1>%s</h1>" % e(name))
+        if c0["name_latin"]:
+            b.append('<p class="latin">%s</p>' % e(c0["name_latin"]))
+        b.append('<table class="facts">' + "".join(
+            "<tr><th>%s</th><td>%s</td></tr>" % (kk, vv) for kk, vv in facts) + "</table>")
+        b.append("</div></div>")
+        for ttl, html_ in (("性格", pers), ("外見", appe), ("役柄・特徴", role_t)):
+            if html_:
+                b.append('<section><h2>%s</h2><p class="tags">%s</p></section>' % (ttl, html_))
+        b.append('<section><h2>登場作品</h2>%s</section>' % card_list(apps))
+        b.append("</article>")
+
+        cvtxt = "、".join(cvs)
+        d = "%s（%s）が登場する乙女ゲームと、プロフィール・性格・外見のまとめ。" % (
+            name, cvtxt or "声優未確定")
+        if len(apps) > 1:
+            d += "%d作品に登場します。" % len(apps)
+        ld = {"@context": "https://schema.org", "@type": "Person", "name": name,
+              "url": BASE_URL + url}
+        if c0["image_url"]:
+            ld["image"] = c0["image_url"]
+        crumbs = [(SITE_NAME, "/"), (games[c0["vid"]]["title"],
+                                     slug[("game", c0["vid"])]), (name, None)]
+        write(url, layout("%s（CV: %s）｜%s" % (name, cvtxt or "—", SITE_NAME),
+                          d, BASE_URL + url, "\n".join(b), [ld], crumbs, c0["image_url"]))
+        urls.append((url, None))
+        n_char += 1
 
     # ---------------- シリーズページ（発売順＝プレイ順） ----------------
     n_ser = 0
@@ -612,6 +734,7 @@ def main():
 
     print()
     print("  作品      %5d" % len(games))
+    print("  キャラクター %4d" % n_char)
     print("  声優      %5d" % n_cv)
     print("  スタッフ   %5d" % n_staff)
     print("  キャラ属性 %5d" % n_tr)
