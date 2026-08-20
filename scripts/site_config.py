@@ -24,6 +24,18 @@ SITE_URL = "https://example.pages.dev" if PUBLISH else "https://hamatie0409.gith
 # ルート配信なら空文字。末尾スラッシュなし。
 BASE_PATH = "" if PUBLISH else "/otomedana-test"
 
+# ------------------------------------------------------------------
+# 画像の出し方
+#   "vndb"      … VNDBの画像サーバを直接参照する。確認しやすいが、
+#                 VNDBは「個々の画像はフェアユース」という立場であって
+#                 第三者への利用許諾ではない。日本にフェアユース規定は
+#                 なく、VNDBの帯域も使うため公開には向かない。
+#   "affiliate" … パッケージ画像はアフィリエイトAPIが返す画像URLのみ
+#                 （楽天は「URLのまま表示」が規約上OK）。
+#                 キャラクター画像は出さず、VNDBへのリンクに置き換える。
+# ------------------------------------------------------------------
+IMAGE_MODE = "affiliate" if PUBLISH else "vndb"
+
 # ODbL 4.6（改変方法の提供義務）を満たすための公開リポジトリ
 REPO_URL = "https://github.com/"
 

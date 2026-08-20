@@ -10,7 +10,7 @@ from common import DATA, ROOT
 
 from series import build_series
 from site_config import (SITE_NAME, SITE_DESC, SITE_URL, REPO_URL, SCOPE_NOTE,
-                         PUBLISH, BASE_PATH)
+                         PUBLISH, BASE_PATH, IMAGE_MODE)
 
 # GitHub Pages は リポジトリ直下 か docs/ からしか配信できないため docs/ に出す
 OUT = os.path.join(ROOT, "docs")
@@ -178,6 +178,16 @@ def main():
                             AND role IN ('主人公','攻略対象')""" % ph, vids):
         ch_by_cid[r["cid"]].append(r)
 
+    con.execute("""CREATE TABLE IF NOT EXISTS shop_images
+                   (vid TEXT PRIMARY KEY, url TEXT, source TEXT)""")
+    shop_img = dict(con.execute("SELECT vid, url FROM shop_images"))
+
+    def cover_of(g):
+        """公開モードではアフィリエイト由来の画像だけを使う"""
+        if IMAGE_MODE == "vndb":
+            return g["image_url"]
+        return shop_img.get(g["vid"])
+
     series = build_series(con, set(games))
     series_of = {}
     for key, v in series.items():
@@ -225,9 +235,10 @@ def main():
 
         b = ['<article class="game">']
         b.append('<div class="hero">')
-        if g["image_url"]:
+        cover = cover_of(g)
+        if cover:
             b.append('<img class="cover" src="%s" alt="%sのパッケージ" width="220">'
-                     % (e(g["image_url"]), e(g["title"])))
+                     % (e(cover), e(g["title"])))
         b.append("<div>")
         b.append("<h1>%s</h1>" % e(g["title"]))
         if g["title_latin"]:
@@ -359,8 +370,8 @@ def main():
               "inLanguage": "ja"}
         if g["released"] and len(g["released"]) == 10:
             ld["datePublished"] = g["released"]
-        if g["image_url"]:
-            ld["image"] = g["image_url"]
+        if cover:
+            ld["image"] = cover
         if g["developers"]:
             ld["publisher"] = {"@type": "Organization",
                                "name": g["developers"].split(" / ")[0]}
@@ -379,8 +390,7 @@ def main():
         crumbs.append((g["title"], None))
         title = "%s（%s）の攻略キャラ・声優一覧｜%s" % (
             g["title"], (plat.split(" / ")[0] if plat else ""), SITE_NAME)
-        write(url, layout(title, desc, BASE_URL + url, "\n".join(b), [ld], crumbs,
-                          g["image_url"]))
+        write(url, layout(title, desc, BASE_URL + url, "\n".join(b), [ld], crumbs, cover))
         urls.append((url, g["released"]))
 
     # ---------------- 一覧系ページ ----------------
@@ -407,7 +417,7 @@ def main():
                 if not g:
                     continue
                 items.append((slug[("game", g["vid"])], g["title"], g["released"],
-                              (g["platforms"] or "").split(" / ")[0], g["image_url"],
+                              (g["platforms"] or "").split(" / ")[0], cover_of(g),
                               r[extra_col] if extra_col and extra_col in r.keys() else None))
             if not items:
                 continue
@@ -447,7 +457,7 @@ def main():
                     cast_items.append((slug[("game", g["vid"])], g["title"],
                                        ja_date(g["released"]),
                                        (g["platforms"] or "").split(" / ")[0],
-                                       g["image_url"], r["name"]))
+                                       cover_of(g), r["name"]))
         if sid:
             seen = {}
             for c in sc_by_sid.get(sid, []):
@@ -459,7 +469,7 @@ def main():
                 g = games[v2]
                 staff_items.append((slug[("game", v2)], g["title"], ja_date(g["released"]),
                                     (g["platforms"] or "").split(" / ")[0],
-                                    g["image_url"], "・".join(sorted(set(roles)))))
+                                    cover_of(g), "・".join(sorted(set(roles)))))
 
         cast_items.sort(key=lambda x: (x[2] or ""), reverse=True)
         staff_items.sort(key=lambda x: (x[2] or ""), reverse=True)
@@ -539,7 +549,7 @@ def main():
             g = games.get(r["vid"])
             if g:
                 items.append((slug[("game", g["vid"])], g["title"], g["released"],
-                              (g["platforms"] or "").split(" / ")[0], g["image_url"],
+                              (g["platforms"] or "").split(" / ")[0], cover_of(g),
                               r["name"]))
         if not items:
             continue
@@ -571,7 +581,7 @@ def main():
         for r in sorted(rows, key=lambda x: (games[x["vid"]]["released"] or "9999")):
             g = games[r["vid"]]
             apps.append((slug[("game", g["vid"])], g["title"], ja_date(g["released"]),
-                         (g["platforms"] or "").split(" / ")[0], g["image_url"], r["role"]))
+                         (g["platforms"] or "").split(" / ")[0], cover_of(g), r["role"]))
 
         cvs = sorted({r["cv"] for r in rows if r["cv"]})
         cv_links = []
@@ -612,7 +622,8 @@ def main():
         role_t = chips(["役柄", "行動", "服装", "持ち物", "境遇"])
 
         b = ['<article class="chara">', '<div class="hero">']
-        if c0["image_url"]:
+        show_img = IMAGE_MODE == "vndb" and c0["image_url"]
+        if show_img:
             b.append('<img class="cover" src="%s" alt="%s" width="180">'
                      % (e(c0["image_url"]), e(name)))
         b.append("<div>")
@@ -625,6 +636,9 @@ def main():
         for ttl, html_ in (("性格", pers), ("外見", appe), ("役柄・特徴", role_t)):
             if html_:
                 b.append('<section><h2>%s</h2><p class="tags">%s</p></section>' % (ttl, html_))
+        if not show_img:
+            b.append('<p class="ext"><a href="https://vndb.org/%s" rel="noopener" '
+                     'target="_blank">VNDBでこのキャラクターを見る（立ち絵あり）</a></p>' % e(key))
         b.append('<section><h2>登場作品</h2>%s</section>' % card_list(apps))
         b.append("</article>")
 
@@ -635,12 +649,13 @@ def main():
             d += "%d作品に登場します。" % len(apps)
         ld = {"@context": "https://schema.org", "@type": "Person", "name": name,
               "url": BASE_URL + url}
-        if c0["image_url"]:
+        if show_img:
             ld["image"] = c0["image_url"]
         crumbs = [(SITE_NAME, "/"), (games[c0["vid"]]["title"],
                                      slug[("game", c0["vid"])]), (name, None)]
         write(url, layout("%s（CV: %s）｜%s" % (name, cvtxt or "—", SITE_NAME),
-                          d, BASE_URL + url, "\n".join(b), [ld], crumbs, c0["image_url"]))
+                          d, BASE_URL + url, "\n".join(b), [ld], crumbs,
+                          c0["image_url"] if show_img else None))
         urls.append((url, None))
         n_char += 1
 
@@ -654,7 +669,7 @@ def main():
         for m in v["members"]:
             g = games[m]
             items.append((slug[("game", m)], g["title"], ja_date(g["released"]),
-                          (g["platforms"] or "").split(" / ")[0], g["image_url"],
+                          (g["platforms"] or "").split(" / ")[0], cover_of(g),
                           ("★ %.2f" % g["rating"]) if g["rating"] else None))
         d = ("「%s」シリーズの乙女ゲーム %d作品を発売順に並べた一覧。"
              "どれから遊べばよいか分かるように、続編・前日譚・ファンディスクをまとめています。"
@@ -688,11 +703,11 @@ def main():
     if upcoming:
         body += ["<h2>発売予定</h2>",
                  card_list([(slug[("game", g["vid"])], g["title"], ja_date(g["released"]),
-                             (g["platforms"] or "").split(" / ")[0], g["image_url"], None)
+                             (g["platforms"] or "").split(" / ")[0], cover_of(g), None)
                             for g in upcoming])]
     body += ["<h2>最近発売された作品</h2>",
              card_list([(slug[("game", g["vid"])], g["title"], ja_date(g["released"]),
-                         (g["platforms"] or "").split(" / ")[0], g["image_url"],
+                         (g["platforms"] or "").split(" / ")[0], cover_of(g),
                          ("★ %.2f" % g["rating"]) if g["rating"] else None)
                         for g in recent])]
     write("/", layout("%s｜乙女ゲームを声優・キャラ属性から探す" % SITE_NAME, SITE_DESC,
@@ -733,6 +748,10 @@ def main():
         else "User-agent: *\nDisallow: /\n")
 
     print()
+    if IMAGE_MODE != "vndb":
+        miss = sum(1 for g in games.values() if not cover_of(g))
+        print("  画像モード: %s（アフィリエイト画像なし %d件 / キャラ画像は非表示）"
+              % (IMAGE_MODE, miss))
     print("  作品      %5d" % len(games))
     print("  キャラクター %4d" % n_char)
     print("  声優      %5d" % n_cv)
