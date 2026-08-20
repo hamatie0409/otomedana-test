@@ -14,6 +14,8 @@ body{margin:0;background:var(--bg);color:var(--ink);line-height:1.8;
 a{color:var(--accent2)}
 img{max-width:100%;height:auto}
 main{max-width:900px;margin:0 auto;padding:0 20px 72px}
+/* トップにはヘッダーが無いので、その分だけ上を空ける */
+.ad-notice+main{padding-top:16px}
 
 .ad-notice{margin:0;padding:6px 20px;background:var(--chip);color:var(--ink2);
   font-size:12px;text-align:center}

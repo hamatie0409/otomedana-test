@@ -19,12 +19,14 @@ HOME = ("Switch", "PS", "ニンテンドー", "Xbox")
 
 e = lambda s: html.escape(str(s), quote=True) if s is not None else ""
 
-# 全ページ共通のカテゴリ導線。索引ページ（/cv/ /maker/ …）への入口を常設する。
+# 下層ページの導線。索引ページ（/cv/ /maker/ …）への入口を常設する。
 # ここに無いと索引ページを作っても誰も辿り着けないので layout() に組み込む。
-NAV = '<nav class="site-nav" aria-label="カテゴリ">%s</nav>' % "".join(
+# トップには出さない。同じ入口をカードで大きく並べている上、
+# ブランド名も見出しも「トップへ戻る」も、そのページ自身を指すことになるため。
+NAV = '<nav class="site-nav" aria-label="サイト内の移動">%s</nav>' % "".join(
     '<a href="%s">%s</a>' % (u, t) for t, u in
-    [("声優", "/cv/"), ("メーカー", "/maker/"), ("シリーズ", "/series/"),
-     ("タグ", "/tag/"), ("キャラ属性", "/trait/")])
+    [("トップ", "/"), ("声優", "/cv/"), ("メーカー", "/maker/"),
+     ("シリーズ", "/series/"), ("タグ", "/tag/"), ("キャラ属性", "/trait/")])
 
 # 訳が用意できていない英語のままの語は表示しない（サイトは日本語で統一する）
 is_en = lambda t: bool(re.fullmatch(r"[\x20-\x7e]+", t or ""))
@@ -33,7 +35,8 @@ ja_only = lambda xs: [x for x in xs if x and not is_en(x)]
 
 # ---------------------------------------------------------------- テンプレート
 
-def layout(title, desc, canonical, body, jsonld=None, breadcrumb=None, og_image=None):
+def layout(title, desc, canonical, body, jsonld=None, breadcrumb=None, og_image=None,
+           home=False):
     crumb = ""
     if breadcrumb:
         parts = " ".join(
@@ -63,11 +66,7 @@ def layout(title, desc, canonical, body, jsonld=None, breadcrumb=None, og_image=
 %(ld)s</head>
 <body>
 %(notice)s
-<header class="site">
-  <a class="brand" href="/">%(site)s</a>
-</header>
-%(nav)s
-%(crumb)s
+%(header)s%(crumb)s
 <main>
 %(body)s
 </main>
@@ -83,7 +82,11 @@ def layout(title, desc, canonical, body, jsonld=None, breadcrumb=None, og_image=
 </body>
 </html>""" % dict(title=e(title), desc=e(desc), canon=e(canonical), site=e(SITE_NAME),
                   sitedesc=e(SITE_DESC), ld=ld, crumb=crumb, body=body, repo=e(REPO_URL),
-                  basepath=json.dumps(BASE_PATH), nav=NAV,
+                  basepath=json.dumps(BASE_PATH),
+                  header="" if home else
+                  ('<header class="site">\n'
+                   '  <a class="brand" href="/">%s</a>\n'
+                   '</header>\n%s\n' % (e(SITE_NAME), NAV)),
                   robots="" if PUBLISH else '<meta name="robots" content="noindex,nofollow">\n',
                   notice=('<p class="ad-notice">当サイトはアフィリエイト広告を利用しています</p>'
                           if PUBLISH else
@@ -945,7 +948,7 @@ def main():
                          ("★ %.2f" % g["rating"]) if g["rating"] else None)
                         for g in recent])]
     write("/", layout("%s｜乙女ゲームを声優・キャラ属性から探す" % SITE_NAME, SITE_DESC,
-                      BASE_URL + "/", "\n".join(body), None, None))
+                      BASE_URL + "/", "\n".join(body), None, None, home=True))
     urls.append(("/", None))
 
     # ---------------- assets / sitemap / robots ----------------
