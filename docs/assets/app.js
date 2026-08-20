@@ -1,12 +1,16 @@
 /* トップページの検索と絞り込み。
    index.json だけで動き、検索欄に触れたとき suggest.json、
-   キャラ属性で絞るときだけ traits.json を追加で読む。 */
+   キャラ属性で絞るときだけ traits.json を追加で読む。
+
+   照合はすべて事前に正規化した文字列に対して行う。
+   かな・カナ・漢字・ローマ字のどれで入力しても引けるようにしている。 */
 (function () {
   var BP = window.BASE_PATH || '';
   var root = document.getElementById('app');
   if (!root) return;
 
   var DATA = null, TRAITS = null, SUGGEST = null;
+  var CHAR_OF = null;          // 作品の添字 → その作品のキャラ（事前に作る索引）
   var TODAY = new Date().toISOString().slice(0, 10);
 
   function el(tag, attrs, kids) {
@@ -20,7 +24,64 @@
   }
   function option(v, t) { var o = el('option', { value: v }); o.textContent = t; return o; }
   function val(id) { var n = document.getElementById(id); return n ? n.value : ''; }
-  function norm(s) { return (s || '').toLowerCase().replace(/[\s　]/g, ''); }
+
+  /* ---------------- 表記ゆれの吸収 ---------------- */
+
+  // カタカナをひらがなに寄せ、空白と記号を落とす
+  function norm(s) {
+    if (!s) return '';
+    s = s.toLowerCase().replace(/[\s　・･、。,.\-–—~〜「」『』（）()【】\[\]!！?？:：;；'"’”]/g, '');
+    return s.replace(/[ァ-ヶ]/g, function (c) {
+      return String.fromCharCode(c.charCodeAt(0) - 0x60);
+    });
+  }
+
+  // ローマ字をひらがなに変換する。VNDBの表記はヘボン式なのでそれに合わせる
+  var RO = [
+    ['kkya','っきゃ'],['kkyu','っきゅ'],['kkyo','っきょ'],['sshi','っし'],['ssha','っしゃ'],
+    ['sshu','っしゅ'],['ssho','っしょ'],['tchi','っち'],['ttsu','っつ'],['ccha','っちゃ'],
+    ['cchu','っちゅ'],['ccho','っちょ'],
+    ['kya','きゃ'],['kyu','きゅ'],['kyo','きょ'],['gya','ぎゃ'],['gyu','ぎゅ'],['gyo','ぎょ'],
+    ['sha','しゃ'],['shu','しゅ'],['sho','しょ'],['sha','しゃ'],['ja','じゃ'],['ju','じゅ'],
+    ['jo','じょ'],['cha','ちゃ'],['chu','ちゅ'],['cho','ちょ'],['nya','にゃ'],['nyu','にゅ'],
+    ['nyo','にょ'],['hya','ひゃ'],['hyu','ひゅ'],['hyo','ひょ'],['bya','びゃ'],['byu','びゅ'],
+    ['byo','びょ'],['pya','ぴゃ'],['pyu','ぴゅ'],['pyo','ぴょ'],['mya','みゃ'],['myu','みゅ'],
+    ['myo','みょ'],['rya','りゃ'],['ryu','りゅ'],['ryo','りょ'],
+    ['shi','し'],['chi','ち'],['tsu','つ'],['fu','ふ'],['ji','じ'],
+    ['ka','か'],['ki','き'],['ku','く'],['ke','け'],['ko','こ'],
+    ['sa','さ'],['su','す'],['se','せ'],['so','そ'],
+    ['ta','た'],['te','て'],['to','と'],
+    ['na','な'],['ni','に'],['nu','ぬ'],['ne','ね'],['no','の'],
+    ['ha','は'],['hi','ひ'],['he','へ'],['ho','ほ'],
+    ['ma','ま'],['mi','み'],['mu','む'],['me','め'],['mo','も'],
+    ['ya','や'],['yu','ゆ'],['yo','よ'],
+    ['ra','ら'],['ri','り'],['ru','る'],['re','れ'],['ro','ろ'],
+    ['wa','わ'],['wo','を'],
+    ['ga','が'],['gi','ぎ'],['gu','ぐ'],['ge','げ'],['go','ご'],
+    ['za','ざ'],['zu','ず'],['ze','ぜ'],['zo','ぞ'],
+    ['da','だ'],['de','で'],['do','ど'],['di','ぢ'],['du','づ'],
+    ['ba','ば'],['bi','び'],['bu','ぶ'],['be','べ'],['bo','ぼ'],
+    ['pa','ぱ'],['pi','ぴ'],['pu','ぷ'],['pe','ぺ'],['po','ぽ'],
+    ['a','あ'],['i','い'],['u','う'],['e','え'],['o','お'],['n','ん']
+  ];
+
+  function romajiToKana(s) {
+    if (!s) return '';
+    s = s.toLowerCase().replace(/[^a-z]/g, '');
+    var out = '', i = 0;
+    outer: while (i < s.length) {
+      // 促音（同じ子音が続く）
+      if (i + 1 < s.length && s[i] === s[i + 1] && 'kstpgzdbjcf'.indexOf(s[i]) >= 0) {
+        out += 'っ'; i++; continue;
+      }
+      for (var r = 0; r < RO.length; r++) {
+        var k = RO[r][0];
+        if (s.substr(i, k.length) === k) { out += RO[r][1]; i += k.length; continue outer; }
+      }
+      i++;   // 変換できない文字は捨てる
+    }
+    return out;
+  }
 
   /* ---------------- 組み立て ---------------- */
 
@@ -28,7 +89,6 @@
     var panel = el('div', { class: 'search-panel' });
     panel.appendChild(el('h2', { text: '乙女ゲームを探す', class: 'sp-title' }));
 
-    // 検索対象（otomex に倣った切り替え）
     var modes = [['all', 'すべて'], ['title', '作品名'], ['cv', '声優名'], ['char', 'キャラクター名']];
     var mrow = el('div', { class: 'sp-modes' });
     modes.forEach(function (m, i) {
@@ -42,26 +102,21 @@
     });
     panel.appendChild(mrow);
 
-    // 検索欄＋候補
     var box = el('div', { class: 'sp-box' });
     var q = el('input', { type: 'search', id: 'f-q', autocomplete: 'off',
-                          placeholder: '作品名・声優名・キャラクター名を入力' });
+                          placeholder: '作品名・声優名・キャラクター名（かな・ローマ字も可）' });
     var sug = el('ul', { class: 'sp-sug', id: 'f-sug', hidden: 'hidden' });
     box.appendChild(q);
     box.appendChild(sug);
     panel.appendChild(box);
 
-    // よく使う絞り込み
     var row = el('div', { class: 'filters' });
     var pl = el('select', { id: 'f-plat' });
     pl.appendChild(option('', '機種：すべて'));
     var groups = {};
     (DATA.vocab.platform || []).forEach(function (p, i) {
       var g = p.g || 'その他';
-      if (!groups[g]) {
-        groups[g] = el('optgroup', { label: g });
-        pl.appendChild(groups[g]);
-      }
+      if (!groups[g]) { groups[g] = el('optgroup', { label: g }); pl.appendChild(groups[g]); }
       groups[g].appendChild(option(i, p.n));
     });
     var se = el('select', { id: 'f-series' }); se.appendChild(option('', 'シリーズ：すべて'));
@@ -78,7 +133,6 @@
     [pl, se, yr, st].forEach(function (x) { row.appendChild(x); });
     panel.appendChild(row);
 
-    // 詳しく絞り込む（普段は閉じておく）
     var det = el('details', { class: 'sp-more' });
     det.appendChild(el('summary', { text: '詳しく絞り込む' }));
     var row2 = el('div', { class: 'filters' });
@@ -105,12 +159,14 @@
     root.appendChild(el('p', { class: 'count', id: 'f-count' }));
     root.appendChild(el('ul', { class: 'cards', id: 'f-out' }));
 
-    q.addEventListener('focus', loadSuggest, { once: true });
-    q.addEventListener('input', function () { onType(); render(); });
-    q.addEventListener('keydown', onKey);
-    document.addEventListener('click', function (ev) {
-      if (!box.contains(ev.target)) hideSug();
+    // 打鍵のたびに全件を走らせない
+    var timer = null;
+    q.addEventListener('input', function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () { onType(); render(); }, 120);
     });
+    q.addEventListener('keydown', onKey);
+    document.addEventListener('click', function (ev) { if (!box.contains(ev.target)) hideSug(); });
     tr.addEventListener('focus', loadTraits, { once: true });
     [pl, se, yr, st, cv, sf, pb, tg, tr].forEach(function (x) {
       x.addEventListener('change', render);
@@ -124,7 +180,7 @@
     render();
   }
 
-  /* ---------------- 追加読み込み ---------------- */
+  /* ---------------- 追加読み込みと索引づくり ---------------- */
 
   function loadTraits() {
     var sel = document.getElementById('f-trait');
@@ -136,9 +192,50 @@
     });
   }
 
+  function prepare() {
+    // 照合用の文字列を1度だけ作る
+    DATA.items.forEach(function (it, i) {
+      it._i = i;
+      it._n = norm(it.t);
+      it._l = norm(it.l);
+      it._r = romajiToKana(it.l);      // 作品名をかなでも引けるように
+    });
+    (DATA.vocab.cv || []).forEach(function (v) { v._n = norm(v.n); });
+    (DATA.vocab.staff || []).forEach(function (v) { v._n = norm(v.n); });
+
+    SUGGEST.forEach(function (s) {
+      s._n = norm(s.n);
+      s._k = norm(s.k);
+      s._r = romajiToKana(s.k);     // ローマ字から起こしたかな
+    });
+
+    // 声優・スタッフにも読みを渡す（一覧の絞り込みでもかな・ローマ字を効かせる）
+    var stByName = {};
+    (DATA.vocab.staff || []).forEach(function (v) { stByName[v._n] = v; });
+    SUGGEST.forEach(function (s) {
+      if (s.t === '声優' && typeof s.i === 'number' && DATA.vocab.cv[s.i]) {
+        DATA.vocab.cv[s.i]._k = s._k;
+        DATA.vocab.cv[s.i]._r = s._r;
+      } else if (s.t === 'スタッフ') {
+        var v = stByName[s._n];
+        if (v) { v._k = s._k; v._r = s._r; }
+      }
+    });
+
+    // 作品 → その作品のキャラ（毎回 SUGGEST を走査しないための索引）
+    CHAR_OF = new Array(DATA.items.length);
+    SUGGEST.forEach(function (s) {
+      if (s.t !== 'キャラ' || !s.v) return;
+      for (var i = 0; i < s.v.length; i++) {
+        var ix = s.v[i];
+        (CHAR_OF[ix] || (CHAR_OF[ix] = [])).push(s);
+      }
+    });
+  }
+
   function loadSuggest() {
-    fetch(BP + '/assets/suggest.json').then(function (r) { return r.json(); })
-      .then(function (j) { SUGGEST = j; onType(); });
+    return fetch(BP + '/assets/suggest.json').then(function (r) { return r.json(); })
+      .then(function (j) { SUGGEST = j; prepare(); });
   }
 
   /* ---------------- 入力補完 ---------------- */
@@ -149,15 +246,16 @@
     var m = document.querySelector('input[name=smode]:checked');
     return m ? m.value : 'all';
   }
-
-  function wanted(t) {
-    var m = mode();
+  function wanted(t, m) {
     if (m === 'all') return true;
     if (m === 'title') return t === '作品';
     if (m === 'cv') return t === '声優' || t === 'スタッフ';
     return t === 'キャラ';
   }
-
+  function hit(s, q) {
+    return s._n.indexOf(q) >= 0 || (s._k && s._k.indexOf(q) >= 0) ||
+           (s._r && s._r.indexOf(q) >= 0);
+  }
   function hideSug() {
     var s = document.getElementById('f-sug');
     if (s) { s.hidden = true; s.innerHTML = ''; }
@@ -167,18 +265,16 @@
   function onType() {
     var q = norm(val('f-q'));
     var box = document.getElementById('f-sug');
-    if (!SUGGEST || q.length < 1) { hideSug(); return; }
-    var hits = [];
-    for (var i = 0; i < SUGGEST.length && hits.length < 40; i++) {
+    if (!SUGGEST || !q) { hideSug(); return; }
+    var m = mode();                 // DOM参照は1回だけ
+    var head = [], rest = [];
+    for (var i = 0; i < SUGGEST.length; i++) {
       var s = SUGGEST[i];
-      if (!wanted(s.t)) continue;
-      if (norm(s.n).indexOf(q) >= 0 || (s.k && norm(s.k).indexOf(q) >= 0)) hits.push(s);
+      if (!wanted(s.t, m) || !hit(s, q)) continue;
+      (s._n.indexOf(q) === 0 || (s._r && s._r.indexOf(q) === 0) ? head : rest).push(s);
+      if (head.length >= 12 || rest.length >= 200) break;
     }
-    // 前方一致を上に
-    hits.sort(function (a, b) {
-      return (norm(a.n).indexOf(q) === 0 ? 0 : 1) - (norm(b.n).indexOf(q) === 0 ? 0 : 1);
-    });
-    sugItems = hits.slice(0, 12);
+    sugItems = head.concat(rest).slice(0, 12);
     sugPos = -1;
     box.innerHTML = '';
     if (!sugItems.length) { box.hidden = true; return; }
@@ -198,43 +294,39 @@
 
   function setPos(i) {
     var box = document.getElementById('f-sug');
-    Array.prototype.forEach.call(box.children, function (li, n) {
-      li.className = n === i ? 'on' : '';
-    });
+    Array.prototype.forEach.call(box.children, function (li, n) { li.className = n === i ? 'on' : ''; });
     sugPos = i;
   }
-
   function onKey(ev) {
     if (!sugItems.length) return;
     if (ev.key === 'ArrowDown') { ev.preventDefault(); setPos(Math.min(sugPos + 1, sugItems.length - 1)); }
     else if (ev.key === 'ArrowUp') { ev.preventDefault(); setPos(Math.max(sugPos - 1, 0)); }
-    else if (ev.key === 'Enter' && sugPos >= 0) {
-      ev.preventDefault(); location.href = BP + sugItems[sugPos].u;
-    } else if (ev.key === 'Escape') hideSug();
+    else if (ev.key === 'Enter' && sugPos >= 0) { ev.preventDefault(); location.href = BP + sugItems[sugPos].u; }
+    else if (ev.key === 'Escape') hideSug();
   }
 
   /* ---------------- 絞り込み ---------------- */
 
-  function textMatch(it, q) {
-    var m = mode();
+  function textMatch(it, q, m) {
+    var i;
     if (m === 'title' || m === 'all') {
-      if (norm(it.t).indexOf(q) >= 0 || norm(it.l).indexOf(q) >= 0) return '作品名';
+      if (it._n.indexOf(q) >= 0 || it._l.indexOf(q) >= 0 ||
+          (it._r && it._r.indexOf(q) >= 0)) return '作品名';
     }
     if (m === 'cv' || m === 'all') {
-      for (var i = 0; i < it.c.length; i++) {
+      for (i = 0; i < it.c.length; i++) {
         var n = DATA.vocab.cv[it.c[i]];
-        if (n && norm(n.n).indexOf(q) >= 0) return '声優: ' + n.n;
+        if (n && hit(n, q)) return '声優: ' + n.n;
       }
-      for (var j = 0; j < (it.s || []).length; j++) {
-        var st = (DATA.vocab.staff || [])[it.s[j]];
-        if (st && norm(st.n).indexOf(q) >= 0) return 'スタッフ: ' + st.n;
+      for (i = 0; i < (it.s || []).length; i++) {
+        var st = (DATA.vocab.staff || [])[it.s[i]];
+        if (st && hit(st, q)) return 'スタッフ: ' + st.n;
       }
     }
-    if ((m === 'char' || m === 'all') && SUGGEST) {
-      for (var k = 0; k < SUGGEST.length; k++) {
-        var s = SUGGEST[k];
-        if (s.t === 'キャラ' && s.v && norm(s.n).indexOf(q) >= 0 &&
-            s.v.indexOf(it._i) >= 0) return 'キャラ: ' + s.n;
+    if ((m === 'char' || m === 'all') && CHAR_OF) {
+      var cs = CHAR_OF[it._i];
+      if (cs) for (i = 0; i < cs.length; i++) {
+        if (hit(cs[i], q)) return 'キャラ: ' + cs[i].n;
       }
     }
     return null;
@@ -245,33 +337,30 @@
     var pl = val('f-plat'), cv = val('f-cv'), sf = val('f-staff'), tg = val('f-tag'),
         tr = val('f-trait'), yr = val('f-year'), se = val('f-series'), pb = val('f-pub');
 
+    var m = mode();                 // DOM参照は1回だけ
     var out = [];
-    DATA.items.forEach(function (it, ix) {
-      it._i = ix;
-      var why = null;
-      if (q) {
-        why = textMatch(it, q);
-        if (!why) return;
-      }
-      if (pl !== '' && it.p.indexOf(+pl) < 0) return;
-      if (cv !== '' && it.c.indexOf(+cv) < 0) return;
-      if (sf !== '' && (it.s || []).indexOf(+sf) < 0) return;
-      if (se !== '' && it.e !== +se) return;
-      if (pb !== '' && (it.b || []).indexOf(+pb) < 0) return;
-      if (tg !== '' && it.k.indexOf(+tg) < 0) return;
+    for (var n = 0; n < DATA.items.length; n++) {
+      var it = DATA.items[n], why = null;
+      if (q) { why = textMatch(it, q, m); if (!why) continue; }
+      if (pl !== '' && it.p.indexOf(+pl) < 0) continue;
+      if (cv !== '' && it.c.indexOf(+cv) < 0) continue;
+      if (sf !== '' && (it.s || []).indexOf(+sf) < 0) continue;
+      if (se !== '' && it.e !== +se) continue;
+      if (pb !== '' && (it.b || []).indexOf(+pb) < 0) continue;
+      if (tg !== '' && it.k.indexOf(+tg) < 0) continue;
       if (tr !== '' && TRAITS) {
         var x = TRAITS.items[it.v];
-        if (!x || x.indexOf(+tr) < 0) return;
+        if (!x || x.indexOf(+tr) < 0) continue;
       }
       if (yr) {
         var y = parseInt((it.r || '').slice(0, 4), 10) || 0;
-        if (yr === '2021-' && y < 2021) return;
-        if (yr === '2016-2020' && (y < 2016 || y > 2020)) return;
-        if (yr === '2011-2015' && (y < 2011 || y > 2015)) return;
-        if (yr === '-2010' && (y > 2010 || y === 0)) return;
+        if (yr === '2021-' && y < 2021) continue;
+        if (yr === '2016-2020' && (y < 2016 || y > 2020)) continue;
+        if (yr === '2011-2015' && (y < 2011 || y > 2015)) continue;
+        if (yr === '-2010' && (y > 2010 || y === 0)) continue;
       }
       out.push({ it: it, why: why });
-    });
+    }
 
     var sort = val('f-sort');
     out.sort(function (A, B) {
@@ -288,7 +377,7 @@
 
     document.getElementById('f-count').textContent = out.length + '件';
     var ul = document.getElementById('f-out');
-    ul.innerHTML = '';
+    var frag = document.createDocumentFragment();
     out.slice(0, 120).forEach(function (o) {
       var it = o.it;
       var a = el('a', { href: BP + it.u });
@@ -302,16 +391,27 @@
       if (it.g) m.appendChild(el('small', { class: 'ex', text: '★ ' + it.g.toFixed(2) + '（' + it.n + '票）' }));
       if (o.why && o.why !== '作品名') m.appendChild(el('small', { class: 'why', text: o.why }));
       a.appendChild(m);
-      ul.appendChild(el('li', {}, [a]));
+      frag.appendChild(el('li', {}, [a]));
     });
-    if (out.length > 120) ul.appendChild(el('li', { class: 'more', text: '…ほか ' + (out.length - 120) + '件' }));
+    if (out.length > 120) frag.appendChild(el('li', { class: 'more', text: '…ほか ' + (out.length - 120) + '件' }));
+    ul.innerHTML = '';
+    ul.appendChild(frag);
   }
 
   fetch(BP + '/assets/index.json').then(function (r) { return r.json(); })
-    .then(function (j) { DATA = j; build(); loadSuggest(); })
+    .then(function (j) {
+      DATA = j;
+      SUGGEST = [];
+      prepare();
+      build();
+      return loadSuggest();
+    })
+    .then(function () {
+      var i = document.getElementById('f-q');
+      if (i && i.value) { onType(); render(); }
+    })
     .catch(function () { root.textContent = 'データを読み込めませんでした。'; });
 
-  // ヘッダーの検索欄から来たとき
   var p = new URLSearchParams(location.search).get('q');
   if (p) {
     var t = setInterval(function () {
