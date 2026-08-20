@@ -54,6 +54,30 @@ python3 scripts/restore.py
 BACKUP_KEEP=30 BACKUP_KEEP_FULL=3 BACKUP_MAX_MB=200 python3 scripts/backup.py "やること"
 ```
 
+## 最重要ルール：作業の内容をログに残す
+
+区切りのいい作業をしたら、必ず [WORKLOG.md](WORKLOG.md) に 1 件残す。
+
+```bash
+python3 scripts/worklog.py "やったこと" --why "なぜ" --next "次にやること"
+```
+
+日時・ブランチ・コミットは自動で入る。新しいものが上に積まれる。
+
+コミットメッセージが「何を変えたか」なら、WORKLOG は
+**「なぜそうしたか」と「次に何をするつもりだったか」**を残す場所。
+後から読み返して判断の経緯を思い出せることが目的なので、`--why` は省かない。
+
+作業の流れはこの順で固定する。
+
+1. `python3 scripts/backup.py "やること"` （大きな変更のときは必須）
+2. `git switch -c feat/やること` （大きな変更のときは必須）
+3. 実装する
+4. `python3 scripts/worklog.py "やったこと" --why "なぜ"`
+5. `git add -A && git commit`
+
+WORKLOG.md は git 管理下なので、コミットに含めてよい。
+
 ## バージョン管理の方針（GitHub）
 
 - `main` は常に「動くサイト」。直接大きな変更を積まない。
@@ -68,6 +92,7 @@ BACKUP_KEEP=30 BACKUP_KEEP_FULL=3 BACKUP_MAX_MB=200 python3 scripts/backup.py "�
 |---|---|---|
 | `scripts/` | 取得・整形・DB構築・サイト生成のスクリプト | する |
 | `docs/` | 生成された静的サイト（GitHub Pages の配信元） | する |
+| `WORKLOG.md` | 作業ログ（なぜそうしたかの記録） | する |
 | `data/` | DB・jsonl・xlsx・サイト用 JSON | **しない**（要バックアップ） |
 | `vndb/`, `raw/` | VNDB ダンプと中間データ（再取得可能） | しない |
 | `backups/` | `backup.py` の出力（スナップショット 30 件＋共有プール） | しない |
