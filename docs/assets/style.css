@@ -9,6 +9,9 @@
   --used:#86bca1; --warn:#d9a468;
 }}
 *{box-sizing:border-box}
+/* フォームの部品は既定だとブラウザ独自の小さい書体になる。本文に揃える。
+   16px 未満だと iOS が入力のたびに画面を拡大してしまうので、それも避ける */
+select,input,button,textarea{font-family:inherit;font-size:16px}
 /* display を指定した要素にも hidden を効かせる（ul.cards などを隠すため） */
 [hidden]{display:none !important}
 body{margin:0;background:var(--bg);color:var(--ink);line-height:1.8;
@@ -73,11 +76,12 @@ ul.cards .ex{color:var(--accent2)}
 
 #app{margin:20px 0}
 .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
-.filters select,.filters input{padding:8px 10px;border:1px solid var(--line);
-  border-radius:6px;background:var(--card);color:var(--ink)}
-.filters .reset{padding:8px 14px;border:1px solid var(--line);border-radius:6px;
-  background:transparent;color:var(--muted);cursor:pointer;font-size:14px}
-.filters .reset:hover{border-color:var(--accent);color:var(--accent2)}
+.filters select,.filters input{padding:11px 12px;min-height:46px;
+  flex:1 1 190px;min-width:170px;max-width:280px;
+  border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
+.reset{padding:11px 20px;min-height:46px;border:1px solid var(--line);
+  border-radius:6px;background:transparent;color:var(--muted);cursor:pointer}
+.reset:hover{border-color:var(--accent);color:var(--accent2)}
 .count{color:var(--muted);font-size:14px;margin:8px 0}
 
 footer.site{border-top:1px solid var(--line);margin-top:48px;padding:24px 20px 60px;
@@ -90,15 +94,19 @@ footer.site .src{margin:6px 0}
   .cover{width:132px}
   h1{font-size:22px}
   ul.cards{grid-template-columns:1fr}
-  .filters select,.filters input{flex:1;min-width:44%}
+  .filters select,.filters input{flex:1 1 100%;min-width:0;max-width:none;min-height:50px}
+  .reset{min-height:50px;width:100%}
+  .pager button{min-width:50px;min-height:50px}
 }
 
 /* ---------- 検索パネル ---------- */
 .search-panel{background:var(--card);border:1px solid var(--line);border-radius:10px;
   padding:18px 18px 14px;margin:0 0 18px}
 .sp-title{font-size:16px;margin:0 0 12px;padding:0 0 8px;border-bottom:2px solid var(--accent)}
-.sp-modes{display:flex;flex-wrap:wrap;gap:6px 18px;margin-bottom:10px;font-size:14px}
-.sp-modes .radio{display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.sp-modes{display:flex;flex-wrap:wrap;gap:2px 10px;margin-bottom:8px;font-size:15px}
+.sp-modes .radio{display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+  min-height:44px;padding:0 8px 0 2px}
+.sp-modes .radio input{width:19px;height:19px;margin:0;accent-color:var(--accent)}
 .sp-box{position:relative;margin-bottom:12px}
 .sp-box input{width:100%;padding:11px 14px;font-size:16px;border:1px solid var(--rule-strong,var(--line));
   border-radius:6px;background:var(--bg);color:var(--ink)}
@@ -136,8 +144,8 @@ ul.cards .why{color:var(--accent2);font-weight:600}
 .idx{margin:16px 0}
 .idx-tools{position:sticky;top:0;z-index:10;display:flex;gap:10px;align-items:center;
   padding:10px 0;background:var(--bg)}
-.idx-filter{flex:1;min-width:0;padding:10px 13px;font-size:16px;border:1px solid var(--line);
-  border-radius:6px;background:var(--card);color:var(--ink)}
+.idx-filter{flex:1;min-width:0;padding:12px 14px;min-height:48px;
+  border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
 .idx-filter:focus{outline:2px solid var(--accent);outline-offset:1px}
 .idx-count{color:var(--muted);font-size:13px;white-space:nowrap}
 .idx-jump{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 6px}
@@ -185,15 +193,14 @@ ul.browse small{color:var(--muted);font-size:12.5px;line-height:1.6}
   .combo{min-width:44%}
 }
 
-/* 選択肢の文字数で幅が暴れないようにする（シリーズ名が長い） */
-.filters select{flex:1 1 170px;min-width:150px;max-width:280px}
 
 /* ---------- 検索結果とページャー ---------- */
 #f-results{margin:0}
 #f-results .count{margin:8px 0 12px}
 .pager{display:flex;flex-wrap:wrap;gap:6px;margin:18px 0 0}
-.pager button{min-width:40px;padding:7px 10px;border:1px solid var(--line);border-radius:6px;
-  background:var(--card);color:var(--ink2);cursor:pointer;font-size:14px;font-family:inherit}
+.pager{gap:8px}
+.pager button{min-width:46px;min-height:46px;padding:10px 12px;border:1px solid var(--line);
+  border-radius:6px;background:var(--card);color:var(--ink2);cursor:pointer}
 .pager button:hover{border-color:var(--accent);color:var(--accent2)}
 .pager button.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
 #browse{margin-top:8px}
@@ -201,14 +208,15 @@ ul.browse small{color:var(--muted);font-size:12.5px;line-height:1.6}
 /* ---------- 一覧ページの絞り込み・並べ替え ---------- */
 .list-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 18px;
   padding:12px;background:var(--card);border:1px solid var(--line);border-radius:8px}
-.list-tools select{padding:7px 10px;font-size:14px;border:1px solid var(--line);
-  border-radius:6px;background:var(--bg);color:var(--ink);max-width:240px}
+.list-tools select{padding:11px 12px;min-height:46px;flex:1 1 190px;min-width:170px;
+  max-width:260px;border:1px solid var(--line);border-radius:6px;
+  background:var(--bg);color:var(--ink)}
 .list-count{color:var(--muted);font-size:13px;white-space:nowrap}
-.list-reset{padding:7px 12px;border:1px solid var(--line);border-radius:6px;
-  background:transparent;color:var(--muted);cursor:pointer;font-size:13px;
-  font-family:inherit;margin-left:auto}
+.list-reset{padding:11px 18px;min-height:46px;border:1px solid var(--line);
+  border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;
+  margin-left:auto}
 .list-reset:hover{border-color:var(--accent);color:var(--accent2)}
 @media (max-width:560px){
-  .list-tools select{flex:1 1 44%;min-width:0}
-  .list-reset{margin-left:0}
+  .list-tools select{flex:1 1 100%;min-width:0;max-width:none;min-height:50px}
+  .list-reset{flex:1 1 100%;margin-left:0;min-height:50px}
 }
