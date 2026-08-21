@@ -32,11 +32,15 @@ cd ..
 python3 scripts/vndb_build.py     # ダンプ → JSONL
 python3 scripts/vndb_export.py    # JSONL → SQLite + Excel
 python3 scripts/buy_links.py      # JAN・外部リンクの抽出
-python3 scripts/shop_urls.py      # 5チャネルの購入URL生成
+python3 scripts/editions.py       # 版（機種×通常版/限定版/DL版）に組み直す
+python3 scripts/offers.py         # 版ごとの購入先URLを作る
 python3 scripts/slugs.py          # URLスラッグの確定
 python3 scripts/site_data.py      # 検索インデックス
 
-# 3. 静的サイトの生成（3,628ページ）
+# 価格を出す場合だけ（楽天ウェブサービスの認証情報が要る。規約上24時間で失効）
+python3 scripts/rakuten_prices.py --only-scope
+
+# 3. 静的サイトの生成（6,729ページ）
 python3 scripts/site_build.py
 ```
 
@@ -44,7 +48,7 @@ python3 scripts/site_build.py
 全体で約1分です。
 
 > **実行順に注意** — `vndb_export.py` はテーブルを作り直すので、
-> 必ず `vndb_export.py` → `buy_links.py` → `shop_urls.py` → `slugs.py` の順で実行してください。
+> 必ず `vndb_export.py` → `buy_links.py` → `editions.py` → `offers.py` → `slugs.py` の順で実行してください。
 
 ## 設定
 

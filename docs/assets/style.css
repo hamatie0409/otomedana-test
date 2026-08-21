@@ -63,6 +63,7 @@ details.plat>*:last-child{margin-bottom:14px}
 .ed-head{margin:14px 0 6px;font-weight:700;font-size:14px;color:var(--ink2)}
 .ed-head .jan{font-weight:400;font-size:12px;color:var(--muted);margin-left:6px}
 .dl-note{font-size:13px;color:var(--muted);margin:10px 0 0}
+.price-note{font-size:12px;color:var(--muted);margin:8px 0 0}
 
 ul.shops{list-style:none;padding:0;margin:0;display:flex;gap:10px;flex-wrap:wrap}
 .shop{display:inline-block;padding:10px 18px;background:var(--accent);color:#fff;

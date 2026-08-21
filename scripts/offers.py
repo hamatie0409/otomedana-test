@@ -30,7 +30,7 @@ CREATE TABLE offers (
     key_type TEXT,       -- jan / title / url
     key_value TEXT,
     url TEXT,            -- 表示に使うURL（アフィリエイトIDが設定されていれば適用済み）
-    -- ここから下は【フェーズ2/3】で UPDATE する。今は NULL
+    -- ここから下は rakuten_prices.py / amazon_asin.py が UPDATE する。今は NULL
     item_code TEXT, item_name TEXT, image_url TEXT,
     price INTEGER, availability TEXT, fetched_at TEXT,
     priority INTEGER     -- 小さいほど上に表示
@@ -65,6 +65,15 @@ def amazon(kw):
     url = "https://www.amazon.co.jp/s?k=%s" % q(kw)
     if AF.AMAZON_ASSOCIATE_TAG:
         url += "&tag=" + AF.AMAZON_ASSOCIATE_TAG
+    return url
+
+
+def amazon_item(asin):
+    """ASINが分かっている版は商品ページに直接送る（検索より確実）。
+    ASINの取得には PA-API が要るが、リンクを作るだけならIDがあれば足りる。"""
+    url = "https://www.amazon.co.jp/dp/%s/" % asin
+    if AF.AMAZON_ASSOCIATE_TAG:
+        url += "?tag=" + AF.AMAZON_ASSOCIATE_TAG
     return url
 
 
@@ -139,10 +148,19 @@ def main():
             if gtin:
                 # JANで引ければ通常版と限定版を撃ち分けられる。これが本筋
                 new.append(("楽天", "", "新品", "search", "jan", gtin, rakuten(gtin)))
-                new.append(("Amazon", "", "新品", "search", "jan", gtin, amazon(gtin)))
             else:
                 kw = new_keyword(e)
                 new.append(("楽天", "", "新品", "search", "title", kw, rakuten(kw)))
+
+            # Amazon は ASIN が分かっていれば直リンク、無ければJAN（次点でタイトル）検索。
+            # ASIN は amazon_asin.py が入れる（PA-API が通るまでは空）
+            if e["asin"]:
+                new.append(("Amazon", "", "新品", "item", "asin", e["asin"],
+                            amazon_item(e["asin"])))
+            elif gtin:
+                new.append(("Amazon", "", "新品", "search", "jan", gtin, amazon(gtin)))
+            else:
+                kw = new_keyword(e)
                 new.append(("Amazon", "", "新品", "search", "title", kw, amazon(kw)))
             kw = new_keyword(e)
             new.append(("アニメイト", "", "新品", "search", "title", kw, animate(kw)))
@@ -150,7 +168,8 @@ def main():
             ukw = used_keyword(e)
             used.append(("駿河屋", "", "中古", "search", "title", ukw, surugaya(ukw)))
             used.append(("メルカリ", "", "中古", "search", "title", ukw, mercari(ukw)))
-            # 駿河屋楽天市場店。表示はしないが、フェーズ2でここから中古価格を取る。
+            # 駿河屋楽天市場店。値段が取れるまでは表示しないが、
+            # rakuten_prices.py がここから中古価格を取る。
             # 駿河屋本体には公式APIが無いので、規約上安全に価格を取れる唯一の経路
             used.append(("駿河屋", "rakuten_shop", "中古", "search", "title", ukw,
                          rakuten_shop(ukw, AF.SURUGAYA_RAKUTEN_SID)))

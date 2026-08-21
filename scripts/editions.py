@@ -92,7 +92,7 @@ CREATE TABLE editions (
     edition_rank INTEGER,   -- 版の表示順
     released TEXT,          -- ISO。年だけ・年月だけもある
     gtin TEXT,              -- JAN。無ければ ''
-    asin TEXT,              -- 【フェーズ3】PA-APIが通ったら埋める
+    asin TEXT,              -- amazon_asin.py が埋める。PA-APIが通るまでは空
     is_dl INTEGER,          -- ダウンロード版。版名かメディア（ネット配信のみ）で判定
     store_site TEXT,        -- DL版の配信ストア（nintendo_jp など）
     store_url TEXT,

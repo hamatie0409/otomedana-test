@@ -1,4 +1,4 @@
-"""【フェーズ3】静的サイトを生成する。3,627ページ + sitemap + robots。
+"""【フェーズ3】静的サイトを生成する。6,729ページ + sitemap + robots。
 
   python3 scripts/site_build.py
 
@@ -437,6 +437,24 @@ def norm_title(t):
     return re.sub(r"[^0-9a-z\u3040-\u30ff\u4e00-\u9fff]", "", t)
 
 
+# 楽天ウェブサービスの規約で、価格・在庫を持っていられるのは取得から24時間まで。
+# ビルドが空いたときに古い値段を出してしまわないよう、表示側でも切る。
+PRICE_TTL_HOURS = 24
+
+
+def fresh_price(o):
+    """24時間以内に取った価格だけ返す。無ければ None"""
+    if not o["price"] or not o["fetched_at"]:
+        return None
+    try:
+        t = datetime.datetime.strptime(o["fetched_at"], "%Y-%m-%d %H:%M:%S")
+    except (ValueError, TypeError):
+        return None
+    if (datetime.datetime.now() - t).total_seconds() > PRICE_TTL_HOURS * 3600:
+        return None
+    return o["price"]
+
+
 # 中古の店は「〜で中古を探す」と書き分ける。同じ「探す」でも行き先が違う
 COND_VERB = {"新品": "で探す", "中古": "で中古を探す", "ダウンロード": "で見る"}
 
@@ -466,6 +484,7 @@ def buy_section(g, ed_rows, offers):
             groups.append((r["platform"], [r]))
 
     n_shown = 0
+    fetched = []
     for code, rows in groups:
         live = [r for r in rows if offers.get(r["eid"])]
         if not live:
@@ -501,14 +520,27 @@ def buy_section(g, ed_rows, offers):
                     ' <span class="jan">JAN %s</span>' % e(r["gtin"]) if r["gtin"] else ""))
             b.append('<ul class="shops">')
             seen = set()
-            for o in offers[r["eid"]]:
-                if o["channel"] in seen:
+            # 値段が出ている店を上に。探しに行かなくても分かるものが先
+            for o in sorted(offers[r["eid"]],
+                            key=lambda o: (0 if fresh_price(o) else 1, o["priority"])):
+                key = (o["channel"], o["via"])
+                if key in seen:
                     continue
-                seen.add(o["channel"])
+                price = fresh_price(o)
+                # 駿河屋楽天市場店の行は価格が取れているときだけ出す。
+                # 取れていなければ駿河屋本体の検索リンクだけで足りる
+                if o["via"] and not price:
+                    continue
+                seen.add(key)
+                name = e(o["channel"]) + ("（楽天市場店）" if o["via"] == "rakuten_shop" else "")
+                if price:
+                    label = "%s ¥%s" % (name, format(price, ","))
+                    fetched.append(o["fetched_at"])
+                else:
+                    label = name + COND_VERB.get(o["condition"], "で探す")
                 b.append('<li><a class="shop%s" href="%s" rel="nofollow sponsored noopener"'
-                         ' target="_blank">%s%s</a></li>'
-                         % (" used" if o["condition"] == "中古" else "", e(o["url"]),
-                            e(o["channel"]), COND_VERB.get(o["condition"], "で探す")))
+                         ' target="_blank">%s</a></li>'
+                         % (" used" if o["condition"] == "中古" else "", e(o["url"]), label))
             b.append("</ul>")
 
         # 配信ストアのリンクが取れないダウンロード版は出しようがないので、存在だけ伝える
@@ -516,6 +548,12 @@ def buy_section(g, ed_rows, offers):
             b.append('<p class="dl-note">このほかダウンロード版があります</p>')
         b.append("</details>")
 
+    if fetched:
+        # 楽天ウェブサービスの規約で価格・在庫は24時間まで。いつ時点かを必ず書く
+        newest = max(fetched)
+        b.append('<p class="price-note">価格は %s %s時点のものです。'
+                 '変わっている場合があるので、購入前に各店でご確認ください。</p>'
+                 % (e(ja_date(newest[:10])), e(newest[11:16])))
     if not n_shown:
         b.append('<p class="note">購入できるお店の情報がまだありません。</p>')
     elif (g["released"] or "9999") <= "2015":
@@ -557,7 +595,7 @@ def main():
                                      is_dl, edition_rank, released""" % ph, vids):
         eds[r["vid"]].append(r)
     offers = defaultdict(list)
-    for r in con.execute("""SELECT * FROM offers WHERE vid IN (%s) AND via=''
+    for r in con.execute("""SELECT * FROM offers WHERE vid IN (%s)
                             ORDER BY priority""" % ph, vids):
         offers[r["eid"]].append(r)
     gtags = defaultdict(list)
