@@ -20,6 +20,10 @@ HOME = ("Switch", "PS", "ニンテンドー", "Xbox")
 
 e = lambda s: html.escape(str(s), quote=True) if s is not None else ""
 
+# 全角の英数字を半角へ。リリース名との突き合わせに使う
+ZEN2HAN_ALL = {ord(c): ord(c) - 0xFEE0 for c in
+               "".join(chr(0xFF01 + i) for i in range(94))}
+
 # 下層ページの導線。索引ページ（/cv/ /maker/ …）への入口を常設する。
 # ここに無いと索引ページを作っても誰も辿り着けないので layout() に組み込む。
 # トップには出さない。同じ入口をカードで大きく並べている上、
@@ -426,6 +430,102 @@ def idx_wrap(inner, placeholder, reading=False):
 
 
 
+# 記号・空白・全角半角を落として比べる。リリース名と作品名は
+# 「Collar x Malice」と「Collar×Malice」のように表記だけが違うことがある
+def norm_title(t):
+    t = (t or "").translate(ZEN2HAN_ALL).lower().replace("×", "x").replace("✕", "x")
+    return re.sub(r"[^0-9a-z\u3040-\u30ff\u4e00-\u9fff]", "", t)
+
+
+# 中古の店は「〜で中古を探す」と書き分ける。同じ「探す」でも行き先が違う
+COND_VERB = {"新品": "で探す", "中古": "で中古を探す", "ダウンロード": "で見る"}
+
+
+def buy_section(g, ed_rows, offers):
+    """買えるお店。機種でまとめ、その中を版（通常版／限定版／DL版…）で分ける。
+
+    乙女ゲームは同じ作品が複数の機種で出て、機種ごとに通常版と限定版があり、
+    値段も別物になる。掲載637作品のうち586作品が版を2つ以上持つので、
+    「1作品＝1商品」で並べると通常版と限定版が混ざってしまう。
+    リンクは作品ではなく版に付ける。
+
+    版が32ある作品もあるため、最初の機種だけ開いて残りは折りたたむ。
+    """
+    b = ['<section id="buy"><h2>買えるお店</h2>']
+    b.append('<p class="ad-inline">%s</p>' % (
+        "以下はアフィリエイトリンクを含みます" if PUBLISH
+        else "テスト環境のため、以下は通常の検索リンクです（アフィリエイト未設定）"))
+
+    # 機種ごとにまとめる。並びは editions の取得順
+    # （家庭用機 → PC → スマホ、その中では新しく出た機種が上）
+    groups = []
+    for r in ed_rows:
+        if groups and groups[-1][0] == r["platform"]:
+            groups[-1][1].append(r)
+        else:
+            groups.append((r["platform"], [r]))
+
+    n_shown = 0
+    for code, rows in groups:
+        live = [r for r in rows if offers.get(r["eid"])]
+        if not live:
+            continue
+        # 見出し。作品名とリリース名は一致しないことがあるので、違うときだけ添える
+        # （作品名「薄桜鬼 新選組奇譚」/ Switch版「薄桜鬼 真改 風華伝」）
+        names = {r["rel_title"] for r in live if r["rel_title"]}
+        # 記号や全角半角の違いだけの場合は作品名と同じものとして扱う
+        # （作品名「Collar x Malice」/ リリース名「Collar×Malice」）
+        sub = ""
+        if len(names) == 1:
+            name = names.pop()
+            if norm_title(name) != norm_title(g["title"]):
+                sub = " ― %s" % e(name)
+        dates = sorted({r["released"] for r in live if r["released"]})
+        if not dates:
+            when = ""
+        elif len(dates) == 1:
+            when = "（%s）" % ja_date(dates[0])
+        else:
+            when = "（%s年〜%s年）" % (dates[0][:4], dates[-1][:4])
+        head = "%s版%s%s" % (e(live[0]["platform_ja"]), sub, when)
+
+        b.append('<details class="plat"%s><summary>%s</summary>'
+                 % (" open" if n_shown == 0 else "", head))
+        n_shown += 1
+
+        for r in live:
+            label = r["edition_label"] or ("通常版" if len(live) > 1 else "")
+            if label:
+                b.append('<div class="ed-head">%s%s</div>' % (
+                    e(label),
+                    ' <span class="jan">JAN %s</span>' % e(r["gtin"]) if r["gtin"] else ""))
+            b.append('<ul class="shops">')
+            seen = set()
+            for o in offers[r["eid"]]:
+                if o["channel"] in seen:
+                    continue
+                seen.add(o["channel"])
+                b.append('<li><a class="shop%s" href="%s" rel="nofollow sponsored noopener"'
+                         ' target="_blank">%s%s</a></li>'
+                         % (" used" if o["condition"] == "中古" else "", e(o["url"]),
+                            e(o["channel"]), COND_VERB.get(o["condition"], "で探す")))
+            b.append("</ul>")
+
+        # 配信ストアのリンクが取れないダウンロード版は出しようがないので、存在だけ伝える
+        if any(r["is_dl"] and not offers.get(r["eid"]) for r in rows):
+            b.append('<p class="dl-note">このほかダウンロード版があります</p>')
+        b.append("</details>")
+
+    if not n_shown:
+        b.append('<p class="note">購入できるお店の情報がまだありません。</p>')
+    elif (g["released"] or "9999") <= "2015":
+        b.append('<p class="note">2015年以前の作品です。'
+                 '新品は流通していない可能性があります。</p>')
+    b.append("</section>")
+    return b
+
+
+
 # ---------------------------------------------------------------- 本体
 
 def main():
@@ -449,9 +549,17 @@ def main():
     chars = defaultdict(list)
     for r in con.execute("SELECT * FROM characters WHERE vid IN (%s)" % ph, vids):
         chars[r["vid"]].append(r)
-    shops = defaultdict(list)
-    for r in con.execute("SELECT * FROM shop_urls WHERE vid IN (%s) ORDER BY priority" % ph, vids):
-        shops[r["vid"]].append(r)
+    # 購入導線は版（機種×通常版/限定版…）ごとに持つ。
+    # 掲載637作品のうち586作品が版を2つ以上持つので、これが既定の形になる。
+    eds = defaultdict(list)
+    for r in con.execute("""SELECT * FROM editions WHERE vid IN (%s)
+                            ORDER BY plat_group, plat_sort DESC, platform,
+                                     is_dl, edition_rank, released""" % ph, vids):
+        eds[r["vid"]].append(r)
+    offers = defaultdict(list)
+    for r in con.execute("""SELECT * FROM offers WHERE vid IN (%s) AND via=''
+                            ORDER BY priority""" % ph, vids):
+        offers[r["eid"]].append(r)
     gtags = defaultdict(list)
     for r in con.execute("SELECT vid,tag FROM vn_tags WHERE vid IN (%s)" % ph, vids):
         gtags[r["vid"]].append(r["tag"])
@@ -588,31 +696,7 @@ def main():
             "<tr><th>%s</th><td>%s</td></tr>" % (k, v) for k, v in rows) + "</table>")
         b.append("</div></div>")
 
-        # 購入導線
-        b.append('<section id="buy"><h2>買えるお店</h2>')
-        b.append('<p class="ad-inline">%s</p>' % (
-            "以下はアフィリエイトリンクを含みます" if PUBLISH
-            else "テスト環境のため、以下は通常の検索リンクです（アフィリエイト未設定）"))
-        # 表示順は shop_urls の priority に従う（発売年で新品/中古が入れ替わる）
-        first = shops[vid][0]["condition"] if shops[vid] else "新品"
-        order = [first] + [c for c in ("新品", "中古") if c != first]
-        for cond_name in order:
-            group = [s for s in shops[vid] if s["condition"] == cond_name]
-            if not group:
-                continue
-            b.append('<h3>%s%s</h3><ul class="shops">' % (
-                cond_name, "（こちらがおすすめ）" if cond_name == first else ""))
-            seen = set()
-            for s in group:
-                if s["channel"] in seen:
-                    continue
-                seen.add(s["channel"])
-                b.append('<li><a class="shop" href="%s" rel="nofollow sponsored noopener" target="_blank">%s で探す</a></li>'
-                         % (e(s["url"]), e(s["channel"])))
-            b.append("</ul>")
-        if (g["released"] or "9999") <= "2015":
-            b.append('<p class="note">2015年以前の作品です。新品は流通していない可能性があります。</p>')
-        b.append("</section>")
+        b += buy_section(g, eds[vid], offers)
 
         # キャスト
         if cs:
