@@ -196,6 +196,59 @@ def kana_row(key):
     return _ROW_OF.get(k[:1], "etc")
 
 
+# 五十音順の並び替え。スラッグ（ヘボン式ローマ字）を音節に切り、
+# 五十音での位置に置き換えた数列どうしを比べる。
+# ローマ字のABC順とは違う（ABC順だと「あ え い お う」の順に並んでしまう）。
+_KANA_ORDER = [
+    "a", "i", "u", "e", "o",
+    "ka", "ga", "ki", "gi", "ku", "gu", "ke", "ge", "ko", "go",
+    "sa", "za", "shi", "ji", "su", "zu", "se", "ze", "so", "zo",
+    "ta", "da", "chi", "di", "tsu", "du", "te", "de", "to", "do",
+    "na", "ni", "nu", "ne", "no",
+    "ha", "ba", "pa", "hi", "bi", "pi", "fu", "hu", "bu", "pu",
+    "he", "be", "pe", "ho", "bo", "po",
+    "ma", "mi", "mu", "me", "mo",
+    "ya", "yu", "yo",
+    "ra", "ri", "ru", "re", "ro",
+    "wa", "wo", "n",
+]
+_KANA_AT = {syl: i for i, syl in enumerate(_KANA_ORDER)}
+
+# 拗音は「い段＋や行」に開いて比べる（きゃ → き・や）
+_YOUON = {}
+for _c, _i in [("ky", "ki"), ("gy", "gi"), ("sh", "shi"), ("j", "ji"), ("ch", "chi"),
+               ("ny", "ni"), ("hy", "hi"), ("by", "bi"), ("py", "pi"),
+               ("my", "mi"), ("ry", "ri")]:
+    for _v, _y in [("a", "ya"), ("u", "yu"), ("o", "yo")]:
+        _YOUON.setdefault(_c + _v, (_i, _y))
+
+# 長いものから順に当てる（"na" を "n" より先に見る）
+_SYLLABLES = sorted(set(list(_YOUON) + list(_KANA_AT)), key=len, reverse=True)
+
+
+def kana_sort_key(key):
+    """ローマ字スラッグ → 五十音での並び順を表す数列"""
+    t = re.sub(r"[^a-z]", "", (key or "").lower())
+    out, i = [], 0
+    while i < len(t):
+        # 促音（同じ子音が続く）は読みに影響しないので飛ばす
+        if i + 1 < len(t) and t[i] == t[i + 1] and t[i] not in "aiueon":
+            i += 1
+            continue
+        for syl in _SYLLABLES:
+            if t.startswith(syl, i):
+                if syl in _YOUON:
+                    out.extend(_KANA_AT[x] for x in _YOUON[syl])
+                else:
+                    out.append(_KANA_AT[syl])
+                i += len(syl)
+                break
+        else:
+            out.append(900 + ord(t[i]))   # ローマ字として読めない字は最後に回す
+            i += 1
+    return out
+
+
 def slug_key(url):
     """/cv/toriumi-kousuke-s45/ → toriumi-kousuke（絞り込みの照合と行分けに使う）"""
     return re.sub(r"-[sv]\d+$", "", url.strip("/").split("/")[-1])
@@ -215,13 +268,17 @@ def idx_cards(entries):
     return "\n".join(out)
 
 
-def idx_names(entries):
-    """名前だけを詰めて並べる（声優・スタッフ）"""
+def idx_names(entries, show_n=True):
+    """名前だけを詰めて並べる（声優・スタッフ）。
+
+    show_n=False では作品数を出さない。数字は名前を追うときの邪魔になるので、
+    一覧では名前だけを見せ、件数はその人のページで確かめてもらう。"""
     out = ['<ul class="idx-names">']
     for it in entries:
         sub = ('<i>%s</i>' % e(it["sub"])) if it.get("sub") else ""
-        out.append('<li data-k="%s"><a href="%s"><span>%s</span>%s<small>%d</small></a></li>'
-                   % (e(it["k"]), e(it["url"]), e(it["label"]), sub, it["n"]))
+        n = ('<small>%d</small>' % it["n"]) if show_n else ""
+        out.append('<li data-k="%s"><a href="%s"><span>%s</span>%s%s</a></li>'
+                   % (e(it["k"]), e(it["url"]), e(it["label"]), sub, n))
     out.append("</ul>")
     return "\n".join(out)
 
@@ -242,7 +299,7 @@ def idx_kana(entries):
         by[kana_row(it["k"])].append(it)
     jump, secs = [], []
     for rid, rname in KANA_ROWS:
-        rows = sorted(by.get(rid, []), key=lambda x: x["k"])
+        rows = sorted(by.get(rid, []), key=lambda x: (kana_sort_key(x["k"]), x["label"]))
         if not rows:
             continue
         jump.append('<a href="#r-%s">%s</a>' % (rid, e(rname)))
@@ -257,8 +314,8 @@ def idx_byrole(entries):
     """役割ごとの節に分ける（スタッフ）。
 
     1人が複数の役割を持つことがあるので、entries を役割の数だけ展開する。
-    節の中に出す件数は「その役割での参加作品数」で、人物ページの合計とは違う。
-    節の並びは STAFF_ROLES で決め打ちする（人数順にすると意味の薄い並びになる）。"""
+    節の並びは STAFF_ROLES で決め打ちし、節の中は五十音順に並べる。
+    参加作品数は一覧には出さない（名前を追う邪魔になるため、人物ページで見せる）。"""
     by = defaultdict(list)
     for it in entries:
         for role, n in sorted((it.get("roles") or {}).items()):
@@ -269,12 +326,12 @@ def idx_byrole(entries):
     for i, role in enumerate(STAFF_ROLES, 1):
         if role not in by:
             continue
-        rows = sorted(by[role], key=lambda x: (-x["n"], x["k"]))
+        rows = sorted(by[role], key=lambda x: (kana_sort_key(x["k"]), x["label"]))
         rid = "role-%d" % i
         jump.append('<a href="#%s">%s</a>' % (rid, e(role)))
         secs.append('<section class="idx-sec" id="%s" data-sec>'
                     '<h2>%s<span class="idx-n">%d人</span></h2>%s</section>'
-                    % (rid, e(role), len(rows), idx_names(rows)))
+                    % (rid, e(role), len(rows), idx_names(rows, show_n=False)))
     return ('<nav class="idx-jump" aria-label="役割">%s</nav>' % "".join(jump)
             + "\n".join(secs))
 
