@@ -316,8 +316,15 @@ def main():
         print("overrides.py のJANを %d行に反映" % n_manual)
 
     # 表紙をVNDBの画像で出してよい作品
+    # 「家庭用機のパッケージ版が1つも無い」作品。サイトが扱うのは家庭用機だけなので、
+    # そこに箱が無ければ楽天から商品画像を取りようがない。
+    #   ・Switch版はDL専売だが iOS版はパッケージ扱い（うっかり婚・艶が～る）
+    #   ・家庭用機の版がVNDBに1つも無い（夢見鳥ノスタルジア・白虎隊 志士異聞記）
+    # のどちらも拾えるように、版の有無ではなく「箱が無いこと」で判定する
     con.execute("""INSERT INTO vndb_image_ok
-                   SELECT vid, 'dl' FROM editions GROUP BY vid HAVING MIN(is_dl)=1""")
+                   SELECT g.vid, 'no-package' FROM games g WHERE NOT EXISTS
+                     (SELECT 1 FROM editions e
+                      WHERE e.vid = g.vid AND e.plat_group = 0 AND e.is_dl = 0)""")
     for vid in FORCE_VNDB_IMAGE:
         con.execute("INSERT OR REPLACE INTO vndb_image_ok VALUES (?, 'manual')", (vid,))
     con.commit()
