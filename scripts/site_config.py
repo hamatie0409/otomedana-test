@@ -47,18 +47,24 @@ SCOPE_NOTE = "家庭用ゲーム機で遊べる日本語の乙女ゲームを収
 # 対象年齢の区分
 #   VNDB の minage（0,3,6,10,12,13,15,16,17,18）は刻みが細かいので、
 #   CERO（A/B/C/D/Z）の区切りに寄せてまとめる。
+#   注意: minage は VNDB 独自の項目で、CERO の公式レーティングではない。
+#   13 や 16 のように CERO に無い値も入っているため、表示は目安。
 #   (値, 表示名, 下限, 上限)
 # ------------------------------------------------------------------
 AGE_TIERS = [
-    ("0",  "全年齢",    0, 11),
-    ("12", "12歳以上", 12, 14),
-    ("15", "15歳以上", 15, 16),
-    ("17", "17歳以上", 17, 17),
-    ("18", "18歳以上", 18, 99),
+    ("0",  "全年齢（CERO A）",    0, 11),
+    ("12", "12歳以上（CERO B）", 12, 14),
+    ("15", "15歳以上（CERO C）", 15, 16),
+    ("17", "17歳以上（CERO D）", 17, 17),
+    ("18", "18歳以上（CERO Z）", 18, 99),
 ]
 
-# 発売年の区分。トップの絞り込みと各一覧ページで同じものを使う
-YEAR_BUCKETS = ["2021-", "2016-2020", "2011-2015", "-2010"]
+# 発売年の区分。この年以降は1年ずつ、それより前は5年ずつまとめる。
+# 古い作品は年あたり数本しかなく、1年ずつ出すと空に近い選択肢が並ぶため。
+YEAR_SINGLE_FROM = 2006
+YEAR_OLD_BUCKETS = [("2001-2005", 2001, 2005),
+                    ("1996-2000", 1996, 2000),
+                    ("-1995", 0, 1995)]
 
 
 def age_tier(minage):
@@ -72,15 +78,29 @@ def age_tier(minage):
 
 
 def year_bucket(released):
-    """発売日(ISO) → 区分の値。年が取れなければ空文字"""
+    """発売日(ISO) → 区分の値（"2015" や "2001-2005"）。年が取れなければ空文字"""
     try:
         y = int((released or "")[:4])
     except ValueError:
         return ""
-    if y >= 2021:
-        return "2021-"
-    if y >= 2016:
-        return "2016-2020"
-    if y >= 2011:
-        return "2011-2015"
-    return "-2010" if y else ""
+    if not y:
+        return ""
+    if y >= YEAR_SINGLE_FROM:
+        return str(y)
+    for key, lo, hi in YEAR_OLD_BUCKETS:
+        if lo <= y <= hi:
+            return key
+    return ""
+
+
+def year_label(bucket):
+    """区分の値 → 表示名"""
+    if bucket.startswith("-"):
+        return "%s年以前" % bucket[1:]
+    return "%s年" % bucket
+
+
+def year_sort(bucket):
+    """新しい順に並べるための数値。開始年で見る"""
+    head = bucket[:4]
+    return int(head) if head.isdigit() else -1

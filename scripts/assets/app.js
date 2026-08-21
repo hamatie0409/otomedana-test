@@ -136,23 +136,12 @@ var OD = (function () {
     return norm(out);
   }
 
-  // 発売年の区分。site_config.py の YEAR_BUCKETS と対応させる
-  function inYear(iso, bucket) {
-    if (!bucket) return true;
-    var y = parseInt((iso || '').slice(0, 4), 10) || 0;
-    if (bucket === '2021-') return y >= 2021;
-    if (bucket === '2016-2020') return y >= 2016 && y <= 2020;
-    if (bucket === '2011-2015') return y >= 2011 && y <= 2015;
-    if (bucket === '-2010') return y > 0 && y <= 2010;
-    return true;
-  }
-
-  return { norm: norm, readingOf: readingOf, inYear: inYear };
+  return { norm: norm, readingOf: readingOf };
 })();
 
 (function () {
   var BP = window.BASE_PATH || '';
-  var norm = OD.norm, readingOf = OD.readingOf, inYear = OD.inYear;
+  var norm = OD.norm, readingOf = OD.readingOf;
   var root = document.getElementById('app');
   if (!root) return;
 
@@ -209,7 +198,7 @@ var OD = (function () {
       groups[g].appendChild(option(i, p.n));
     });
     var yr = el('select', { id: 'f-year' }); yr.appendChild(option('', '発売年：すべて'));
-    ['2021-', '2016-2020', '2011-2015', '-2010'].forEach(function (y) { yr.appendChild(option(y, y)); });
+    (DATA.vocab.year || []).forEach(function (y) { yr.appendChild(option(y.v, y.n)); });
     var ag = el('select', { id: 'f-age' }); ag.appendChild(option('', '対象年齢：すべて'));
     (DATA.vocab.age || []).forEach(function (a) { ag.appendChild(option(a.v, a.n)); });
     var st = el('select', { id: 'f-sort' });
@@ -453,7 +442,7 @@ var OD = (function () {
       if (q) { why = textMatch(it, q, m); if (!why) continue; }
       if (pl !== '' && it.p.indexOf(+pl) < 0) continue;
       if (ag !== '' && it.a !== ag) continue;
-      if (!inYear(it.r, yr)) continue;
+      if (yr !== '' && it.y !== yr) continue;
       out.push({ it: it, why: why });
     }
 

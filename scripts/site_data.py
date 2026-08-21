@@ -10,7 +10,7 @@ from common import DATA
 import re
 from series import build_series
 from vndb_build import PLATFORM_JA
-from site_config import AGE_TIERS, age_tier
+from site_config import AGE_TIERS, age_tier, year_bucket, year_label, year_sort
 
 # 訳が用意できていない英語のままの語は絞り込み候補に出さない
 is_en = lambda t: bool(re.fullmatch(r"[\x20-\x7e]+", t or ""))
@@ -147,6 +147,7 @@ def main():
             "n": votes,
             "i": img,
             "a": age_tier(minage),
+            "y": year_bucket(rel),
         })
 
     index = {
@@ -163,6 +164,9 @@ def main():
             "series": [{"n": v["name"], "u": slug.get(("series", k)),
                         "c": len(v["members"])} for k, v in ser_list],
             "age": [{"v": k, "n": lab} for k, lab, _lo, _hi in AGE_TIERS],
+            # 発売年は実際にある区分だけを新しい順に
+            "year": [{"v": b, "n": year_label(b)} for b in
+                     sorted({i["y"] for i in items if i["y"]}, key=year_sort, reverse=True)],
         },
         "items": items,
     }

@@ -11,7 +11,7 @@ from common import DATA, ROOT
 from series import build_series
 from site_config import (SITE_NAME, SITE_DESC, SITE_URL, REPO_URL, SCOPE_NOTE,
                          PUBLISH, BASE_PATH, IMAGE_MODE,
-                         AGE_TIERS, YEAR_BUCKETS, age_tier, year_bucket)
+                         AGE_TIERS, age_tier, year_bucket, year_label, year_sort)
 
 # GitHub Pages は リポジトリ直下 か docs/ からしか配信できないため docs/ に出す
 OUT = os.path.join(ROOT, "docs")
@@ -154,8 +154,11 @@ def list_tools(gs):
 
     選択肢はそのページに実際にある値だけを出す（空振りする項目を並べない）。
     JSが無い環境では何も起きないが、一覧自体は実体のHTMLなので読める。"""
+    # 同じ作品が複数行に出ることがある（1作品で2役の声優、同じ属性のキャラが複数）。
+    # 選択肢に添える数は作品数なので、ここで作品単位に均す
+    uniq = {g["vid"]: g for g in gs}.values()
     plat_n, age_n, year_n = defaultdict(int), defaultdict(int), defaultdict(int)
-    for g in gs:
+    for g in uniq:
         for pl in (g["platforms"] or "").split(" / "):
             if pl.strip():
                 plat_n[pl.strip()] += 1
@@ -175,7 +178,8 @@ def list_tools(gs):
             [(k, "%s（%d）" % (k, v)) for k, v in
              sorted(plat_n.items(), key=lambda kv: (-kv[1], kv[0]))]),
         sel("year", "発売年",
-            [(b, b) for b in YEAR_BUCKETS if year_n.get(b)]),
+            [(b, year_label(b)) for b in
+             sorted((k for k in year_n if k), key=year_sort, reverse=True)]),
         sel("age", "対象年齢",
             [(k, lab) for k, lab, _lo, _hi in AGE_TIERS if age_n.get(k)]),
         ('<select data-f="sort" aria-label="並び順">%s</select>' % "".join(
@@ -185,7 +189,7 @@ def list_tools(gs):
     ]
     parts = [x for x in parts if x]
     # 絞る余地が無く、件数も少ないなら道具を置かない（並べ替えだけでは意味が薄い）
-    if len(parts) < 2 and len(gs) < 6:
+    if len(parts) < 2 and len(uniq) < 6:
         return ""
     return ('<div class="list-tools" data-list-tools>%s'
             '<span class="list-count" aria-live="polite"></span>'
@@ -705,7 +709,7 @@ def main():
         urls.append((url, g["released"]))
 
     # ---------------- 一覧系ページ ----------------
-    def listing(kind, heading_fmt, desc_fmt, member_sql, extra_col=None):
+    def listing(kind, heading_fmt, desc_fmt, member_sql, extra_col=None, tools=False):
         made = 0
         for (k, key), (n, is_page) in npages.items():
             if k != kind or not is_page:
@@ -722,14 +726,16 @@ def main():
             else:
                 rows = con.execute(member_sql, (key,) if "?" in member_sql else ()).fetchall() \
                     if "?" in member_sql else []
-            items = []
+            items, gs = [], []
             for r in rows:
                 g = games.get(r["vid"])
                 if not g:
                     continue
                 items.append((slug[("game", g["vid"])], g["title"], g["released"],
                               (g["platforms"] or "").split(" / ")[0], cover_of(g),
-                              r[extra_col] if extra_col and extra_col in r.keys() else None))
+                              r[extra_col] if extra_col and extra_col in r.keys() else None,
+                              card_attrs(g)))
+                gs.append(g)
             if not items:
                 continue
             items.sort(key=lambda x: (x[2] or "0000"), reverse=True)
@@ -737,7 +743,12 @@ def main():
                     '<p class="lead">%s</p>' % e(desc_fmt % (lab, len(items)))]
             if kind == "cv" and alias_of.get(key):
                 body.append('<p class="alias">別名義: %s</p>' % e("、".join(alias_of[key])))
+            if tools:
+                body.append('<div data-list>')
+                body.append(list_tools(gs))
             body.append(card_list(items))
+            if tools:
+                body.append('</div>')
             ld = {"@context": "https://schema.org", "@type": "ItemList",
                   "name": heading_fmt % lab,
                   "numberOfItems": len(items),
@@ -863,7 +874,7 @@ def main():
 
     n_tag = listing("tag", "「%s」の乙女ゲーム",
                     "「%s」に該当する乙女ゲーム %d作品の一覧。",
-                    "SELECT DISTINCT vid FROM vn_tags WHERE tag = ?")
+                    "SELECT DISTINCT vid FROM vn_tags WHERE tag = ?", tools=True)
     n_plat = listing("platform", "%s の乙女ゲーム",
                      "%s で遊べる乙女ゲーム %d作品の一覧。",
                      "SELECT DISTINCT vid FROM platforms WHERE platform = ?")
@@ -872,7 +883,8 @@ def main():
                     "SELECT vid FROM games WHERE publishers LIKE '%' || ? || '%'")
     n_maker = listing("maker", "%s の乙女ゲーム",
                       "%s が開発した乙女ゲーム %d作品の一覧。",
-                      "SELECT vid FROM games WHERE developers LIKE '%' || ? || '%'")
+                      "SELECT vid FROM games WHERE developers LIKE '%' || ? || '%'",
+                      tools=True)
 
     # 属性ページ（キーが category:trait）
     n_tr = 0
@@ -885,13 +897,14 @@ def main():
         rows = con.execute(
             "SELECT DISTINCT vid, name FROM traits WHERE category=? AND trait=?",
             (cat, tr)).fetchall()
-        items = []
+        items, gs = [], []
         for r in rows:
             g = games.get(r["vid"])
             if g:
                 items.append((slug[("game", g["vid"])], g["title"], g["released"],
                               (g["platforms"] or "").split(" / ")[0], cover_of(g),
-                              r["name"]))
+                              r["name"], card_attrs(g)))
+                gs.append(g)
         if not items:
             continue
         items.sort(key=lambda x: (x[2] or "0000"), reverse=True)
@@ -901,7 +914,8 @@ def main():
         nw = len({i[0] for i in items})
         d = "「%s」のキャラクターが登場する乙女ゲーム %d作品の一覧。" % (tr, nw)
         body = ['<h1>「%s」のキャラクターがいる乙女ゲーム</h1>' % e(tr),
-                '<p class="lead">%s（%s）</p>' % (e(d), e(cat)), card_list(items)]
+                '<p class="lead">%s（%s）</p>' % (e(d), e(cat)),
+                '<div data-list>', list_tools(gs), card_list(items), '</div>']
         write(url, layout("「%s」のキャラクターがいる乙女ゲーム｜%s" % (tr, SITE_NAME),
                           d, BASE_URL + url, "\n".join(body), None, cat_crumbs("trait", tr)))
         urls.append((url, None))
