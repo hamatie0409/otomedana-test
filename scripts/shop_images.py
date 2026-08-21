@@ -244,10 +244,8 @@ def main():
     print("店の共通画像として除外: %d枚（%d JANで使い回されていたもの）"
           % (n_shared, SHARED_MAX))
 
-    # JANがあればJANで、無ければ eid で候補を引く
-    eds = con.execute("""SELECT eid, vid,
-                                CASE WHEN gtin <> '' THEN gtin ELSE eid END AS key,
-                                gtin, edition_kind, platform, plat_group, released, is_dl
+    eds = con.execute("""SELECT eid, vid, gtin, edition_kind, platform, plat_group,
+                                released, is_dl
                          FROM editions""").fetchall()
 
     measure_shops(con, items)
@@ -276,7 +274,9 @@ def main():
     for e in eds:
         if e["is_dl"]:
             continue
-        for it in items.get(e["key"], ()):
+        # JANで引いた商品と、タイトルで引いた商品の両方を候補にする。
+        # JANがあっても写真の付いた出品が無いことがある（花笑む彼と & bloom）
+        for it in list(items.get(e["gtin"], ())) + list(items.get(e["eid"], ())):
             cands.setdefault(e["vid"], []).append((score(e, it), it, e))
     for v in cands:
         cands[v].sort(key=lambda t: t[0])

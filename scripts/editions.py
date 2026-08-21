@@ -17,6 +17,7 @@ VNDBのリリースには機種・発売日・JANが揃っているので、
 import os, re, sqlite3
 from collections import defaultdict
 from common import DATA, ROOT
+from overrides import FORCE_VNDB_IMAGE, MANUAL_GTIN
 from vndb_build import PLATFORM_JA, vndb_date
 
 DB_DUMP = os.path.join(ROOT, "vndb", "db")
@@ -103,11 +104,12 @@ CREATE INDEX idx_ed_vid ON editions(vid);
 CREATE INDEX idx_ed_gtin ON editions(gtin);
 CREATE INDEX idx_ed_rid ON editions(rid);
 
--- パッケージ版が1つも無い作品。箱が存在しないので楽天から商品画像を取れない。
--- サイト側はこの作品だけ VNDB の画像に戻す（site_build.py / site_data.py）
-DROP VIEW IF EXISTS dl_only_games;
-CREATE VIEW dl_only_games AS
-    SELECT vid FROM editions GROUP BY vid HAVING MIN(is_dl) = 1;
+-- 表紙を VNDB の画像で出してよい作品（site_build.py / site_data.py が見る）。
+--   dl     … パッケージ版が1つも無い。箱が存在せず楽天から画像を取りようがない
+--   manual … overrides.py で人が指定したもの
+-- 定義を1か所に置くために、ビューではなく実体のテーブルとして持つ
+DROP TABLE IF EXISTS vndb_image_ok;
+CREATE TABLE vndb_image_ok (vid TEXT PRIMARY KEY, reason TEXT);
 """
 
 
@@ -302,6 +304,22 @@ def main():
             for row in kept]
 
     con.executemany("INSERT INTO editions VALUES (%s)" % ",".join("?" * len(F)), kept)
+
+    # 手で足したJAN（VNDBに入っていないもの）
+    n_manual = 0
+    for vid, per_plat in MANUAL_GTIN.items():
+        for code, gtin in per_plat.items():
+            cur = con.execute("""UPDATE editions SET gtin=? WHERE vid=? AND platform=?
+                                 AND is_dl=0 AND gtin=''""", (gtin, vid, code))
+            n_manual += cur.rowcount
+    if n_manual:
+        print("overrides.py のJANを %d行に反映" % n_manual)
+
+    # 表紙をVNDBの画像で出してよい作品
+    con.execute("""INSERT INTO vndb_image_ok
+                   SELECT vid, 'dl' FROM editions GROUP BY vid HAVING MIN(is_dl)=1""")
+    for vid in FORCE_VNDB_IMAGE:
+        con.execute("INSERT OR REPLACE INTO vndb_image_ok VALUES (?, 'manual')", (vid,))
     con.commit()
 
     # --- 結果 -------------------------------------------------------

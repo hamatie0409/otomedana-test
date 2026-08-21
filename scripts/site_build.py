@@ -654,7 +654,7 @@ def main():
     shop_img = dict(con.execute("SELECT vid, url FROM shop_images"))
     # ダウンロード専売の作品は箱が存在せず、楽天から商品画像を取りようがない。
     # この作品だけ VNDB の画像に戻す
-    dl_only = {r[0] for r in con.execute("SELECT vid FROM dl_only_games")}
+    dl_only = {r[0] for r in con.execute("SELECT vid FROM vndb_image_ok")}
 
     def cover_of(g):
         """作品の表紙。IMAGE_MODE=affiliate でも、パッケージが存在しない

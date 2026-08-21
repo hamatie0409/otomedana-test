@@ -188,12 +188,24 @@ def targets(con, only_home=False, only_scope=False):
 
 
 def title_targets(con, only_scope=True):
-    """JANが無い版のうち、タイトルで引く価値のあるものを返す。
+    """タイトルで引く価値のある版を返す。
 
     家庭用機のパッケージ版だけ。DL版とPC・スマホは店で買えないか、
     タイトル検索の当たりが悪すぎる。
+
+    対象は2種類。
+      ・JANが無い版（VNDBは新作にJANが入っていないことが多い）
+      ・JANはあるが、そのJANでは使える商品画像が1枚も返らなかった版
+        （例: 花笑む彼と & bloom は通常版のJANが0件、特装版もブックオフの
+          「画像準備中」だけだった。タイトルで引くと写真つきの出品が見つかる）
     """
-    where = ["e.gtin = ''", "e.is_dl = 0", "e.plat_group = 0"]
+    no_image = """NOT EXISTS (SELECT 1 FROM rakuten_items r WHERE r.jan = e.gtin
+                    AND r.image_url IS NOT NULL
+                    AND r.image_url NOT LIKE '%noimg%'
+                    AND r.image_url NOT LIKE '%noimage%'
+                    AND r.image_url NOT LIKE '%no_image%')"""
+    where = ["e.is_dl = 0", "e.plat_group = 0",
+             "(e.gtin = '' OR %s)" % no_image]
     if only_scope:
         cond = " OR ".join("platforms LIKE '%%%s%%'" % k
                            for k in ("Switch", "PS", "ニンテンドー", "Xbox"))
@@ -286,11 +298,11 @@ def apply_to_offers(con):
     cols = [d[1] for d in con.execute("PRAGMA table_info(rakuten_items)")]
     F = {n: i for i, n in enumerate(cols)}
 
-    # JANがあればJANで、無ければ eid で引く
-    eds = con.execute("""SELECT eid, CASE WHEN gtin <> '' THEN gtin ELSE eid END
-                         FROM editions""").fetchall()
+    # JANで引いた商品とタイトルで引いた商品の両方を見る。
+    # JANがあっても出品が無い・写真が無いことがあり、その穴をタイトル検索が埋める
+    eds = con.execute("SELECT eid, gtin FROM editions").fetchall()
     for eid, jan in eds:
-        got = items.get(jan) or []
+        got = list(items.get(jan) or []) + list(items.get(eid) or [])
         buyable = [i for i in got if i[F["availability"]] and i[F["price"]]]
 
         # 楽天（新品）… いちばん安い購入可能な新品
