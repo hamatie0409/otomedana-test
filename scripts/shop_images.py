@@ -221,23 +221,34 @@ def main():
     # 何件のJANで使い回されている画像かを先に数える。
     # 店の共通画像（送料無料バナー・画像準備中）はファイル名で分からないものもあり、
     # 「複数のJANで同じ写真」が いちばん確かな手がかりになる
-    shared = {u: n for u, n in con.execute(
-        """SELECT image_url, COUNT(DISTINCT jan) FROM rakuten_items
-           WHERE image_url IS NOT NULL GROUP BY image_url""")}
+    shared = {}
+    for u, n in con.execute(
+            """SELECT image_url, COUNT(DISTINCT jan) FROM rakuten_items
+               WHERE image_url IS NOT NULL GROUP BY image_url
+               UNION ALL
+               SELECT image_url, COUNT(DISTINCT eid) FROM rakuten_title_items
+               WHERE image_url IS NOT NULL GROUP BY image_url"""):
+        shared[u] = shared.get(u, 0) + n
     n_shared = sum(1 for u, n in shared.items() if n >= SHARED_MAX)
 
     items = {}
-    for r in con.execute("""SELECT jan, shop_code, condition, image_url, review_count
-                            FROM rakuten_items WHERE image_url IS NOT NULL"""):
-        u = r["image_url"]
-        if usable(u) and shared.get(u, 0) < SHARED_MAX:
-            items.setdefault(r["jan"], []).append(r)
+    for sql in ("""SELECT jan AS k, shop_code, condition, image_url, review_count
+                   FROM rakuten_items WHERE image_url IS NOT NULL""",
+                # JANの無い版はタイトル検索の結果を eid で引く
+                """SELECT eid AS k, shop_code, condition, image_url, review_count
+                   FROM rakuten_title_items WHERE image_url IS NOT NULL"""):
+        for r in con.execute(sql):
+            u = r["image_url"]
+            if usable(u) and shared.get(u, 0) < SHARED_MAX:
+                items.setdefault(r["k"], []).append(r)
     print("店の共通画像として除外: %d枚（%d JANで使い回されていたもの）"
           % (n_shared, SHARED_MAX))
 
-    eds = con.execute("""SELECT eid, vid, gtin, edition_kind, platform, plat_group,
-                                released, is_dl
-                         FROM editions WHERE gtin <> ''""").fetchall()
+    # JANがあればJANで、無ければ eid で候補を引く
+    eds = con.execute("""SELECT eid, vid,
+                                CASE WHEN gtin <> '' THEN gtin ELSE eid END AS key,
+                                gtin, edition_kind, platform, plat_group, released, is_dl
+                         FROM editions""").fetchall()
 
     measure_shops(con, items)
     heights = {r[0]: r[1] for r in con.execute("SELECT shop_code, height FROM shop_image_size")}
@@ -265,7 +276,7 @@ def main():
     for e in eds:
         if e["is_dl"]:
             continue
-        for it in items.get(e["gtin"], ()):
+        for it in items.get(e["key"], ()):
             cands.setdefault(e["vid"], []).append((score(e, it), it, e))
     for v in cands:
         cands[v].sort(key=lambda t: t[0])

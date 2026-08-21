@@ -5,6 +5,7 @@
   python3 scripts/rakuten_prices.py --dry-run       # 何件叩くかだけ見る
   python3 scripts/rakuten_prices.py --limit 20      # 先に20件で試す
   python3 scripts/rakuten_prices.py --only-scope    # 掲載対象だけ（1601件・約30分）
+  python3 scripts/rakuten_prices.py --by-title      # JANの無い版をタイトルで引く
   python3 scripts/rakuten_prices.py --apply         # APIを叩かず offers に入れ直すだけ
 
 `offers` が「検索ページへのリンク」なのに対し、こちらは
@@ -28,6 +29,7 @@ Amazon・アニメイト・メルカリは価格を取る手段が無いので�
 だから「取り込んだら終わり」ではなく、定期的に回し直す前提のスクリプト。
 """
 import os
+import re
 import sqlite3
 import sys
 import time
@@ -36,6 +38,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import affiliate_config as AF
 import rakuten_api
 from common import DATA
+from editions import PLATFORM_KW
 
 DB = os.path.join(DATA, "vndb_otome.db")
 
@@ -77,7 +80,51 @@ CREATE TABLE IF NOT EXISTS rakuten_fetch_log (
     fetched_at TEXT,
     hits       INTEGER
 );
+
+-- JANが無い版はタイトルで引く。VNDBは新作・近作にJANがまだ入っていないことが多く、
+-- 2026年発売の作品は82%がJAN未登録だった（＝画像も価格も出せなかった）
+CREATE TABLE IF NOT EXISTS rakuten_title_items (
+    eid           TEXT,
+    item_code     TEXT,
+    item_name     TEXT,
+    price         INTEGER,
+    shop_name     TEXT,
+    shop_code     TEXT,
+    availability  INTEGER,
+    condition     TEXT,
+    item_url      TEXT,
+    affiliate_url TEXT,
+    image_url     TEXT,
+    point_rate    INTEGER,
+    review_count  INTEGER,
+    review_average REAL,
+    fetched_at    TEXT,
+    PRIMARY KEY (eid, item_code)
+);
+CREATE INDEX IF NOT EXISTS idx_rti_eid ON rakuten_title_items(eid);
+
+CREATE TABLE IF NOT EXISTS rakuten_title_log (
+    eid TEXT PRIMARY KEY, fetched_at TEXT, hits INTEGER
+);
 """
+
+# タイトル検索はグッズを大量に拾う。ゲーム本体だけ残す。
+# （「マツリカの炯」で引くと缶バッジ・ブロマイドが最安で並ぶ）
+GOODS_WORDS = ("バッジ", "ブロマイド", "キャラカード", "アクリル", "アクスタ", "ラバスト",
+               "クリアファイル", "ポスター", "ステッカー", "タペストリー", "マグカップ",
+               "ぬいぐるみ", "キーホルダー", "コースター", "缶バ", "色紙", "同人",
+               "攻略本", "設定資料", "画集", "サウンドトラック", "サントラ", "ドラマCD",
+               "抱き枕", "Tシャツ", "トレーディング", "パスケース", "スタンド")
+SOFT_WORDS = ("Switch", "スイッチ", "ソフト", "PS4", "PS5", "PSVita", "Vita",
+              "PlayStation", "プレイステーション", "HAC-P", "3DS", "PSP")
+
+
+def looks_like_game(name):
+    """商品名がゲーム本体か。グッズ・書籍・CDを落とす"""
+    n = name or ""
+    if any(w in n for w in GOODS_WORDS):
+        return False
+    return any(w in n for w in SOFT_WORDS)
 
 USED_WORDS = ("中古", "USED", "used", "ユーズド")
 
@@ -140,6 +187,89 @@ def targets(con, only_home=False, only_scope=False):
     return out
 
 
+def title_targets(con, only_scope=True):
+    """JANが無い版のうち、タイトルで引く価値のあるものを返す。
+
+    家庭用機のパッケージ版だけ。DL版とPC・スマホは店で買えないか、
+    タイトル検索の当たりが悪すぎる。
+    """
+    where = ["e.gtin = ''", "e.is_dl = 0", "e.plat_group = 0"]
+    if only_scope:
+        cond = " OR ".join("platforms LIKE '%%%s%%'" % k
+                           for k in ("Switch", "PS", "ニンテンドー", "Xbox"))
+        where.append("e.vid IN (SELECT vid FROM games WHERE %s)" % cond)
+    rows = con.execute("""
+        SELECT e.eid, e.search_kw, e.platform, e.edition, e.edition_kind, e.released
+        FROM editions e WHERE %s ORDER BY e.released DESC""" % " AND ".join(where)).fetchall()
+    return rows
+
+
+# 楽天の keyword は記号や長すぎる文字列を弾く（HTTP 400 wrong_parameter）。
+# 「~」「♪」「☆」「＆」などを含む作品名がそのままだと通らない
+BAD_KW_CHARS = re.compile(r"[~〜～♪☆★＆&＋+|｜/／\\<>＜＞\"'`^*＊%％#＃@＠!！?？:：;；,，.。、]")
+
+
+def title_keyword(row):
+    parts = [row[1], PLATFORM_KW.get(row[2], "")]
+    if row[4] in ("限定", "セット"):
+        parts.append(row[3])
+    kw = " ".join(p for p in parts if p)
+    kw = BAD_KW_CHARS.sub(" ", kw)
+    # 楽天の keyword は「1文字の語」と「6語以上」を弾く（実地確認済み）。
+    #   「剣が君 for S Switch」 … 単独の "S" で 400
+    #   「ワンド オブ フォーチュン 2 時空に沈む黙示録 PSP」 … 6語で 400
+    plat = PLATFORM_KW.get(row[2], "")
+    words = [w for w in re.split(r"[\s　]+", kw) if len(w) >= 2]
+    if plat and plat in words:
+        words = [w for w in words if w != plat]
+        words = words[:4] + [plat]
+    else:
+        words = words[:5]
+    return " ".join(words)
+
+
+def fetch_by_title(con, todo, refresh=False):
+    """JANの無い版をタイトルで引く。グッズを落としてから保存する"""
+    n_item = n_hit = n_drop = 0
+    for i, row in enumerate(todo, 1):
+        eid = row[0]
+        kw = title_keyword(row)
+        stamp = time.strftime("%Y-%m-%d %H:%M:%S")
+        try:
+            data = rakuten_api.ichiba_search(keyword=kw, hits=30, use_cache=not refresh)
+        except rakuten_api.RakutenError as e:
+            print("  [%d/%d] %s 失敗: %s" % (i, len(todo), kw, e))
+            continue
+        rows = []
+        for it in rakuten_api.items_of(data):
+            code = it.get("itemCode")
+            if not code or not it.get("itemPrice"):
+                continue
+            if not looks_like_game(it.get("itemName")):
+                n_drop += 1
+                continue
+            rows.append((
+                eid, code, it.get("itemName"), int(it["itemPrice"]),
+                it.get("shopName"), it.get("shopCode"),
+                int(it.get("availability") or 0), classify(it),
+                it.get("itemUrl"), it.get("affiliateUrl") or it.get("itemUrl"),
+                image_of(it), it.get("pointRate"),
+                it.get("reviewCount"), it.get("reviewAverage"), stamp))
+        con.execute("DELETE FROM rakuten_title_items WHERE eid = ?", (eid,))
+        con.executemany(
+            "INSERT OR REPLACE INTO rakuten_title_items VALUES (%s)" % ",".join("?" * 15), rows)
+        con.execute("INSERT OR REPLACE INTO rakuten_title_log VALUES (?,?,?)",
+                    (eid, stamp, len(rows)))
+        con.commit()
+        n_item += len(rows)
+        if rows:
+            n_hit += 1
+        if i % 25 == 0 or i == len(todo):
+            print("  [%d/%d] %s → %d件（累計 商品%d / ヒット%d / グッズ除外%d）"
+                  % (i, len(todo), kw[:26], len(rows), n_item, n_hit, n_drop))
+    return n_hit
+
+
 def apply_to_offers(con):
     """取り込んだ楽天の商品を offers に流し込む。
 
@@ -147,13 +277,18 @@ def apply_to_offers(con):
     site_build.py 側でも fetched_at を見て古いものは表示しない。
     """
     n_new = n_used = n_used_rk = 0
-    eds = con.execute("SELECT eid, gtin FROM editions WHERE gtin <> ''").fetchall()
     items = {}
     for r in con.execute("SELECT * FROM rakuten_items"):
+        items.setdefault(r[0], []).append(r)
+    # JANの無い版はタイトル検索の結果を使う。列の並びは同じにしてある
+    for r in con.execute("SELECT * FROM rakuten_title_items"):
         items.setdefault(r[0], []).append(r)
     cols = [d[1] for d in con.execute("PRAGMA table_info(rakuten_items)")]
     F = {n: i for i, n in enumerate(cols)}
 
+    # JANがあればJANで、無ければ eid で引く
+    eds = con.execute("""SELECT eid, CASE WHEN gtin <> '' THEN gtin ELSE eid END
+                         FROM editions""").fetchall()
     for eid, jan in eds:
         got = items.get(jan) or []
         buyable = [i for i in got if i[F["availability"]] and i[F["price"]]]
@@ -215,6 +350,29 @@ def main():
 
     con = sqlite3.connect(DB)
     con.executescript(SCHEMA)
+
+    if "--by-title" in argv:
+        try:
+            rakuten_api.credentials()
+        except rakuten_api.MissingCredentials as e:
+            print(e); con.close(); return 1
+        todo = title_targets(con, only_scope=True)
+        done = {r[0] for r in con.execute("SELECT eid FROM rakuten_title_log")} \
+            if not refresh else set()
+        todo = [t for t in todo if t[0] not in done]
+        if limit:
+            todo = todo[:limit]
+        print("JANの無い版 %d件をタイトルで引きます（約%d分）"
+              % (len(todo), max(1, round(len(todo) * rakuten_api.DELAY / 60))))
+        if dry:
+            for t in todo[:20]:
+                print("   %-46s %s" % (title_keyword(t)[:46], t[5] or "-"))
+            con.close(); return 0
+        fetch_by_title(con, todo, refresh=refresh)
+        print()
+        apply_to_offers(con)
+        con.close()
+        return 0
 
     if "--apply" in argv:
         # 取得済みのデータを offers に入れ直すだけ（APIは叩かない）
