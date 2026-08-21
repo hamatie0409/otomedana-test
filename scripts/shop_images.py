@@ -74,8 +74,20 @@ CREATE TABLE shop_images (
 """
 
 
+# 同じ画像が何件のJANで使い回されていたら「商品の写真ではない」とみなすか。
+# 実測すると 1JAN=7644枚 に対して 3JAN以上は13枚しかなく、その全部が
+# no_img.gif / noimage.jpg / shippingfree.gif のような店の共通画像だった。
+# 通常版と限定版で同じ写真を使う店はあるので、2件までは許す。
+SHARED_MAX = 3
+
+
 def usable(url):
-    return bool(url) and not re.search(r"noimg|no_image|nowprinting", url, re.I)
+    """商品の写真として使えるURLか。ファイル名で分かるものはここで落とす"""
+    if not url:
+        return False
+    return not re.search(r"no[_-]?img|no[_-]?image|no[_-]?photo|nowprinting|now_printing"
+                         r"|shippingfree|caution|comingsoon|coming_soon|dummy|sample",
+                         url, re.I)
 
 
 def jpeg_size(b):
@@ -193,11 +205,22 @@ def main():
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
 
+    # 何件のJANで使い回されている画像かを先に数える。
+    # 店の共通画像（送料無料バナー・画像準備中）はファイル名で分からないものもあり、
+    # 「複数のJANで同じ写真」が いちばん確かな手がかりになる
+    shared = {u: n for u, n in con.execute(
+        """SELECT image_url, COUNT(DISTINCT jan) FROM rakuten_items
+           WHERE image_url IS NOT NULL GROUP BY image_url""")}
+    n_shared = sum(1 for u, n in shared.items() if n >= SHARED_MAX)
+
     items = {}
     for r in con.execute("""SELECT jan, shop_code, condition, image_url, review_count
                             FROM rakuten_items WHERE image_url IS NOT NULL"""):
-        if usable(r["image_url"]):
+        u = r["image_url"]
+        if usable(u) and shared.get(u, 0) < SHARED_MAX:
             items.setdefault(r["jan"], []).append(r)
+    print("店の共通画像として除外: %d枚（%d JANで使い回されていたもの）"
+          % (n_shared, SHARED_MAX))
 
     eds = con.execute("""SELECT eid, vid, gtin, edition_kind, plat_group, released, is_dl
                          FROM editions WHERE gtin <> ''""").fetchall()

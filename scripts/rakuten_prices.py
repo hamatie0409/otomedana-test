@@ -146,7 +146,7 @@ def apply_to_offers(con):
     価格・在庫は楽天ウェブサービスの規約で24時間しか保持できないので、
     site_build.py 側でも fetched_at を見て古いものは表示しない。
     """
-    n_new = n_used = 0
+    n_new = n_used = n_used_rk = 0
     eds = con.execute("SELECT eid, gtin FROM editions WHERE gtin <> ''").fetchall()
     items = {}
     for r in con.execute("SELECT * FROM rakuten_items"):
@@ -171,6 +171,22 @@ def apply_to_offers(con):
                          i[F["affiliate_url"]] or i[F["item_url"]], eid))
             n_new += con.total_changes and 1 or 0
 
+        # 楽天（中古）… 駿河屋楽天市場店を除いた最安の中古。
+        # 駿河屋は専用の行で出すので、同じ商品が2行に並ばないよう外す
+        used = sorted([i for i in buyable
+                       if i[F["condition"]] == "中古"
+                       and i[F["shop_code"]] != AF.SURUGAYA_RAKUTEN_SHOPCODE],
+                      key=lambda i: i[F["price"]])
+        if used:
+            i = used[0]
+            con.execute("""UPDATE offers SET link_type='item', item_code=?, item_name=?,
+                           image_url=?, price=?, availability='在庫あり', fetched_at=?,
+                           url=? WHERE eid=? AND channel='楽天' AND via='rakuten_used'""",
+                        (i[F["item_code"]], i[F["item_name"]], i[F["image_url"]],
+                         i[F["price"]], i[F["fetched_at"]],
+                         i[F["affiliate_url"]] or i[F["item_url"]], eid))
+            n_used_rk += 1
+
         # 駿河屋（中古）… 同じ結果に駿河屋楽天市場店が居ればその価格を使う
         sg = sorted([i for i in buyable
                      if i[F["shop_code"]] == AF.SURUGAYA_RAKUTEN_SHOPCODE],
@@ -185,7 +201,8 @@ def apply_to_offers(con):
                          i[F["affiliate_url"]] or i[F["item_url"]], eid))
             n_used += 1
     con.commit()
-    print("offers を更新: 楽天（新品）%d行 / 駿河屋楽天市場店（中古）%d行" % (n_new, n_used))
+    print("offers を更新: 楽天（新品）%d行 / 楽天（中古）%d行 / 駿河屋楽天市場店（中古）%d行"
+          % (n_new, n_used_rk, n_used))
 
 
 def main():

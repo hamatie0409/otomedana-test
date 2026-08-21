@@ -466,6 +466,9 @@ def fresh_price(o):
 # 中古の店は「〜で中古を探す」と書き分ける。同じ「探す」でも行き先が違う
 COND_VERB = {"新品": "で探す", "中古": "で中古を探す", "ダウンロード": "で見る"}
 
+# 同じ店でも経路が違えば別の行として出す。値段が取れたときだけ出る行
+VIA_LABEL = {"rakuten_shop": "（楽天市場店）", "rakuten_used": "（中古）"}
+
 
 def buy_section(g, ed_rows, offers):
     """買えるお店。機種でまとめ、その中を版（通常版／限定版／DL版…）で分ける。
@@ -540,7 +543,7 @@ def buy_section(g, ed_rows, offers):
                 if o["via"] and not price:
                     continue
                 seen.add(key)
-                name = e(o["channel"]) + ("（楽天市場店）" if o["via"] == "rakuten_shop" else "")
+                name = e(o["channel"]) + VIA_LABEL.get(o["via"], "")
                 if price:
                     label = "%s ¥%s" % (name, format(price, ","))
                     fetched.append(o["fetched_at"])

@@ -166,6 +166,12 @@ def main():
             new.append(("アニメイト", "", "新品", "search", "title", kw, animate(kw)))
 
             ukw = used_keyword(e)
+            # 楽天の中古。中古の在庫があるJANは1427件あるのに駿河屋楽天市場店は359件しかなく、
+            # 駿河屋だけを見ていると PSP・PS Vita・PS2 の値段がほとんど出ない。
+            # ブックオフ・ゲオなども含めた最安を rakuten_prices.py が入れる。
+            # 値段が取れなければ表示しない（楽天の新品リンクと行き先が同じになるため）
+            used.append(("楽天", "rakuten_used", "中古", "search", "jan" if gtin else "title",
+                         gtin or ukw, rakuten(gtin or ukw)))
             used.append(("駿河屋", "", "中古", "search", "title", ukw, surugaya(ukw)))
             used.append(("メルカリ", "", "中古", "search", "title", ukw, mercari(ukw)))
             # 駿河屋楽天市場店。値段が取れるまでは表示しないが、
