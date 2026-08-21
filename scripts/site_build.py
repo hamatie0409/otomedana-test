@@ -731,16 +731,21 @@ def main():
 
         cast_items.sort(key=lambda x: (x[2] or ""), reverse=True)
         staff_items.sort(key=lambda x: (x[2] or ""), reverse=True)
-        total = len({i[0] for i in cast_items} | {i[0] for i in staff_items})
+        # cast_items は「作品×キャラ」の行。同じ作品で2役演じていれば2行になるので、
+        # 作品数として数えるときは作品URLで重複を落とす
+        cast_works = {i[0] for i in cast_items}
+        total = len(cast_works | {i[0] for i in staff_items})
         if not total:
             return False
 
         roles_txt = "・".join(sorted({c["role"] for c in sc_by_sid.get(sid, [])})) if sid else ""
         if kind == "cv":
             head = "%s が出演する乙女ゲーム" % lab
-            desc = ("%s が声を担当した乙女ゲーム %d作品の一覧。"
+            # 2役以上を演じている作品があるときだけ「（%d役）」を添える
+            n_role = ("（%d役）" % len(cast_items)) if len(cast_items) > len(cast_works) else ""
+            desc = ("%s が声を担当した乙女ゲーム %d作品%sの一覧。"
                     "キャラクター名・発売日・機種と、買えるお店へのリンクをまとめています。"
-                    % (lab, len(cast_items)))
+                    % (lab, len(cast_works), n_role))
         else:
             head = "%s が手がけた乙女ゲーム" % lab
             desc = ("%s（%s）が参加した乙女ゲーム %d作品の一覧。"
@@ -760,14 +765,17 @@ def main():
             body.append(card_list(staff_items))
 
         ld = {"@context": "https://schema.org", "@type": "ItemList", "name": head,
-              "numberOfItems": total,
+              "numberOfItems": len(cast_items) + len(staff_items),
               "itemListElement": [{"@type": "ListItem", "position": i + 1,
                                    "url": BASE_URL + it[0], "name": it[1]}
                                   for i, it in enumerate((cast_items + staff_items)[:50])]}
         write(url, layout("%s｜%s" % (head, SITE_NAME), desc, BASE_URL + url,
                           "\n".join(body), [ld], cat_crumbs(kind, lab)))
         urls.append((url, None))
-        ent = dict(url=url, label=lab, n=total, k=slug_key(url))
+        # 索引に出す数は、声優なら出演作品数（スタッフ参加は混ぜない）。
+        # 「声優から探す」の一覧に主題歌などの参加数まで足すと意味がずれる
+        ent = dict(url=url, label=lab, k=slug_key(url),
+                   n=(len(cast_works) or total) if kind == "cv" else total)
         if kind == "staff":
             # 役割ごとの参加作品数。索引ではこちらを件数として出す
             by_role = defaultdict(set)
