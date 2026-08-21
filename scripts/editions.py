@@ -17,7 +17,7 @@ VNDBのリリースには機種・発売日・JANが揃っているので、
 import os, re, sqlite3
 from collections import defaultdict
 from common import DATA, ROOT
-from overrides import FORCE_VNDB_IMAGE, MANUAL_GTIN
+from overrides import FORCE_VNDB_IMAGE, MANUAL_ASIN, MANUAL_GTIN
 from vndb_build import PLATFORM_JA, vndb_date
 
 DB_DUMP = os.path.join(ROOT, "vndb", "db")
@@ -314,6 +314,14 @@ def main():
             n_manual += cur.rowcount
     if n_manual:
         print("overrides.py のJANを %d行に反映" % n_manual)
+
+    # 手で調べたASIN。editions は毎回作り直すので、DBに直接書くと消える
+    n_asin = 0
+    for gtin, asin in MANUAL_ASIN.items():
+        cur = con.execute("UPDATE editions SET asin=? WHERE gtin=?", (asin, gtin))
+        n_asin += cur.rowcount
+    if n_asin:
+        print("overrides.py のASINを %d行に反映" % n_asin)
 
     # 表紙をVNDBの画像で出してよい作品
     # 「家庭用機のパッケージ版が1つも無い」作品。サイトが扱うのは家庭用機だけなので、

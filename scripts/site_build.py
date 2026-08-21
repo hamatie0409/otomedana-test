@@ -562,8 +562,10 @@ def buy_section(g, ed_rows, offers):
                         text = "%s ¥%s" % (e(o["channel"]), format(price, ","))
                         fetched.append(o["fetched_at"])
                     else:
-                        text = e(o["channel"]) + ("で見る" if cond_name == "ダウンロード"
-                                                  else "で探す")
+                        # 商品ページに直接飛ぶものは「探す」ではない
+                        text = e(o["channel"]) + (
+                            "で見る" if cond_name == "ダウンロード"
+                            or o["link_type"] == "item" else "で探す")
                     b.append('<li><a class="shop%s" href="%s"'
                              ' rel="nofollow sponsored noopener" target="_blank">%s</a></li>'
                              % (" used" if cond_name == "中古" else "", e(o["url"]), text))

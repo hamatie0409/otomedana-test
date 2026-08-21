@@ -61,11 +61,27 @@ def rakuten_shop(kw, sid):
     return url
 
 
-def amazon(kw):
-    url = "https://www.amazon.co.jp/s?k=%s" % q(kw)
+def amazon(kw, dept=None):
+    """Amazonの検索リンク。
+
+    成果に効くのは tag= だけ。SiteStripe が付ける linkCode / linkId / ref_ は
+    リンクの種類とセッションの記録用で、こちらで作る意味が無いので入れない。
+    空白は + （Amazon自身の検索URLがその形）。
+
+    dept を渡すと売り場で絞る。家庭用機のソフトは i=videogames にすると
+    攻略本・サントラ・グッズが落ちて、目当ての商品に当たりやすくなる。
+    """
+    url = "https://www.amazon.co.jp/s?k=%s" % urllib.parse.quote_plus(str(kw))
+    if dept:
+        url += "&i=" + dept
     if AF.AMAZON_ASSOCIATE_TAG:
         url += "&tag=" + AF.AMAZON_ASSOCIATE_TAG
     return url
+
+
+# 売り場の絞り込み。家庭用機だけ。PCソフトは別の売り場で、
+# videogames で絞ると出てこない
+AMAZON_DEPT = {0: "videogames"}
 
 
 def amazon_item(asin):
@@ -192,10 +208,12 @@ def main():
                 new.append(("Amazon", "", "新品", "item", "asin", e["asin"],
                             amazon_item(e["asin"])))
             elif gtin:
-                new.append(("Amazon", "", "新品", "search", "jan", gtin, amazon(gtin)))
+                new.append(("Amazon", "", "新品", "search", "jan", gtin,
+                            amazon(gtin, AMAZON_DEPT.get(e["plat_group"]))))
             else:
                 kw = new_keyword(e)
-                new.append(("Amazon", "", "新品", "search", "title", kw, amazon(kw)))
+                new.append(("Amazon", "", "新品", "search", "title", kw,
+                            amazon(kw, AMAZON_DEPT.get(e["plat_group"]))))
             kw = new_keyword(e)
             new.append(("アニメイト", "", "新品", "search", "title", kw, animate(kw)))
 
