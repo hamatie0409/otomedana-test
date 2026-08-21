@@ -2,8 +2,11 @@
 """アフィリエイトIDとAPI認証情報の設定。
 
 値は「環境変数 → ~/.config/otomegamedb/env → このファイルの既定値」の順で解決する。
-`scripts/` は git 管理下なので、**秘密情報はここに直書きしないこと**。
-特に accessKey はファイルに残さない。
+
+**秘密なのは楽天の accessKey だけ**。ほかのIDは生成されるリンクに必ず現れる公開値
+（アフィリエイトIDは hb.afl.rakuten.co.jp のURLに、アプリIDは rafcid= に出る）なので、
+ここに既定値として書いてある。こうしておくと GitHub Actions で必要な Secret が
+RAKUTEN_ACCESS_KEY の1つで済む。
 
     # ~/.config/otomegamedb/env （権限600・git管理外）
     export RAKUTEN_APPLICATION_ID=...
@@ -48,10 +51,10 @@ def _env(name, default=""):
 
 # --- 楽天 ---------------------------------------------------------------
 # 楽天アフィリエイトID（例: "1a2b3c4d.5e6f7g8h.9i0j1k2l.3m4n5o6p"）
-RAKUTEN_AFFILIATE_ID = _env("RAKUTEN_AFFILIATE_ID", "")
+RAKUTEN_AFFILIATE_ID = _env("RAKUTEN_AFFILIATE_ID", "1f97fe7f.938d5c13.1f97fe80.1628d44a")
 
 # 楽天ウェブサービスのアプリID（商品検索APIに必要）
-RAKUTEN_APPLICATION_ID = _env("RAKUTEN_APPLICATION_ID", "")
+RAKUTEN_APPLICATION_ID = _env("RAKUTEN_APPLICATION_ID", "8d2fe18b-88d8-4575-a194-71a7f7254c59")
 
 # 楽天ウェブサービスに登録したアプリのURL。
 # 2026年のインフラ刷新以降、リクエストに Referer と Origin が無いと
@@ -59,25 +62,26 @@ RAKUTEN_APPLICATION_ID = _env("RAKUTEN_APPLICATION_ID", "")
 # 公開先が決まったら site_config.SITE_URL と揃えること。
 RAKUTEN_APP_URL = _env("RAKUTEN_APP_URL", "https://hamatie0409.github.io")
 
-# 楽天ウェブサービスのアクセスキー（"pk_" で始まる）。
+# 楽天ウェブサービスのアクセスキー（"pk_" で始まる）。**ここだけ秘密**。
+# 絶対にこのファイルに書かないこと（scripts/ は git 管理下）。
 # 2026年のインフラ刷新で applicationId だけでは通らなくなり、必須になった。
 # 既存アプリの編集では発行されないので「新規アプリ登録」から取り直すこと。
 RAKUTEN_ACCESS_KEY = _env("RAKUTEN_ACCESS_KEY", "")
 
 # --- そのほかのチャネル -------------------------------------------------
 # AmazonアソシエイトのトラッキングID（例: "otomedana-22"）
-AMAZON_ASSOCIATE_TAG = _env("AMAZON_ASSOCIATE_TAG", "")
+AMAZON_ASSOCIATE_TAG = _env("AMAZON_ASSOCIATE_TAG", "hamat1e-22")
 
 # 駿河屋アフィリエイトのID（af_jump.php の user_id にあたる）。
 # 素のURLにパラメータを足す方式ではなく、リダイレクトURLを組む
-SURUGAYA_AFFILIATE_ID = _env("SURUGAYA_AFFILIATE_ID", "")
+SURUGAYA_AFFILIATE_ID = _env("SURUGAYA_AFFILIATE_ID", "4041")
 
 # A8.net のアニメイト用リンク（発行された a8.net のリダイレクトURLをそのまま入れる）
 # 例: "https://px.a8.net/svt/ejp?a8mat=XXXXXX"
 ANIMATE_A8_BASE = _env("ANIMATE_A8_BASE", "")
 
 # メルカリアンバサダーのリンク（発行形式が決まったら反映）
-MERCARI_AMBASSADOR_ID = _env("MERCARI_AMBASSADOR_ID", "")
+MERCARI_AMBASSADOR_ID = _env("MERCARI_AMBASSADOR_ID", "2811053099")
 
 # 駿河屋楽天市場店
 #   shopCode … 楽天商品検索APIの shopCode パラメータ用（文字列）

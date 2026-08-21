@@ -35,11 +35,13 @@ python3 scripts/buy_links.py      # JAN・外部リンクの抽出
 python3 scripts/editions.py       # 版（機種×通常版/限定版/DL版）に組み直す
 python3 scripts/offers.py         # 版ごとの購入先URLを作る
 python3 scripts/slugs.py          # URLスラッグの確定
-python3 scripts/site_data.py      # 検索インデックス
 
 # 価格とパッケージ画像（楽天ウェブサービスの認証情報が要る。価格は規約上24時間で失効）
-python3 scripts/rakuten_prices.py --only-scope   # 1601件・約29分
+python3 scripts/rakuten_prices.py --only-scope   # JANで引く（1601件・約30分）
+python3 scripts/rakuten_prices.py --by-title     # JANの無い版をタイトルで引く
 python3 scripts/shop_images.py                   # 商品画像から作品の顔を選ぶ
+
+python3 scripts/site_data.py      # 検索インデックス（shop_images の後に実行すること）
 
 # 3. 静的サイトの生成（6,729ページ）
 python3 scripts/site_build.py
@@ -50,6 +52,30 @@ python3 scripts/site_build.py
 
 > **実行順に注意** — `vndb_export.py` はテーブルを作り直すので、
 > 必ず `vndb_export.py` → `buy_links.py` → `editions.py` → `offers.py` → `slugs.py` の順で実行してください。
+
+## 自動更新（GitHub Actions）
+
+価格・在庫は楽天ウェブサービスの規約で取得から24時間しか保持できないため、
+毎日取り直して作り直す仕組みを `.github/workflows/daily.yml` に置いている。
+
+- 毎日 22:00 JST に実行（手動実行も可）
+- VNDBのダンプ取得 → DB構築 → 楽天から価格取得 → サイト生成 → GitHub Pages へ公開
+- 所要 約35分（うち30分は楽天の 1秒1リクエスト制限）
+
+**動かす前に2つ設定が要る。**
+
+1. **Secret を1つ登録する**
+   Settings > Secrets and variables > Actions で `RAKUTEN_ACCESS_KEY` を追加。
+   秘密なのはこれだけで、ほかのアフィリエイトIDは生成されるリンクに必ず現れる
+   公開値なので `scripts/affiliate_config.py` に既定値として入っている。
+
+2. **Pages の配信元を変える**
+   Settings > Pages > Source を「GitHub Actions」にする。
+   （いまは main の `docs/` から配信している）
+
+配信元を変えると、公開されるのは **CIが生成したサイト**になる。
+リポジトリの `docs/` は手元でビルドした結果のままなので、両者は日々ずれる。
+手元で確認したいときは `python3 scripts/site_build.py` で作り直すこと。
 
 ## 設定
 

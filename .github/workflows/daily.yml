@@ -1,0 +1,110 @@
+name: 日次ビルド
+
+# 価格・在庫は楽天ウェブサービスの規約で取得から24時間しか保持できない。
+# 表示を続けるには毎日取り直して作り直す必要がある。
+on:
+  schedule:
+    # 13:00 UTC = 22:00 JST。VNDBのダンプは 08:00 UTC 前後に更新されるので、
+    # その日のぶんを確実に取れる時刻に回す
+    - cron: "0 13 * * *"
+  workflow_dispatch:        # 手動実行もできるようにしておく
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 走っている途中にもう1本走らせない（楽天APIを二重に叩かないため）
+concurrency:
+  group: daily-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90        # 楽天の取得だけで約30分かかる
+    env:
+      # 秘密なのはこれだけ。ほかのIDは生成されるリンクに必ず出る公開値なので
+      # scripts/affiliate_config.py に既定値として入っている
+      RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 認証情報の確認
+        run: |
+          if [ -z "$RAKUTEN_ACCESS_KEY" ]; then
+            echo "::error::RAKUTEN_ACCESS_KEY が未設定です。" \
+                 "リポジトリの Settings > Secrets and variables > Actions で登録してください"
+            exit 1
+          fi
+
+      - name: VNDBのダンプを取得（約187MB）
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq zstd
+          curl -fsSL -o vndb-db-latest.tar.zst https://dl.vndb.org/dump/vndb-db-latest.tar.zst
+          mkdir -p vndb && cd vndb
+          zstd -dc ../vndb-db-latest.tar.zst | tar -xf -
+          rm ../vndb-db-latest.tar.zst
+          echo "ダンプの日時: $(cat TIMESTAMP)"
+
+      - name: データベースを作る
+        run: |
+          python3 scripts/vndb_build.py
+          python3 scripts/vndb_export.py
+          python3 scripts/buy_links.py
+          python3 scripts/editions.py
+          python3 scripts/offers.py
+          python3 scripts/slugs.py
+
+      - name: 楽天から価格を取る（約30分・1秒1リクエスト）
+        run: |
+          python3 scripts/rakuten_prices.py --only-scope
+          python3 scripts/rakuten_prices.py --by-title
+
+      - name: パッケージ画像を選ぶ
+        run: python3 scripts/shop_images.py
+
+      - name: サイトを生成する
+        run: |
+          python3 scripts/site_data.py
+          python3 scripts/site_build.py
+
+      - name: 生成できたか確かめる
+        # 途中でこけても空のサイトを公開してしまわないよう、最低限の数を見る
+        run: |
+          pages=$(find docs -name index.html | wc -l)
+          echo "生成ページ数: $pages"
+          if [ "$pages" -lt 6000 ]; then
+            echo "::error::ページ数が少なすぎます（$pages）。公開せずに止めます"
+            exit 1
+          fi
+          # GitHub Actions の bash は pipefail が有効なので、
+          # grep が0件で終わってもジョブが落ちないように包む
+          priced=$( { grep -rl 'class="price-note"' docs/game || true; } | wc -l )
+          echo "価格が出ているページ: $priced"
+          if [ "$priced" -lt 300 ]; then
+            echo "::warning::価格の入ったページが少ないです（$priced）。楽天の取得を確認してください"
+          fi
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
