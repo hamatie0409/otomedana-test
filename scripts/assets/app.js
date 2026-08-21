@@ -136,12 +136,23 @@ var OD = (function () {
     return norm(out);
   }
 
-  return { norm: norm, readingOf: readingOf };
+  // 発売年の区分。site_config.py の YEAR_BUCKETS と対応させる
+  function inYear(iso, bucket) {
+    if (!bucket) return true;
+    var y = parseInt((iso || '').slice(0, 4), 10) || 0;
+    if (bucket === '2021-') return y >= 2021;
+    if (bucket === '2016-2020') return y >= 2016 && y <= 2020;
+    if (bucket === '2011-2015') return y >= 2011 && y <= 2015;
+    if (bucket === '-2010') return y > 0 && y <= 2010;
+    return true;
+  }
+
+  return { norm: norm, readingOf: readingOf, inYear: inYear };
 })();
 
 (function () {
   var BP = window.BASE_PATH || '';
-  var norm = OD.norm, readingOf = OD.readingOf;
+  var norm = OD.norm, readingOf = OD.readingOf, inYear = OD.inYear;
   var root = document.getElementById('app');
   if (!root) return;
 
@@ -199,12 +210,14 @@ var OD = (function () {
     });
     var yr = el('select', { id: 'f-year' }); yr.appendChild(option('', '発売年：すべて'));
     ['2021-', '2016-2020', '2011-2015', '-2010'].forEach(function (y) { yr.appendChild(option(y, y)); });
+    var ag = el('select', { id: 'f-age' }); ag.appendChild(option('', '対象年齢：すべて'));
+    (DATA.vocab.age || []).forEach(function (a) { ag.appendChild(option(a.v, a.n)); });
     var st = el('select', { id: 'f-sort' });
     [['new', '発売日が新しい順'], ['old', '発売日が古い順'],
      ['rate', '評価が高い順'], ['pop', '票数が多い順']].forEach(function (o) {
       st.appendChild(option(o[0], o[1]));
     });
-    [pl, yr, st].forEach(function (x) { row.appendChild(x); });
+    [pl, yr, ag, st].forEach(function (x) { row.appendChild(x); });
     panel.appendChild(row);
 
     var rs = el('button', { type: 'button', id: 'f-reset', class: 'reset' });
@@ -231,11 +244,11 @@ var OD = (function () {
     });
     q.addEventListener('keydown', onKey);
     document.addEventListener('click', function (ev) { if (!box.contains(ev.target)) hideSug(); });
-    [pl, yr, st].forEach(function (x) {
+    [pl, yr, ag, st].forEach(function (x) {
       x.addEventListener('change', function () { render(); });
     });
     rs.addEventListener('click', function () {
-      [q, pl, yr].forEach(function (x) { x.value = ''; });
+      [q, pl, yr, ag].forEach(function (x) { x.value = ''; });
       st.value = 'new';
       document.getElementById('m-all').checked = true;
       hideSug(); render();
@@ -394,7 +407,8 @@ var OD = (function () {
 
   // 「検索した」とみなす条件。並び順だけ変えても検索にはしない
   function active() {
-    return !!(norm(val('f-q')) || val('f-plat') !== '' || val('f-year') !== '');
+    return !!(norm(val('f-q')) || val('f-plat') !== '' || val('f-year') !== ''
+              || val('f-age') !== '');
   }
 
   function drawPager(pages) {
@@ -430,7 +444,7 @@ var OD = (function () {
     }
 
     var q = norm(val('f-q'));
-    var pl = val('f-plat'), yr = val('f-year');
+    var pl = val('f-plat'), yr = val('f-year'), ag = val('f-age');
 
     var m = mode();                 // DOM参照は1回だけ
     var out = [];
@@ -438,13 +452,8 @@ var OD = (function () {
       var it = DATA.items[n], why = null;
       if (q) { why = textMatch(it, q, m); if (!why) continue; }
       if (pl !== '' && it.p.indexOf(+pl) < 0) continue;
-      if (yr) {
-        var y = parseInt((it.r || '').slice(0, 4), 10) || 0;
-        if (yr === '2021-' && y < 2021) continue;
-        if (yr === '2016-2020' && (y < 2016 || y > 2020)) continue;
-        if (yr === '2011-2015' && (y < 2011 || y > 2015)) continue;
-        if (yr === '-2010' && (y > 2010 || y === 0)) continue;
-      }
+      if (ag !== '' && it.a !== ag) continue;
+      if (!inYear(it.r, yr)) continue;
       out.push({ it: it, why: why });
     }
 
@@ -578,4 +587,72 @@ var OD = (function () {
   // 「?q=」で開いたときにも効かせる
   var p = new URLSearchParams(location.search).get('q');
   if (p) { input.value = p; apply(); }
+})();
+
+/* 一覧ページ（声優・スタッフ）のカードの絞り込みと並べ替え。
+   カードはサーバ側で書き出した実体のHTMLなので、JSが無くても一覧は読める。
+   選択肢もそのページにある値だけをサーバ側で出してあるので、空振りしない。 */
+(function () {
+  var box = document.querySelector('[data-list]');
+  if (!box) return;
+  var tools = box.querySelector('[data-list-tools]');
+  if (!tools) return;
+
+  var count = tools.querySelector('.list-count');
+  var reset = tools.querySelector('.list-reset');
+  var sels = {};
+  [].slice.call(tools.querySelectorAll('select[data-f]')).forEach(function (s) {
+    sels[s.getAttribute('data-f')] = s;
+    s.addEventListener('change', apply);
+  });
+
+  var lists = [].slice.call(box.querySelectorAll('ul.cards'));
+  lists.forEach(function (ul) { ul._items = [].slice.call(ul.querySelectorAll('li[data-r]')); });
+  var total = lists.reduce(function (n, ul) { return n + ul._items.length; }, 0);
+
+  function val(name) { return sels[name] ? sels[name].value : ''; }
+  function num(li, attr) {
+    var x = parseFloat(li.getAttribute(attr));
+    return isNaN(x) ? -1 : x;      // 未評価・未投票は最後に回す
+  }
+
+  function apply() {
+    var pl = val('plat'), yr = val('year'), ag = val('age'), st = val('sort') || 'new';
+    var shown = 0;
+    lists.forEach(function (ul) {
+      var keep = [];
+      ul._items.forEach(function (li) {
+        var on = true;
+        if (pl && (li.getAttribute('data-p') || '').split(' / ').indexOf(pl) < 0) on = false;
+        if (on && yr && li.getAttribute('data-y') !== yr) on = false;
+        if (on && ag && li.getAttribute('data-a') !== ag) on = false;
+        li.hidden = !on;
+        if (on) keep.push(li);
+      });
+      shown += keep.length;
+      keep.sort(function (a, b) {
+        if (st === 'rate') return num(b, 'data-g') - num(a, 'data-g');
+        if (st === 'pop') return num(b, 'data-n') - num(a, 'data-n');
+        // 発売日が未定のものは、どちらの並びでも最後に回す
+        var no = (st === 'old') ? '9999' : '';
+        var x = a.getAttribute('data-r') || no, y = b.getAttribute('data-r') || no;
+        if (st === 'old') return x < y ? -1 : x > y ? 1 : 0;
+        return x > y ? -1 : x < y ? 1 : 0;
+      });
+      keep.forEach(function (li) { ul.appendChild(li); });
+      // 「出演」「スタッフとしての参加」は、中身が消えたら見出しごと隠す
+      ul.hidden = !keep.length;
+      var h = ul.previousElementSibling;
+      if (h && h.tagName === 'H2') h.hidden = !keep.length;
+    });
+    var filtered = !!(pl || yr || ag);
+    count.textContent = filtered ? shown + '件 / ' + total + '件' : '';
+    reset.hidden = !filtered && st === 'new';
+  }
+
+  reset.addEventListener('click', function () {
+    for (var k in sels) { sels[k].value = (k === 'sort' ? 'new' : ''); }
+    apply();
+  });
+  apply();
 })();

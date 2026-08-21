@@ -9,6 +9,8 @@
   --used:#86bca1; --warn:#d9a468;
 }}
 *{box-sizing:border-box}
+/* display を指定した要素にも hidden を効かせる（ul.cards などを隠すため） */
+[hidden]{display:none !important}
 body{margin:0;background:var(--bg);color:var(--ink);line-height:1.8;
   font-family:"Hiragino Sans","Yu Gothic",system-ui,sans-serif;font-size:16px}
 a{color:var(--accent2)}
@@ -195,3 +197,18 @@ ul.browse small{color:var(--muted);font-size:12.5px;line-height:1.6}
 .pager button:hover{border-color:var(--accent);color:var(--accent2)}
 .pager button.on{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:700}
 #browse{margin-top:8px}
+
+/* ---------- 一覧ページの絞り込み・並べ替え ---------- */
+.list-tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:14px 0 18px;
+  padding:12px;background:var(--card);border:1px solid var(--line);border-radius:8px}
+.list-tools select{padding:7px 10px;font-size:14px;border:1px solid var(--line);
+  border-radius:6px;background:var(--bg);color:var(--ink);max-width:240px}
+.list-count{color:var(--muted);font-size:13px;white-space:nowrap}
+.list-reset{padding:7px 12px;border:1px solid var(--line);border-radius:6px;
+  background:transparent;color:var(--muted);cursor:pointer;font-size:13px;
+  font-family:inherit;margin-left:auto}
+.list-reset:hover{border-color:var(--accent);color:var(--accent2)}
+@media (max-width:560px){
+  .list-tools select{flex:1 1 44%;min-width:0}
+  .list-reset{margin-left:0}
+}

@@ -10,6 +10,7 @@ from common import DATA
 import re
 from series import build_series
 from vndb_build import PLATFORM_JA
+from site_config import AGE_TIERS, age_tier
 
 # 訳が用意できていない英語のままの語は絞り込み候補に出さない
 is_en = lambda t: bool(re.fullmatch(r"[\x20-\x7e]+", t or ""))
@@ -31,7 +32,8 @@ def main():
     con = sqlite3.connect(os.path.join(DATA, "vndb_otome.db"))
     cond = " OR ".join("platforms LIKE '%%%s%%'" % k for k in HOME)
     games = con.execute("""SELECT vid, title, title_latin, released, platforms,
-                                  developers, rating, votecount, image_url, cv_status
+                                  developers, rating, votecount, image_url, cv_status,
+                                  minage
                            FROM games WHERE %s ORDER BY released DESC""" % cond).fetchall()
     vids = [g[0] for g in games]
     ph = ",".join("?" * len(vids))
@@ -127,7 +129,7 @@ def main():
         return "その他"
 
     items = []
-    for vid, title, latin, rel, plat, dev, rating, votes, img, cvst in games:
+    for vid, title, latin, rel, plat, dev, rating, votes, img, cvst, minage in games:
         items.append({
             "v": vid,
             "u": slug.get(("game", vid)),
@@ -144,6 +146,7 @@ def main():
             "g": rating,
             "n": votes,
             "i": img,
+            "a": age_tier(minage),
         })
 
     index = {
@@ -159,6 +162,7 @@ def main():
             "publisher": [{"n": p, "u": slug.get(("publisher", p))} for p in pubs],
             "series": [{"n": v["name"], "u": slug.get(("series", k)),
                         "c": len(v["members"])} for k, v in ser_list],
+            "age": [{"v": k, "n": lab} for k, lab, _lo, _hi in AGE_TIERS],
         },
         "items": items,
     }

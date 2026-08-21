@@ -10,7 +10,8 @@ from common import DATA, ROOT
 
 from series import build_series
 from site_config import (SITE_NAME, SITE_DESC, SITE_URL, REPO_URL, SCOPE_NOTE,
-                         PUBLISH, BASE_PATH, IMAGE_MODE)
+                         PUBLISH, BASE_PATH, IMAGE_MODE,
+                         AGE_TIERS, YEAR_BUCKETS, age_tier, year_bucket)
 
 # GitHub Pages は リポジトリ直下 か docs/ からしか配信できないため docs/ に出す
 OUT = os.path.join(ROOT, "docs")
@@ -121,19 +122,75 @@ def write(path, content):
     open(full, "w", encoding="utf-8").write(with_base(content))
 
 
+def card_attrs(g):
+    """カードに絞り込み・並べ替え用のデータを添える（app.js が読む）"""
+    return (' data-r="%s" data-p="%s" data-a="%s" data-y="%s" data-g="%s" data-n="%s"'
+            % (e(g["released"] or ""), e(g["platforms"] or ""),
+               age_tier(g["minage"]), year_bucket(g["released"]),
+               g["rating"] or "", g["votecount"] or ""))
+
+
 def card_list(items):
-    """作品カードの一覧（一覧系ページ共通）"""
+    """作品カードの一覧（一覧系ページ共通）。
+
+    7要素目にデータ属性を渡すと、そのカードは並べ替え・絞り込みの対象になる。"""
     out = ['<ul class="cards">']
-    for url, title, released, plat, img, extra in items:
+    for it in items:
+        url, title, released, plat, img, extra = it[:6]
+        attrs = it[6] if len(it) > 6 else ""
         thumb = '<img src="%s" alt="" loading="lazy" width="90">' % e(img) if img else \
                 '<span class="noimg"></span>'
         out.append(
-            '<li><a href="%s">%s<span class="meta"><b>%s</b>'
+            '<li%s><a href="%s">%s<span class="meta"><b>%s</b>'
             '<small>%s</small><small>%s</small>%s</span></a></li>'
-            % (e(url), thumb, e(title), e(released or ""), e(plat or ""),
+            % (attrs, e(url), thumb, e(title), e(released or ""), e(plat or ""),
                ('<small class="ex">%s</small>' % e(extra)) if extra else ""))
     out.append("</ul>")
     return "\n".join(out)
+
+
+def list_tools(gs):
+    """カード一覧の上に置く絞り込み・並べ替え。
+
+    選択肢はそのページに実際にある値だけを出す（空振りする項目を並べない）。
+    JSが無い環境では何も起きないが、一覧自体は実体のHTMLなので読める。"""
+    plat_n, age_n, year_n = defaultdict(int), defaultdict(int), defaultdict(int)
+    for g in gs:
+        for pl in (g["platforms"] or "").split(" / "):
+            if pl.strip():
+                plat_n[pl.strip()] += 1
+        age_n[age_tier(g["minage"])] += 1
+        year_n[year_bucket(g["released"])] += 1
+
+    def sel(name, label, opts):
+        if len(opts) < 2:
+            return ""      # 選ぶ余地が無いなら出さない
+        o = "".join('<option value="%s">%s</option>' % (e(v), e(t)) for v, t in opts)
+        return ('<select data-f="%s" aria-label="%s">'
+                '<option value="">%s：すべて</option>%s</select>'
+                % (name, e(label), e(label), o))
+
+    parts = [
+        sel("plat", "機種",
+            [(k, "%s（%d）" % (k, v)) for k, v in
+             sorted(plat_n.items(), key=lambda kv: (-kv[1], kv[0]))]),
+        sel("year", "発売年",
+            [(b, b) for b in YEAR_BUCKETS if year_n.get(b)]),
+        sel("age", "対象年齢",
+            [(k, lab) for k, lab, _lo, _hi in AGE_TIERS if age_n.get(k)]),
+        ('<select data-f="sort" aria-label="並び順">%s</select>' % "".join(
+            '<option value="%s">%s</option>' % (v, t) for v, t in
+            [("new", "発売日が新しい順"), ("old", "発売日が古い順"),
+             ("rate", "評価が高い順"), ("pop", "票数が多い順")])),
+    ]
+    parts = [x for x in parts if x]
+    # 絞る余地が無く、件数も少ないなら道具を置かない（並べ替えだけでは意味が薄い）
+    if len(parts) < 2 and len(gs) < 6:
+        return ""
+    return ('<div class="list-tools" data-list-tools>%s'
+            '<span class="list-count" aria-live="polite"></span>'
+            '<button type="button" class="list-reset">条件をクリア</button></div>'
+            % "".join(parts))
 
 
 # ---------------------------------------------------------------- 索引ページ
@@ -703,7 +760,7 @@ def main():
         """1人物1ページ。出演（声優）とスタッフ参加の両方を載せる"""
         sid = key if kind == "staff" else sid_of_cv.get(key)
         body = []
-        cast_items, staff_items = [], []
+        cast_rows, staff_rows = [], []      # (作品, 補足) の組。並べ替えは発売日(ISO)で行う
 
         if kind == "cv":
             keys = [key] + alias_of.get(key, [])
@@ -712,10 +769,7 @@ def main():
                     % ",".join("?" * len(keys)), keys):
                 g = games.get(r["vid"])
                 if g:
-                    cast_items.append((slug[("game", g["vid"])], g["title"],
-                                       ja_date(g["released"]),
-                                       (g["platforms"] or "").split(" / ")[0],
-                                       cover_of(g), r["name"]))
+                    cast_rows.append((g, r["name"]))
         if sid:
             seen = {}
             for c in sc_by_sid.get(sid, []):
@@ -724,13 +778,20 @@ def main():
                     continue
                 seen.setdefault(c["vid"], []).append(c["role"])
             for v2, roles in seen.items():
-                g = games[v2]
-                staff_items.append((slug[("game", v2)], g["title"], ja_date(g["released"]),
-                                    (g["platforms"] or "").split(" / ")[0],
-                                    cover_of(g), "・".join(sorted(set(roles)))))
+                staff_rows.append((games[v2], "・".join(sorted(set(roles)))))
 
-        cast_items.sort(key=lambda x: (x[2] or ""), reverse=True)
-        staff_items.sort(key=lambda x: (x[2] or ""), reverse=True)
+        # 表示は「2011年8月18日」形式だが、並べ替えはISO日付で行う。
+        # 和暦表記の文字列で並べると 8月 が 12月 より後になってしまう
+        cast_rows.sort(key=lambda x: (x[0]["released"] or ""), reverse=True)
+        staff_rows.sort(key=lambda x: (x[0]["released"] or ""), reverse=True)
+
+        def item_of(g, extra):
+            return (slug[("game", g["vid"])], g["title"], ja_date(g["released"]),
+                    (g["platforms"] or "").split(" / ")[0], cover_of(g), extra,
+                    card_attrs(g))
+
+        cast_items = [item_of(g, x) for g, x in cast_rows]
+        staff_items = [item_of(g, x) for g, x in staff_rows]
         # cast_items は「作品×キャラ」の行。同じ作品で2役演じていれば2行になるので、
         # 作品数として数えるときは作品URLで重複を落とす
         cast_works = {i[0] for i in cast_items}
@@ -756,6 +817,8 @@ def main():
             body.append('<p class="alias">スタッフとしての参加: %s</p>' % e(roles_txt))
         if alias_of.get(key):
             body.append('<p class="alias">別名義: %s</p>' % e("、".join(alias_of[key])))
+        body.append('<div data-list>')
+        body.append(list_tools([g for g, _ in cast_rows] + [g for g, _ in staff_rows]))
         if cast_items:
             if staff_items:
                 body.append("<h2>出演</h2>")
@@ -763,6 +826,7 @@ def main():
         if staff_items:
             body.append("<h2>スタッフとしての参加</h2>")
             body.append(card_list(staff_items))
+        body.append('</div>')
 
         ld = {"@context": "https://schema.org", "@type": "ItemList", "name": head,
               "numberOfItems": len(cast_items) + len(staff_items),
