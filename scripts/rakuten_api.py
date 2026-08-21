@@ -6,6 +6,9 @@
   - エンドポイントは openapi.rakuten.co.jp
     （旧 app.rakuten.co.jp は 2026-05 に停止済み）
   - applicationId に加えて accessKey が必須
+  - Referer と Origin のヘッダが必須（無いと 403
+    REQUEST_CONTEXT_BODY_HTTP_REFERRER_MISSING）。
+    値は affiliate_config.RAKUTEN_APP_URL から作る
   - 1アプリIDにつき 1秒1リクエスト
   - affiliateId を渡すと、レスポンスに affiliateUrl が入る
 
@@ -73,6 +76,16 @@ def _cache_path(endpoint, params):
     return os.path.join(CACHE_DIR, hashlib.sha1(key.encode()).hexdigest() + ".json")
 
 
+def _context_headers():
+    """新インフラは「どこから来たリクエストか」を厳しく見る。
+    Referer と Origin の両方が要る（片方だけでは通らない）。"""
+    app_url = (AF.RAKUTEN_APP_URL or "").rstrip("/")
+    parts = urllib.parse.urlsplit(app_url)
+    origin = "%s://%s" % (parts.scheme, parts.netloc) if parts.netloc else app_url
+    return {"Referer": app_url + "/", "Origin": origin,
+            "User-Agent": "otomedana/1.0 (+%s)" % app_url}
+
+
 def _sleep_for_rate_limit():
     wait = DELAY - (time.time() - _last[0])
     if wait > 0:
@@ -98,11 +111,12 @@ def request(endpoint, params, ttl=PRICE_TTL, use_cache=True):
         q["affiliateId"] = affiliate_id
 
     url = endpoint + "?" + urllib.parse.urlencode(q)
+    req = urllib.request.Request(url, headers=_context_headers())
     body = None
     for attempt in range(RETRIES):
         _sleep_for_rate_limit()
         try:
-            with urllib.request.urlopen(url, timeout=TIMEOUT) as r:
+            with urllib.request.urlopen(req, timeout=TIMEOUT) as r:
                 body = r.read().decode("utf-8")
             break
         except urllib.error.HTTPError as e:

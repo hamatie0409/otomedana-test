@@ -1,21 +1,49 @@
 # -*- coding: utf-8 -*-
 """アフィリエイトIDとAPI認証情報の設定。
 
-値は「環境変数 → このファイルの既定値」の順で解決する。
-`scripts/` は git 管理下なので、**秘密情報は環境変数で渡すこと**。
-特に accessKey はファイルに直書きしないほうがいい。
+値は「環境変数 → ~/.config/otomegamedb/env → このファイルの既定値」の順で解決する。
+`scripts/` は git 管理下なので、**秘密情報はここに直書きしないこと**。
+特に accessKey はファイルに残さない。
 
-    export RAKUTEN_APPLICATION_ID=1234567890123456789
-    export RAKUTEN_ACCESS_KEY=pk_xxxxxxxxxxxxxxxxxxxx
+    # ~/.config/otomegamedb/env （権限600・git管理外）
+    export RAKUTEN_APPLICATION_ID=...
+    export RAKUTEN_ACCESS_KEY=pk_...
     export RAKUTEN_AFFILIATE_ID=1a2b3c4d.5e6f7g8h.9i0j1k2l.3m4n5o6p
+
+このファイルは対話シェルからは ~/.zshrc 経由で読まれるが、
+スクリプトを非対話で走らせたときは読まれないので、こちらでも直接読む。
+GitHub Actions のように環境変数で渡せる場所では、そちらが優先される。
 
 空のままなら素のURLが生成される（リンクとしては正しく動く）。
 """
 import os
 
+CONFIG_FILE = os.path.expanduser("~/.config/otomegamedb/env")
+
+
+def _from_file():
+    """`export KEY=VALUE` の並んだ設定ファイルを読む。無ければ空"""
+    out = {}
+    try:
+        with open(CONFIG_FILE, encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("export "):
+                    line = line[7:]
+                if not line or line.startswith("#") or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                out[k.strip()] = v.strip().strip("\"'")
+    except OSError:
+        pass
+    return out
+
+
+_FILE = _from_file()
+
 
 def _env(name, default=""):
-    return (os.environ.get(name) or default).strip()
+    return (os.environ.get(name) or _FILE.get(name) or default).strip()
 
 
 # --- 楽天 ---------------------------------------------------------------
@@ -24,6 +52,12 @@ RAKUTEN_AFFILIATE_ID = _env("RAKUTEN_AFFILIATE_ID", "")
 
 # 楽天ウェブサービスのアプリID（商品検索APIに必要）
 RAKUTEN_APPLICATION_ID = _env("RAKUTEN_APPLICATION_ID", "")
+
+# 楽天ウェブサービスに登録したアプリのURL。
+# 2026年のインフラ刷新以降、リクエストに Referer と Origin が無いと
+# 403 REQUEST_CONTEXT_BODY_HTTP_REFERRER_MISSING で弾かれる（実地確認済み 2026-08-21）。
+# 公開先が決まったら site_config.SITE_URL と揃えること。
+RAKUTEN_APP_URL = _env("RAKUTEN_APP_URL", "https://hamatie0409.github.io")
 
 # 楽天ウェブサービスのアクセスキー（"pk_" で始まる）。
 # 2026年のインフラ刷新で applicationId だけでは通らなくなり、必須になった。

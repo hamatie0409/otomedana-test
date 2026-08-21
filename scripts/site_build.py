@@ -8,6 +8,7 @@ import os, re, json, html, shutil, sqlite3, datetime
 from collections import defaultdict
 from common import DATA, ROOT
 
+import affiliate_config as AF
 from series import build_series
 from site_config import (SITE_NAME, SITE_DESC, SITE_URL, REPO_URL, SCOPE_NOTE,
                          PUBLISH, BASE_PATH, IMAGE_MODE,
@@ -17,6 +18,12 @@ from site_config import (SITE_NAME, SITE_DESC, SITE_URL, REPO_URL, SCOPE_NOTE,
 OUT = os.path.join(ROOT, "docs")
 BASE_URL = SITE_URL + BASE_PATH
 HOME = ("Switch", "PS", "ニンテンドー", "Xbox")
+
+# アフィリエイトIDが1つでも設定されていれば、リンクはアフィリエイトリンクになる。
+# 表示義務があるので、PUBLISH ではなく実際の設定で出し分ける
+HAS_AFFILIATE = any(getattr(AF, k) for k in
+                    ("RAKUTEN_AFFILIATE_ID", "AMAZON_ASSOCIATE_TAG",
+                     "SURUGAYA_AFFILIATE_ID", "ANIMATE_A8_BASE"))
 
 e = lambda s: html.escape(str(s), quote=True) if s is not None else ""
 
@@ -95,8 +102,9 @@ def layout(title, desc, canonical, body, jsonld=None, breadcrumb=None, og_image=
                   robots="" if PUBLISH else '<meta name="robots" content="noindex,nofollow">\n',
                   notice=('<p class="ad-notice">当サイトはアフィリエイト広告を利用しています</p>'
                           if PUBLISH else
-                          '<p class="ad-notice test">テスト環境 — 内容は未確定です。'
-                          '購入リンクにアフィリエイトIDは設定されていません</p>'),
+                          '<p class="ad-notice test">テスト環境 — 内容は未確定です。%s</p>'
+                          % ("購入リンクはアフィリエイトリンクです" if HAS_AFFILIATE
+                             else "購入リンクにアフィリエイトIDは設定されていません")),
                   ogimg=('<meta property="og:image" content="%s">\n' % e(og_image)) if og_image else "")
 
 
@@ -471,8 +479,8 @@ def buy_section(g, ed_rows, offers):
     """
     b = ['<section id="buy"><h2>買えるお店</h2>']
     b.append('<p class="ad-inline">%s</p>' % (
-        "以下はアフィリエイトリンクを含みます" if PUBLISH
-        else "テスト環境のため、以下は通常の検索リンクです（アフィリエイト未設定）"))
+        "以下はアフィリエイトリンクを含みます" if HAS_AFFILIATE
+        else "アフィリエイトIDが未設定のため、以下は通常の検索リンクです"))
 
     # 機種ごとにまとめる。並びは editions の取得順
     # （家庭用機 → PC → スマホ、その中では新しく出た機種が上）
