@@ -1,28 +1,22 @@
-name: 日次ビルド
+name: 日次ビルド（楽天の情報だけ更新）
 
 # 価格・在庫は楽天ウェブサービスの規約で取得から24時間しか保持できないので、
-# 毎日取り直して作り直す必要がある。
+# 毎日取り直して作り直す。
 #
-# ただし「作品の一覧そのもの」を毎日作り直すのは避けている。
-# VNDBの乙女ゲームタグは投票の平均で判定していて日々動くため、毎日作り直すと
-# 収録作品が出入りし、URLも変わりうる。カタログは週1回、価格は毎日。
+# **カタログ（作品一覧・版・URL）はここでは絶対に作り直さない。**
+# 乙女ゲームの判定はVNDBのタグ投票の平均でしていて日々動くため、
+# 自動で作り直すと収録作品が出入りし、URLも変わりうる。
+# 作り直すのは rebuild-db.yml を手で実行したときだけ。
 on:
   schedule:
-    # 13:00 UTC = 22:00 JST。VNDBのダンプは 08:00 UTC 前後に更新される
-    - cron: "0 13 * * *"
+    - cron: "0 13 * * *"      # 13:00 UTC = 22:00 JST
   workflow_dispatch:
-    inputs:
-      rebuild_db:
-        description: "VNDBのダンプからDBを作り直す（overrides.py を直したときなど）"
-        type: boolean
-        default: false
 
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# 走っている途中にもう1本走らせない（楽天APIを二重に叩かないため）
 concurrency:
   group: daily-build
   cancel-in-progress: false
@@ -32,9 +26,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90        # 楽天の取得だけで約30分かかる
     env:
-      # 秘密なのはこれだけ。ほかのIDは生成されるリンクに必ず現れる公開値なので
-      # scripts/affiliate_config.py に既定値として入っている
       RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
+      GH_TOKEN: ${{ github.token }}
 
     steps:
       - uses: actions/checkout@v4
@@ -51,52 +44,25 @@ jobs:
             exit 1
           fi
 
-      - name: 今週のキーを決める
-        id: wk
-        run: echo "key=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
-
-      - name: DBのキャッシュを探す（週替わり）
-        id: dbcache
-        uses: actions/cache@v4
-        with:
-          path: data/vndb_otome.db
-          key: otome-db-v1-${{ steps.wk.outputs.key }}
-
-      - name: 作り直すかどうか
-        id: plan
+      - name: カタログDBを取ってくる
+        # DBはリリース db-latest に置いてある成果物。ここでは作らない。
         run: |
-          if [ "${{ steps.dbcache.outputs.cache-hit }}" = "true" ] \
-             && [ "${{ inputs.rebuild_db }}" != "true" ]; then
-            echo "rebuild=false" >> "$GITHUB_OUTPUT"
-            echo "今週のDBを再利用します（カタログの作り直しは週1回）"
-          else
-            echo "rebuild=true" >> "$GITHUB_OUTPUT"
-            echo "VNDBのダンプからDBを作り直します"
+          mkdir -p data
+          if ! gh release download db-latest --pattern vndb_otome.db --dir data --clobber; then
+            echo "::error::リリース db-latest からDBを取得できませんでした。"
+            echo "::error::先に「カタログDBを作り直す」ワークフローを実行するか、"
+            echo "::error::手元から gh release upload db-latest data/vndb_otome.db してください"
+            exit 1
           fi
+          python3 - <<'PY'
+          import sqlite3
+          con = sqlite3.connect("data/vndb_otome.db")
+          n = con.execute("SELECT COUNT(*) FROM games").fetchone()[0]
+          e = con.execute("SELECT COUNT(*) FROM editions").fetchone()[0]
+          print("カタログ: 作品 %d件 / 版 %d件" % (n, e))
+          assert n > 3000 and e > 5000, "カタログの中身が足りません"
+          PY
 
-      # ---- ここから下は週1回だけ（またはボタンで指定したとき） ----
-      - name: VNDBのダンプを取得（約187MB）
-        if: steps.plan.outputs.rebuild == 'true'
-        run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq zstd
-          curl -fsSL -o dump.tar.zst https://dl.vndb.org/dump/vndb-db-latest.tar.zst
-          mkdir -p vndb && cd vndb
-          zstd -dc ../dump.tar.zst | tar -xf -
-          rm ../dump.tar.zst
-          echo "ダンプの日時: $(cat TIMESTAMP)"
-
-      - name: カタログを作る
-        if: steps.plan.outputs.rebuild == 'true'
-        run: |
-          python3 scripts/vndb_build.py
-          python3 scripts/vndb_export.py
-          python3 scripts/buy_links.py
-          python3 scripts/editions.py
-          python3 scripts/slugs.py
-
-      # ---- ここから下は毎日 ----
-      # offers 以降はDBだけを見る（ダンプは要らない）ので、
-      # 購入先URLの直しは翌日のビルドから反映される
       - name: 購入先URLを作る
         run: python3 scripts/offers.py
 
@@ -114,7 +80,6 @@ jobs:
           python3 scripts/site_build.py
 
       - name: 生成できたか確かめる
-        # 途中でこけても空のサイトを公開してしまわないよう、最低限の数を見る
         run: |
           pages=$(find docs -name index.html | wc -l)
           echo "生成ページ数: $pages"

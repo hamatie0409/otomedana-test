@@ -1,0 +1,99 @@
+name: カタログDBを作り直す（手動のみ）
+
+# VNDBのダンプから作品一覧・版・URLを作り直し、リリース db-latest に置く。
+# 日次ビルドはここで作られたDBを使うだけで、自分では作り直さない。
+#
+# **自動実行はしない。** 乙女ゲームの判定はVNDBのタグ投票の平均でしていて
+# 日々動くので、勝手に作り直すと収録作品が出入りし、公開済みのURLが変わりうる。
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'カタログを作り直します。よければ "rebuild" と入力'
+        required: true
+        default: ""
+
+permissions:
+  contents: write        # リリースにDBを上げるため
+
+concurrency:
+  group: rebuild-db
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: 入力の確認
+        run: |
+          if [ "${{ inputs.confirm }}" != "rebuild" ]; then
+            echo "::error::確認欄に rebuild と入力してください"
+            exit 1
+          fi
+
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: いまのDBを控えておく（差分を見るため）
+        run: |
+          mkdir -p data before
+          gh release download db-latest --pattern vndb_otome.db --dir before --clobber || \
+            echo "（まだリリースがありません。初回です）"
+
+      - name: VNDBのダンプを取得（約187MB）
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq zstd
+          curl -fsSL -o dump.tar.zst https://dl.vndb.org/dump/vndb-db-latest.tar.zst
+          mkdir -p vndb && cd vndb
+          zstd -dc ../dump.tar.zst | tar -xf -
+          rm ../dump.tar.zst
+          echo "ダンプの日時: $(cat TIMESTAMP)"
+
+      - name: カタログを作る
+        run: |
+          python3 scripts/vndb_build.py
+          python3 scripts/vndb_export.py
+          python3 scripts/buy_links.py
+          python3 scripts/editions.py
+          python3 scripts/offers.py
+          python3 scripts/slugs.py
+
+      - name: 前回との差を出す
+        # URLが変わると公開済みのページが404になる。何が動いたかを必ず見せる
+        run: |
+          python3 - <<'PY'
+          import os, sqlite3
+          def urls(path):
+              if not os.path.exists(path):
+                  return None
+              con = sqlite3.connect(path)
+              return {r[0] for r in con.execute(
+                  "SELECT url FROM slugs WHERE is_page=1")}
+          old = urls("before/vndb_otome.db")
+          new = urls("data/vndb_otome.db")
+          print("今回のページ数: %d" % len(new))
+          if old is None:
+              print("初回なので比較しません")
+              raise SystemExit
+          gone, added = sorted(old - new), sorted(new - old)
+          print("消えるURL: %d / 増えるURL: %d" % (len(gone), len(added)))
+          for u in gone[:30]:
+              print("  - %s" % u)
+          if len(gone) > 30:
+              print("  …ほか %d件" % (len(gone) - 30))
+          if len(gone) > len(old) * 0.05:
+              print("::warning::消えるURLが5%%を超えています。公開済みなら404が出ます")
+          PY
+
+      - name: リリースに置く
+        run: |
+          gh release view db-latest >/dev/null 2>&1 || \
+            gh release create db-latest --title "カタログDB" \
+              --notes "日次ビルドが使うDB。手動でのみ更新する。"
+          gh release upload db-latest data/vndb_otome.db --clobber
+          echo "アップロードしました: $(du -h data/vndb_otome.db | cut -f1)"
