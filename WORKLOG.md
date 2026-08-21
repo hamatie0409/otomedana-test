@@ -9,6 +9,11 @@
 
 ## 2026-08-21
 
+### 22:13 駿河屋をアフィリエイトリンクにした（af_jump.php のリダイレクト方式）。&aff= は誤りだった
+- なぜ: 引き継いだコードは素の検索URLに &aff=<ID> を足すだけで、これでは成果が計上されない。affiliate.suruga-ya.jp の robots.txt が /modules/af/af_jump.php を Disallow していたことからリダイレクト方式だと推測していたが、ユーザーが実物のリンクを提示してくれて確定した: affiliate.suruga-ya.jp/modules/af/af_jump.php?user_id=<ID>&goods_url=<行き先を全部エンコードしたもの>。SURUGAYA_AFFILIATE_ID は user_id にあたる。1515本すべてがリダイレクト形式になり、素のURLは0本になった。goods_url の中で検索語が二重エンコードされるが、リダイレクト側で1回デコードされて正しい検索URLになることをローカルで確認した。af_jump.php 自体は robots.txt で拒否されているので、こちらからは叩いていない
+- 次: 実際に成果が計上されるかは、生成されたリンクを1本クリックして駿河屋の管理画面で確認するのが確実。goods_url に商品ページではなく検索URLを渡して受け付けられるかも、そこで分かる
+- ブランチ: feat/editions（記録時 HEAD: 9d0fbd21e）
+
 ### 22:11 メルカリをアフィリエイトリンクにした（afid方式）。検索語から機種名の重複も取り除いた
 - なぜ: メルカリのリンクは素のURLのままでアフィリエイトになっていなかった。MERCARI_AMBASSADOR_ID は affiliate_config.py に定義だけあってコードのどこからも使われていない状態だったので、以前『検索結果をアフィリエイトリンクにできる』と説明したのは実装を伴っていなかった。ユーザーが実物のリンクを提示してくれたので形式が確定した: jp.mercari.com/search?afid=<ID>&keyword=<語+語> で、afid が先・空白は + 。quote_plus に変えて完全に一致させた。1986本すべてに afid が付いた。あわせて、検索語が『AMNESIA for Nintendo Switch Switch』のように機種名が重複していたのを直した。作品名に機種名が入っている版が213件あり、そこに機種名を足していた。中古はキーワード検索しかできないので、無駄な語が入ると空振りが増える
 - 次: 駿河屋の &aff= は根拠が無く、affiliate.suruga-ya.jp の robots.txt が /modules/af/af_jump.php を Disallow していることから、リダイレクト方式で計測している可能性が高い。実物のタグを発行してもらってから実装し直す

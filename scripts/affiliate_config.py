@@ -68,7 +68,8 @@ RAKUTEN_ACCESS_KEY = _env("RAKUTEN_ACCESS_KEY", "")
 # AmazonアソシエイトのトラッキングID（例: "otomedana-22"）
 AMAZON_ASSOCIATE_TAG = _env("AMAZON_ASSOCIATE_TAG", "")
 
-# 駿河屋アフィリエイトのパートナーID
+# 駿河屋アフィリエイトのID（af_jump.php の user_id にあたる）。
+# 素のURLにパラメータを足す方式ではなく、リダイレクトURLを組む
 SURUGAYA_AFFILIATE_ID = _env("SURUGAYA_AFFILIATE_ID", "")
 
 # A8.net のアニメイト用リンク（発行された a8.net のリダイレクトURLをそのまま入れる）

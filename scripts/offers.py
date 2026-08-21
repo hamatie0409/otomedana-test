@@ -102,10 +102,18 @@ def mercari(kw):
 
 def surugaya(kw):
     """駿河屋本体のキーワード検索。JANでは引けないのでタイトルを渡すこと
-    （JAN検索はフォームトークンが必要でGETリンクでは動かない。実地確認済み 2026-08-20）"""
+    （JAN検索はフォームトークンが必要でGETリンクでは動かない。実地確認済み 2026-08-20）
+
+    成果計測はリダイレクト方式。素のURLにパラメータを足しても計上されない。
+    形式は実物のリンクに合わせている（2026-08-21 にユーザーが発行したリンクで確認）:
+        https://affiliate.suruga-ya.jp/modules/af/af_jump.php
+            ?user_id=<ID>&goods_url=<行き先URLを全部エンコードしたもの>
+    SURUGAYA_AFFILIATE_ID は af_jump.php の user_id にあたる。
+    """
     url = "https://www.suruga-ya.jp/search?category=&search_word=%s&searchbox=1" % q(kw)
     if AF.SURUGAYA_AFFILIATE_ID:
-        url += "&aff=" + AF.SURUGAYA_AFFILIATE_ID
+        return ("https://affiliate.suruga-ya.jp/modules/af/af_jump.php"
+                "?user_id=%s&goods_url=%s" % (AF.SURUGAYA_AFFILIATE_ID, q(url)))
     return url
 
 
