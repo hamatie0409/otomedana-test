@@ -529,30 +529,44 @@ def buy_section(g, ed_rows, offers):
                 b.append('<div class="ed-head">%s%s</div>' % (
                     e(label),
                     ' <span class="jan">JAN %s</span>' % e(r["gtin"]) if r["gtin"] else ""))
-            b.append('<ul class="shops">')
-            seen = set()
-            # 値段が出ている店を上に。探しに行かなくても分かるものが先
-            for o in sorted(offers[r["eid"]],
-                            key=lambda o: (0 if fresh_price(o) else 1, o["priority"])):
-                key = (o["channel"], o["via"])
-                if key in seen:
+
+            # 新品と中古を行で分ける。店名の横に値段だけ書くと
+            # 「楽天 ¥6,190 / 楽天（中古） ¥6,000」のように何の値段か読めない
+            by_cond = {}
+            for o in offers[r["eid"]]:
+                # 値段を取るためだけの行（駿河屋楽天市場店・楽天の中古）は、
+                # 値段が無ければ出さない。同じ店の検索リンクと行き先が同じになる
+                if o["via"] and not fresh_price(o):
                     continue
-                price = fresh_price(o)
-                # 駿河屋楽天市場店の行は価格が取れているときだけ出す。
-                # 取れていなければ駿河屋本体の検索リンクだけで足りる
-                if o["via"] and not price:
-                    continue
-                seen.add(key)
-                name = e(o["channel"]) + VIA_LABEL.get(o["via"], "")
-                if price:
-                    label = "%s ¥%s" % (name, format(price, ","))
-                    fetched.append(o["fetched_at"])
-                else:
-                    label = name + COND_VERB.get(o["condition"], "で探す")
-                b.append('<li><a class="shop%s" href="%s" rel="nofollow sponsored noopener"'
-                         ' target="_blank">%s</a></li>'
-                         % (" used" if o["condition"] == "中古" else "", e(o["url"]), label))
-            b.append("</ul>")
+                grp = by_cond.setdefault(o["condition"], {})
+                cur = grp.get(o["channel"])
+                # 同じ店で経路が2つあるとき（駿河屋本体と駿河屋楽天市場店）は
+                # 値段の取れているほうを採る。無ければ検索リンクを残す
+                if cur is None or (fresh_price(o) and not fresh_price(cur)) or (
+                        fresh_price(o) and fresh_price(cur)
+                        and fresh_price(o) < fresh_price(cur)):
+                    grp[o["channel"]] = o
+
+            for cond_name in sorted(by_cond, key=lambda c: min(
+                    o["priority"] for o in by_cond[c].values())):
+                shops = sorted(by_cond[cond_name].values(),
+                               key=lambda o: (0 if fresh_price(o) else 1, o["priority"]))
+                # 「ダウンロード版」の見出しの下に「ダウンロード」と出すと重複する
+                head = ('<span class="cond-label">%s</span>' % e(cond_name)
+                        if cond_name != "ダウンロード" else "")
+                b.append('<div class="cond">%s<ul class="shops">' % head)
+                for o in shops:
+                    price = fresh_price(o)
+                    if price:
+                        text = "%s ¥%s" % (e(o["channel"]), format(price, ","))
+                        fetched.append(o["fetched_at"])
+                    else:
+                        text = e(o["channel"]) + ("で見る" if cond_name == "ダウンロード"
+                                                  else "で探す")
+                    b.append('<li><a class="shop%s" href="%s"'
+                             ' rel="nofollow sponsored noopener" target="_blank">%s</a></li>'
+                             % (" used" if cond_name == "中古" else "", e(o["url"]), text))
+                b.append("</ul></div>")
 
         # 配信ストアのリンクが取れないダウンロード版は出しようがないので、存在だけ伝える
         if any(r["is_dl"] and not offers.get(r["eid"]) for r in rows):
