@@ -23,7 +23,8 @@ HOME = ("Switch", "PS", "ニンテンドー", "Xbox")
 # 表示義務があるので、PUBLISH ではなく実際の設定で出し分ける
 HAS_AFFILIATE = any(getattr(AF, k) for k in
                     ("RAKUTEN_AFFILIATE_ID", "AMAZON_ASSOCIATE_TAG",
-                     "SURUGAYA_AFFILIATE_ID", "ANIMATE_A8_BASE"))
+                     "SURUGAYA_AFFILIATE_ID", "ANIMATE_A8_BASE",
+                     "MERCARI_AMBASSADOR_ID"))
 
 e = lambda s: html.escape(str(s), quote=True) if s is not None else ""
 

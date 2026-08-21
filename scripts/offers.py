@@ -85,7 +85,19 @@ def animate(kw):
 
 
 def mercari(kw):
-    return "https://jp.mercari.com/search?keyword=%s" % q(kw)
+    """メルカリアンバサダーの検索リンク。
+
+    個別の商品ではなく検索結果そのものをリンクにできるので、
+    出品が入れ替わってもリンクが死なない。中古は出品ありきなのでこの形が合う。
+    形式は実物のリンクに合わせている（2026-08-21 にユーザーが発行したリンクで確認）:
+        https://jp.mercari.com/search?afid=<ID>&keyword=<語+語>
+    空白は + で、パラメータの順は afid が先。
+    """
+    kw = urllib.parse.quote_plus(str(kw))
+    if AF.MERCARI_AMBASSADOR_ID:
+        return "https://jp.mercari.com/search?afid=%s&keyword=%s" % (
+            AF.MERCARI_AMBASSADOR_ID, kw)
+    return "https://jp.mercari.com/search?keyword=%s" % kw
 
 
 def surugaya(kw):
@@ -97,15 +109,29 @@ def surugaya(kw):
     return url
 
 
+def _kw_parts(e):
+    """検索語の組み立て。作品名 ＋ 機種 ＋（限定版・セットのときだけ）版名。
+
+    機種を足さないと別機種の版が混ざる。ただし「金色のコルダ PSP」「緋色の欠片DS」の
+    ように作品名に機種名が入っていることがあり（213版）、そのまま足すと
+    「AMNESIA for Nintendo Switch Switch」のような重複した検索語になる。
+    """
+    kw = e["search_kw"] or ""
+    plat = PLATFORM_KW.get(e["platform"], "")
+    parts = [kw]
+    if plat and plat.lower() not in kw.lower():
+        parts.append(plat)
+    return parts
+
+
 def used_keyword(e):
     """中古の検索語。
 
     駿河屋・メルカリはJANで引けずキーワード検索しかない。
-    機種を足さないと別機種の版が混ざるので必ず付ける。
     版名は「限定版」「ツインパック」だけ足す。中古の出品は通常版をわざわざ
     「通常版」と書かないことが多く、付けると空振りになるため。
     """
-    parts = [e["search_kw"], PLATFORM_KW.get(e["platform"], "")]
+    parts = _kw_parts(e)
     if e["edition_kind"] in ("限定", "セット"):
         parts.append(e["edition"])
     return " ".join(p for p in parts if p)
@@ -113,7 +139,7 @@ def used_keyword(e):
 
 def new_keyword(e):
     """新品の検索語（JANが無い版のフォールバック）"""
-    parts = [e["search_kw"], PLATFORM_KW.get(e["platform"], "")]
+    parts = _kw_parts(e)
     if e["edition_kind"] in ("限定", "セット"):
         parts.append(e["edition"])
     return " ".join(p for p in parts if p)
@@ -209,7 +235,8 @@ def main():
     print("掲載対象 %d件 のうち購入導線あり %d件 (%.0f%%)" % (tot, cov, 100.0 * cov / tot))
 
     unset = [k for k in ("RAKUTEN_AFFILIATE_ID", "AMAZON_ASSOCIATE_TAG",
-                         "SURUGAYA_AFFILIATE_ID", "ANIMATE_A8_BASE") if not getattr(AF, k)]
+                         "SURUGAYA_AFFILIATE_ID", "ANIMATE_A8_BASE",
+                         "MERCARI_AMBASSADOR_ID") if not getattr(AF, k)]
     if unset:
         print()
         print("※ 未設定のアフィリエイトID: %s" % ", ".join(unset))
