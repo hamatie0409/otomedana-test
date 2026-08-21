@@ -94,7 +94,11 @@ ul.cards .meta{display:flex;flex-direction:column;gap:2px;min-width:0}
 ul.cards b{font-size:14.5px;line-height:1.5}
 ul.cards small{color:var(--muted);font-size:12px}
 ul.cards .ex{color:var(--accent2)}
-.noimg{width:90px;flex:none;background:var(--chip);border-radius:4px}
+/* 表紙は店の商品写真なので、縦横比が商品ごとにばらばら（正方形のものも多い）。
+   高さを決めずに並べるとカードの背が揃わず、写真の大きさも不揃いに見える。
+   枠を固定して contain で収める。切り取らないので絵柄は欠けない */
+ul.cards a img,.noimg{width:90px;height:126px;flex:none;object-fit:contain;
+  background:var(--chip);border-radius:4px}
 
 #app{margin:20px 0}
 .filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
