@@ -576,6 +576,10 @@ def buy_section(g, ed_rows, offers):
             b.append('<p class="dl-note">このほかダウンロード版があります</p>')
         b.append("</details>")
 
+    # A8の計測用画像。アニメイトのリンクを出したページに1つだけ置く
+    if AF.ANIMATE_A8_BASE and AF.ANIMATE_A8_PIXEL and n_shown:
+        b.append('<img src="%s" alt="" width="1" height="1" loading="lazy" '
+                 'style="position:absolute">' % e(AF.ANIMATE_A8_PIXEL))
     if fetched:
         # 楽天ウェブサービスの規約で価格・在庫は24時間まで。いつ時点かを必ず書く
         newest = max(fetched)

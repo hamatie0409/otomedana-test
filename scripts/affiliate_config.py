@@ -76,9 +76,16 @@ AMAZON_ASSOCIATE_TAG = _env("AMAZON_ASSOCIATE_TAG", "hamat1e-22")
 # 素のURLにパラメータを足す方式ではなく、リダイレクトURLを組む
 SURUGAYA_AFFILIATE_ID = _env("SURUGAYA_AFFILIATE_ID", "4041")
 
-# A8.net のアニメイト用リンク（発行された a8.net のリダイレクトURLをそのまま入れる）
-# 例: "https://px.a8.net/svt/ejp?a8mat=XXXXXX"
-ANIMATE_A8_BASE = _env("ANIMATE_A8_BASE", "")
+# A8.net のアニメイト用リンク。発行されたタグの前半（?a8mat= まで）を入れる。
+# 行き先は &a8ejpredirect=<エンコードしたURL> で足す。
+# a8mat の中の + は区切りではなく値の一部なので、エンコードしないこと。
+ANIMATE_A8_BASE = _env("ANIMATE_A8_BASE",
+                       "https://px.a8.net/svt/ejp?a8mat=3NAHG7+1Y965U+4ADS+BW8O2")
+
+# A8のタグに含まれる1x1の計測用画像。表示回数の計測に使う。
+# リンクごとではなくページに1つ置く（1ページに何本もリンクがあるため）
+ANIMATE_A8_PIXEL = _env("ANIMATE_A8_PIXEL",
+                        "https://www15.a8.net/0.gif?a8mat=3NAHG7+1Y965U+4ADS+BW8O2")
 
 # メルカリアンバサダーのリンク（発行形式が決まったら反映）
 MERCARI_AMBASSADOR_ID = _env("MERCARI_AMBASSADOR_ID", "2811053099")

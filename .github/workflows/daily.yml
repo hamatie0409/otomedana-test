@@ -1,13 +1,21 @@
 name: 日次ビルド
 
-# 価格・在庫は楽天ウェブサービスの規約で取得から24時間しか保持できない。
-# 表示を続けるには毎日取り直して作り直す必要がある。
+# 価格・在庫は楽天ウェブサービスの規約で取得から24時間しか保持できないので、
+# 毎日取り直して作り直す必要がある。
+#
+# ただし「作品の一覧そのもの」を毎日作り直すのは避けている。
+# VNDBの乙女ゲームタグは投票の平均で判定していて日々動くため、毎日作り直すと
+# 収録作品が出入りし、URLも変わりうる。カタログは週1回、価格は毎日。
 on:
   schedule:
-    # 13:00 UTC = 22:00 JST。VNDBのダンプは 08:00 UTC 前後に更新されるので、
-    # その日のぶんを確実に取れる時刻に回す
+    # 13:00 UTC = 22:00 JST。VNDBのダンプは 08:00 UTC 前後に更新される
     - cron: "0 13 * * *"
-  workflow_dispatch:        # 手動実行もできるようにしておく
+  workflow_dispatch:
+    inputs:
+      rebuild_db:
+        description: "VNDBのダンプからDBを作り直す（overrides.py を直したときなど）"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -24,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90        # 楽天の取得だけで約30分かかる
     env:
-      # 秘密なのはこれだけ。ほかのIDは生成されるリンクに必ず出る公開値なので
+      # 秘密なのはこれだけ。ほかのIDは生成されるリンクに必ず現れる公開値なので
       # scripts/affiliate_config.py に既定値として入っている
       RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
 
@@ -39,27 +47,58 @@ jobs:
         run: |
           if [ -z "$RAKUTEN_ACCESS_KEY" ]; then
             echo "::error::RAKUTEN_ACCESS_KEY が未設定です。" \
-                 "リポジトリの Settings > Secrets and variables > Actions で登録してください"
+                 "Settings > Secrets and variables > Actions で登録してください"
             exit 1
           fi
 
+      - name: 今週のキーを決める
+        id: wk
+        run: echo "key=$(date -u +%G-W%V)" >> "$GITHUB_OUTPUT"
+
+      - name: DBのキャッシュを探す（週替わり）
+        id: dbcache
+        uses: actions/cache@v4
+        with:
+          path: data/vndb_otome.db
+          key: otome-db-v1-${{ steps.wk.outputs.key }}
+
+      - name: 作り直すかどうか
+        id: plan
+        run: |
+          if [ "${{ steps.dbcache.outputs.cache-hit }}" = "true" ] \
+             && [ "${{ inputs.rebuild_db }}" != "true" ]; then
+            echo "rebuild=false" >> "$GITHUB_OUTPUT"
+            echo "今週のDBを再利用します（カタログの作り直しは週1回）"
+          else
+            echo "rebuild=true" >> "$GITHUB_OUTPUT"
+            echo "VNDBのダンプからDBを作り直します"
+          fi
+
+      # ---- ここから下は週1回だけ（またはボタンで指定したとき） ----
       - name: VNDBのダンプを取得（約187MB）
+        if: steps.plan.outputs.rebuild == 'true'
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq zstd
-          curl -fsSL -o vndb-db-latest.tar.zst https://dl.vndb.org/dump/vndb-db-latest.tar.zst
+          curl -fsSL -o dump.tar.zst https://dl.vndb.org/dump/vndb-db-latest.tar.zst
           mkdir -p vndb && cd vndb
-          zstd -dc ../vndb-db-latest.tar.zst | tar -xf -
-          rm ../vndb-db-latest.tar.zst
+          zstd -dc ../dump.tar.zst | tar -xf -
+          rm ../dump.tar.zst
           echo "ダンプの日時: $(cat TIMESTAMP)"
 
-      - name: データベースを作る
+      - name: カタログを作る
+        if: steps.plan.outputs.rebuild == 'true'
         run: |
           python3 scripts/vndb_build.py
           python3 scripts/vndb_export.py
           python3 scripts/buy_links.py
           python3 scripts/editions.py
-          python3 scripts/offers.py
           python3 scripts/slugs.py
+
+      # ---- ここから下は毎日 ----
+      # offers 以降はDBだけを見る（ダンプは要らない）ので、
+      # 購入先URLの直しは翌日のビルドから反映される
+      - name: 購入先URLを作る
+        run: python3 scripts/offers.py
 
       - name: 楽天から価格を取る（約30分・1秒1リクエスト）
         run: |
