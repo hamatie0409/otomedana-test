@@ -10,7 +10,8 @@ from common import DATA
 import re
 from series import build_series
 from vndb_build import PLATFORM_JA
-from site_config import AGE_TIERS, age_tier, year_bucket, year_label, year_sort
+from site_config import (AGE_TIERS, IMAGE_MODE, age_tier, year_bucket,
+                         year_label, year_sort)
 
 # 訳が用意できていない英語のままの語は絞り込み候補に出さない
 is_en = lambda t: bool(re.fullmatch(r"[\x20-\x7e]+", t or ""))
@@ -40,6 +41,14 @@ def main():
 
     slug = {(k, key): url for k, key, url in
             con.execute("SELECT kind, key, url FROM slugs")}
+
+    # 一覧カードの画像は site_build.py の cover_of() と同じものを使う。
+    # ここだけ games.image_url（VNDB）を見ていたため、検索結果とページで
+    # 表紙が食い違っていた（affiliate モードでもVNDBの画像が出ていた）
+    shop_img = dict(con.execute("SELECT vid, url FROM shop_images"))
+
+    def cover(vid, vndb_url):
+        return vndb_url if IMAGE_MODE == "vndb" else shop_img.get(vid)
 
     # 語彙表（ページ化されるものだけを絞り込み候補にする）
     def vocab(kind, sql):
@@ -145,7 +154,7 @@ def main():
             "d": dev,
             "g": rating,
             "n": votes,
-            "i": img,
+            "i": cover(vid, img),
             "a": age_tier(minage),
             "y": year_bucket(rel),
         })

@@ -52,6 +52,19 @@ RAKUTEN_BOOKS = "book"      # 楽天ブックス。元画像が大きく、帯�
 # 版の代表性。作品の顔として出すなら通常版がいい
 EDITION_RANK = {"": 0, "通常": 0, "限定": 1, "セット": 2, "廉価": 3}
 
+# 機種の優先順。Switch版が出ている作品はSwitchのパッケージを顔にする
+# （いま買える版なので、探している人が店頭で見るものと一致する）
+PLATFORM_RANK = {"swi": 0, "sw2": 0}
+OTHER_HOME_RANK = 1     # そのほかの家庭用機
+PC_RANK = 2
+ETC_RANK = 3
+
+
+def platform_rank(code, plat_group):
+    if code in PLATFORM_RANK:
+        return PLATFORM_RANK[code]
+    return {0: OTHER_HOME_RANK, 1: PC_RANK}.get(plat_group, ETC_RANK)
+
 MEASURE_SCHEMA = """
 CREATE TABLE IF NOT EXISTS shop_image_size (
     shop_code TEXT PRIMARY KEY,
@@ -119,7 +132,7 @@ def probe(url):
         return None
 
 
-TRY_N = 4          # 1作品あたり実測する候補の上限
+TRY_N = 6          # 1作品あたり実測する候補の上限
 
 
 def probe_best(con, cands):
@@ -222,7 +235,8 @@ def main():
     print("店の共通画像として除外: %d枚（%d JANで使い回されていたもの）"
           % (n_shared, SHARED_MAX))
 
-    eds = con.execute("""SELECT eid, vid, gtin, edition_kind, plat_group, released, is_dl
+    eds = con.execute("""SELECT eid, vid, gtin, edition_kind, platform, plat_group,
+                                released, is_dl
                          FROM editions WHERE gtin <> ''""").fetchall()
 
     measure_shops(con, items)
@@ -238,9 +252,10 @@ def main():
             shop = 1
         else:
             shop = 2
-        return (band, shop,
+        return (band,
+                platform_rank(e["platform"], e["plat_group"]),
+                shop,
                 EDITION_RANK.get(e["edition_kind"], 5),
-                e["plat_group"],
                 # 今買える版を優先するので新しい順
                 "" if not e["released"] else "".join(chr(255 - ord(c)) for c in e["released"]),
                 -(it["review_count"] or 0))
