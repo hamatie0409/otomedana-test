@@ -37,8 +37,9 @@ python3 scripts/offers.py         # 版ごとの購入先URLを作る
 python3 scripts/slugs.py          # URLスラッグの確定
 python3 scripts/site_data.py      # 検索インデックス
 
-# 価格を出す場合だけ（楽天ウェブサービスの認証情報が要る。規約上24時間で失効）
-python3 scripts/rakuten_prices.py --only-scope
+# 価格とパッケージ画像（楽天ウェブサービスの認証情報が要る。価格は規約上24時間で失効）
+python3 scripts/rakuten_prices.py --only-scope   # 1601件・約29分
+python3 scripts/shop_images.py                   # 商品画像から作品の顔を選ぶ
 
 # 3. 静的サイトの生成（6,729ページ）
 python3 scripts/site_build.py

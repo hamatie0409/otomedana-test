@@ -1300,8 +1300,12 @@ def main():
     print()
     if IMAGE_MODE != "vndb":
         miss = sum(1 for g in games.values() if not cover_of(g))
-        print("  画像モード: %s（アフィリエイト画像なし %d件 / キャラ画像は非表示）"
+        print("  画像モード: %s（パッケージ画像なし %d件 / キャラ画像は非表示）"
               % (IMAGE_MODE, miss))
+        if miss == len(games):
+            print("  ※ パッケージ画像が1枚もありません。先にこの2つを実行してください:")
+            print("       python3 scripts/rakuten_prices.py --only-scope")
+            print("       python3 scripts/shop_images.py")
     print("  作品      %5d" % len(games))
     print("  キャラクター %4d" % n_char)
     print("  声優      %5d" % n_cv)

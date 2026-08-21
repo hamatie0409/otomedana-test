@@ -5,6 +5,8 @@ SITE_URL は canonical・OGP・sitemap.xml・robots.txt に反映される。
 公開後に変えると検索エンジンの評価がリセットされるので、公開前に確定させること。
 """
 
+import os
+
 SITE_NAME = "オトメ棚"
 SITE_DESC = "乙女ゲームを声優・キャラクター属性・機種から探して、買えるお店へ。"
 
@@ -34,7 +36,13 @@ BASE_PATH = "" if PUBLISH else "/otomedana-test"
 #                 （楽天は「URLのまま表示」が規約上OK）。
 #                 キャラクター画像は出さず、VNDBへのリンクに置き換える。
 # ------------------------------------------------------------------
-IMAGE_MODE = "affiliate" if PUBLISH else "vndb"
+#
+# 既定は "affiliate"。VNDB画像は公開できないので、既定にしておくと
+# 「テストでは出ていたのに公開したら消えた」が起きる。
+# 手元で確認したいときだけ環境変数で戻す:
+#       IMAGE_MODE=vndb python3 scripts/site_build.py
+# なお affiliate 画像は shop_images.py を実行しないと1枚も入らない。
+IMAGE_MODE = os.environ.get("IMAGE_MODE") or "affiliate"
 
 # ODbL 4.6（改変方法の提供義務）を満たすための公開リポジトリ
 REPO_URL = "https://github.com/"
