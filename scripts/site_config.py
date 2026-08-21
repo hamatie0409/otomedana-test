@@ -59,12 +59,9 @@ AGE_TIERS = [
     ("18", "18歳以上（CERO Z）", 18, 99),
 ]
 
-# 発売年の区分。この年以降は1年ずつ、それより前は5年ずつまとめる。
+# 発売年の区分。この年以降は1年ずつ、それより前は10年ずつ（年代）でまとめる。
 # 古い作品は年あたり数本しかなく、1年ずつ出すと空に近い選択肢が並ぶため。
-YEAR_SINGLE_FROM = 2006
-YEAR_OLD_BUCKETS = [("2001-2005", 2001, 2005),
-                    ("1996-2000", 1996, 2000),
-                    ("-1995", 0, 1995)]
+YEAR_SINGLE_FROM = 2020
 
 
 def age_tier(minage):
@@ -87,17 +84,13 @@ def year_bucket(released):
         return ""
     if y >= YEAR_SINGLE_FROM:
         return str(y)
-    for key, lo, hi in YEAR_OLD_BUCKETS:
-        if lo <= y <= hi:
-            return key
-    return ""
+    d = (y // 10) * 10
+    return "%d-%d" % (d, d + 9)
 
 
 def year_label(bucket):
-    """区分の値 → 表示名"""
-    if bucket.startswith("-"):
-        return "%s年以前" % bucket[1:]
-    return "%s年" % bucket
+    """区分の値 → 表示名。"2010-2019" は「2010年代」"""
+    return ("%s年代" % bucket[:4]) if "-" in bucket else ("%s年" % bucket)
 
 
 def year_sort(bucket):

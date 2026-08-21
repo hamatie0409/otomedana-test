@@ -509,6 +509,13 @@ def main():
         c = CAT_OF.get(kind)
         return [(SITE_NAME, "/")] + ([(c[2], c[1])] if c else []) + [(lab, None)]
 
+    def game_item(g, extra=None):
+        """作品カード1枚分。日付は和暦で見せ、並べ替え用のISO日付は
+        card_attrs がデータ属性として持たせる"""
+        return (slug[("game", g["vid"])], g["title"], ja_date(g["released"]),
+                (g["platforms"] or "").split(" / ")[0], cover_of(g), extra,
+                card_attrs(g))
+
     def rep_game(gs):
         """代表作。カバー画像があるものを優先し、その中で票数の多いもの。
         評価より票数を見るのは「知られている作品」を出したいから"""
@@ -726,19 +733,17 @@ def main():
             else:
                 rows = con.execute(member_sql, (key,) if "?" in member_sql else ()).fetchall() \
                     if "?" in member_sql else []
-            items, gs = [], []
+            picked = []
             for r in rows:
                 g = games.get(r["vid"])
-                if not g:
-                    continue
-                items.append((slug[("game", g["vid"])], g["title"], g["released"],
-                              (g["platforms"] or "").split(" / ")[0], cover_of(g),
-                              r[extra_col] if extra_col and extra_col in r.keys() else None,
-                              card_attrs(g)))
-                gs.append(g)
-            if not items:
+                if g:
+                    picked.append(
+                        (g, r[extra_col] if extra_col and extra_col in r.keys() else None))
+            if not picked:
                 continue
-            items.sort(key=lambda x: (x[2] or "0000"), reverse=True)
+            picked.sort(key=lambda x: (x[0]["released"] or "0000"), reverse=True)
+            gs = [g for g, _ in picked]
+            items = [game_item(g, x) for g, x in picked]
             body = ["<h1>%s</h1>" % e(heading_fmt % lab),
                     '<p class="lead">%s</p>' % e(desc_fmt % (lab, len(items)))]
             if kind == "cv" and alias_of.get(key):
@@ -796,13 +801,8 @@ def main():
         cast_rows.sort(key=lambda x: (x[0]["released"] or ""), reverse=True)
         staff_rows.sort(key=lambda x: (x[0]["released"] or ""), reverse=True)
 
-        def item_of(g, extra):
-            return (slug[("game", g["vid"])], g["title"], ja_date(g["released"]),
-                    (g["platforms"] or "").split(" / ")[0], cover_of(g), extra,
-                    card_attrs(g))
-
-        cast_items = [item_of(g, x) for g, x in cast_rows]
-        staff_items = [item_of(g, x) for g, x in staff_rows]
+        cast_items = [game_item(g, x) for g, x in cast_rows]
+        staff_items = [game_item(g, x) for g, x in staff_rows]
         # cast_items は「作品×キャラ」の行。同じ作品で2役演じていれば2行になるので、
         # 作品数として数えるときは作品URLで重複を落とす
         cast_works = {i[0] for i in cast_items}
@@ -897,17 +897,16 @@ def main():
         rows = con.execute(
             "SELECT DISTINCT vid, name FROM traits WHERE category=? AND trait=?",
             (cat, tr)).fetchall()
-        items, gs = [], []
+        picked = []
         for r in rows:
             g = games.get(r["vid"])
             if g:
-                items.append((slug[("game", g["vid"])], g["title"], g["released"],
-                              (g["platforms"] or "").split(" / ")[0], cover_of(g),
-                              r["name"], card_attrs(g)))
-                gs.append(g)
-        if not items:
+                picked.append((g, r["name"]))
+        if not picked:
             continue
-        items.sort(key=lambda x: (x[2] or "0000"), reverse=True)
+        picked.sort(key=lambda x: (x[0]["released"] or "0000"), reverse=True)
+        gs = [g for g, _ in picked]
+        items = [game_item(g, x) for g, x in picked]
         url = slug[(k, key)]
         # items はキャラ単位（1作品に該当キャラが複数いれば複数行）なので、
         # 作品数として数えるときは作品URLで重複を落とす
