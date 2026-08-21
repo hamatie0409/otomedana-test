@@ -46,9 +46,13 @@ def main():
     # ここだけ games.image_url（VNDB）を見ていたため、検索結果とページで
     # 表紙が食い違っていた（affiliate モードでもVNDBの画像が出ていた）
     shop_img = dict(con.execute("SELECT vid, url FROM shop_images"))
+    # ダウンロード専売の作品は箱が存在しないので VNDB の画像に戻す
+    dl_only = {r[0] for r in con.execute("SELECT vid FROM dl_only_games")}
 
     def cover(vid, vndb_url):
-        return vndb_url if IMAGE_MODE == "vndb" else shop_img.get(vid)
+        if IMAGE_MODE == "vndb":
+            return vndb_url
+        return shop_img.get(vid) or (vndb_url if vid in dl_only else None)
 
     # 語彙表（ページ化されるものだけを絞り込み候補にする）
     def vocab(kind, sql):

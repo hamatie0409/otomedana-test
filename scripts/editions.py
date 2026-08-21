@@ -102,6 +102,12 @@ CREATE TABLE editions (
 CREATE INDEX idx_ed_vid ON editions(vid);
 CREATE INDEX idx_ed_gtin ON editions(gtin);
 CREATE INDEX idx_ed_rid ON editions(rid);
+
+-- パッケージ版が1つも無い作品。箱が存在しないので楽天から商品画像を取れない。
+-- サイト側はこの作品だけ VNDB の画像に戻す（site_build.py / site_data.py）
+DROP VIEW IF EXISTS dl_only_games;
+CREATE VIEW dl_only_games AS
+    SELECT vid FROM editions GROUP BY vid HAVING MIN(is_dl) = 1;
 """
 
 

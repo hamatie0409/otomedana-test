@@ -652,12 +652,18 @@ def main():
     con.execute("""CREATE TABLE IF NOT EXISTS shop_images
                    (vid TEXT PRIMARY KEY, url TEXT, source TEXT)""")
     shop_img = dict(con.execute("SELECT vid, url FROM shop_images"))
+    # ダウンロード専売の作品は箱が存在せず、楽天から商品画像を取りようがない。
+    # この作品だけ VNDB の画像に戻す
+    dl_only = {r[0] for r in con.execute("SELECT vid FROM dl_only_games")}
 
     def cover_of(g):
+        """作品の表紙。IMAGE_MODE=affiliate でも、パッケージが存在しない
+        ダウンロード専売の作品だけは VNDB の画像を使う"""
         """公開モードではアフィリエイト由来の画像だけを使う"""
         if IMAGE_MODE == "vndb":
             return g["image_url"]
-        return shop_img.get(g["vid"])
+        return shop_img.get(g["vid"]) or (
+            g["image_url"] if g["vid"] in dl_only else None)
 
     series = build_series(con, set(games))
     series_of = {}
@@ -1317,8 +1323,10 @@ def main():
     print()
     if IMAGE_MODE != "vndb":
         miss = sum(1 for g in games.values() if not cover_of(g))
-        print("  画像モード: %s（パッケージ画像なし %d件 / キャラ画像は非表示）"
-              % (IMAGE_MODE, miss))
+        n_dl = sum(1 for g in games.values()
+                   if g["vid"] in dl_only and not shop_img.get(g["vid"]) and g["image_url"])
+        print("  画像モード: %s（表紙なし %d件 / DL専売のためVNDB画像 %d件"
+              " / キャラ画像は非表示）" % (IMAGE_MODE, miss, n_dl))
         if miss == len(games):
             print("  ※ パッケージ画像が1枚もありません。先にこの2つを実行してください:")
             print("       python3 scripts/rakuten_prices.py --only-scope")
