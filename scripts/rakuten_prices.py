@@ -119,6 +119,25 @@ SOFT_WORDS = ("Switch", "スイッチ", "ソフト", "PS4", "PS5", "PSVita", "Vi
               "PlayStation", "プレイステーション", "HAC-P", "3DS", "PSP")
 
 
+# 「その商品自体がゲームではない」と読める書き方。
+#
+# GOODS_WORDS をそのまま JAN 検索に使ってはいけない。ゲーム本体の商品名にも
+# 「限定版:ドラマCD/特製手ぬぐい同梱」のように特典の説明で同じ語が出るので、
+# 正しいリンクを大量に落とす。弾いてよいのは商品そのものがグッズや書籍のとき。
+#
+#   駿河屋は 【中古】<カテゴリ> で始まる。ソフト以外のカテゴリなら本体ではない
+#   楽天ブックスのCDは ＜通常盤＞（CD＋DVD−ROM）／（ドラマCD） の形
+#   特典CDだけの出品は「※CDのみ」と書かれる
+NOT_THE_GAME = re.compile(
+    r"※?CDのみ"
+    r"|【中古】(?:ノート・メモ帳|アニメムック|ライトノベル|販促品|画集|設定資料集)"
+    r"|／（ドラマCD）")
+
+
+def not_the_game(name):
+    return bool(NOT_THE_GAME.search(name or ""))
+
+
 def looks_like_game(name):
     """商品名がゲーム本体か。グッズ・書籍・CDを落とす"""
     n = name or ""
@@ -257,7 +276,7 @@ def fetch_by_title(con, todo, refresh=False):
             code = it.get("itemCode")
             if not code or not it.get("itemPrice"):
                 continue
-            if not looks_like_game(it.get("itemName")):
+            if not_the_game(it.get("itemName")) or not looks_like_game(it.get("itemName")):
                 n_drop += 1
                 continue
             rows.append((
@@ -449,6 +468,10 @@ def main():
         for it in items:
             code = it.get("itemCode")
             if not code or not it.get("itemPrice"):
+                continue
+            # JANがグッズや特典CDのものを指していることがある
+            # （金色のコルダ3 → 同梱特典ドラマCD ※CDのみ）
+            if not_the_game(it.get("itemName")):
                 continue
             rows.append((
                 jan, code, it.get("itemName"), int(it["itemPrice"]),

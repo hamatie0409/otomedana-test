@@ -39,6 +39,11 @@ try:
     from audit_ok import ACK, COMPILATION_OK
 except ImportError:
     ACK, COMPILATION_OK = set(), {}
+try:
+    from rakuten_prices import not_the_game
+except ImportError:
+    def not_the_game(_name):
+        return False
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB = os.path.join(ROOT, "data", "vndb_otome.db")
@@ -155,6 +160,12 @@ def joins(con):
             why.append("価格が%s中央値から外れる（%.1f倍・¥%s / 中央値¥%d）"
                        % (r["condition"], r["price"] / med, r["price"], med))
             risk += 2
+
+        # 商品そのものがゲームでない（特典小冊子・付箋・特典CD）。
+        # ¥3,540 の特典小冊子がゲームとして並んでいたことがある
+        if not_the_game(r["item_name"]):
+            why.append("商品がゲーム本体ではない")
+            risk += 4
 
         t, rel, item = norm(r["title"]), norm(r["rel_title"]), norm(r["item_name"])
         if t and t not in rel:
