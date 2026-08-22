@@ -106,7 +106,7 @@ def joins(con):
     """白黒つかないものを risk 順に並べる"""
     rows = con.execute("""
         SELECT o.eid, o.vid, o.channel, o.condition, o.price, o.item_code, o.item_name,
-               g.title, e.rel_title, e.platform_ja, e.plat_group, e.n_vn, e.rid
+               g.title, e.rel_title, e.edition_label, e.platform_ja, e.plat_group, e.n_vn, e.rid
         FROM offers o
         JOIN editions e ON e.eid = o.eid
         JOIN games g    ON g.vid = o.vid
@@ -129,10 +129,21 @@ def joins(con):
     for r in rows:
         why, risk = [], 0
 
+        # 合本そのものは誤りではない。「ツインパック」のように版の名前で
+        # そうと分かるなら、通常版と並べて出しても誤解は生まれない。
+        # 問題は版の名前が「通常版」「限定版」や空で、中身が別タイトルのとき。
+        # 実物のページで、同じ作品に「通常版 ¥30,472」（実体は合本）と
+        # 「通常版 ¥380」（実体はその作品）が並んでいた。
         n_vn = r["n_vn"] or 1
         if n_vn >= 2 and str(r["rid"]) not in COMPILATION_OK:
-            why.append("合本（1つの商品に%d作品）" % n_vn)
-            risk += 3
+            vague = (r["edition_label"] or "").strip() in ("", "通常版", "限定版")
+            if vague and norm(r["title"]) != norm(r["rel_title"]):
+                why.append("合本なのに版の名前で見分けられない（%d作品入り・実体は「%s」）"
+                           % (n_vn, r["rel_title"]))
+                risk += 3
+            else:
+                why.append("合本（%d作品入り・版の名前で判別できる）" % n_vn)
+                risk += 1
 
         shared = per_item.get(r["item_code"]) or set()
         if len(shared) >= 2:
