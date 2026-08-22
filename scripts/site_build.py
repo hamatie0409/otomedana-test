@@ -486,6 +486,20 @@ def buy_section(g, ed_rows, offers):
         "以下はアフィリエイトリンクを含みます" if HAS_AFFILIATE
         else "アフィリエイトIDが未設定のため、以下は通常の検索リンクです"))
 
+    def is_comp(r):
+        """合本の版か。
+
+        Vita や PSP にしか無かった作品が、後年のSwitch版で本編と一緒に
+        1本にまとめて出し直されることが多い（華ヤカ哉 黄昏ポウラスタ →
+        幻燈ノスタルジィ、NORN9 Last Era → LOFN など）。
+        この版の値段は「合本ぜんぶ」の値段で、この作品1本の相場ではない。
+        中古で ¥30,472 のような値が付き、同じページのPSP版 ¥380 と並んでしまう。
+
+        値段は出さず、「そこに収録されている」ことだけ伝える。
+        """
+        return ((r["n_vn"] or 1) >= 2
+                and norm_title(r["rel_title"] or "") != norm_title(g["title"]))
+
     # 機種ごとにまとめる。並びは editions の取得順
     # （家庭用機 → PC → スマホ、その中では新しく出た機種が上）
     groups = []
@@ -503,11 +517,19 @@ def buy_section(g, ed_rows, offers):
             continue
         # 見出し。作品名とリリース名は一致しないことがあるので、違うときだけ添える
         # （作品名「薄桜鬼 新選組奇譚」/ Switch版「薄桜鬼 真改 風華伝」）
+        comp = [r for r in live if is_comp(r)]
+        solo = [r for r in live if not is_comp(r)]
         names = {r["rel_title"] for r in live if r["rel_title"]}
         # 記号や全角半角の違いだけの場合は作品名と同じものとして扱う
         # （作品名「Collar x Malice」/ リリース名「Collar×Malice」）
         sub = ""
-        if len(names) == 1:
+        incl = ""
+        if comp and not solo and len({r["rel_title"] for r in comp}) == 1:
+            # この機種では合本でしか出ていない。「― 幻燈ノスタルジィ」だと
+            # 「Switch版はこの名前」と読めてしまうので、収録だと書く
+            incl = comp[0]["rel_title"]
+            sub = " ― 『%s』に収録" % e(incl)
+        elif len(names) == 1:
             name = names.pop()
             if norm_title(name) != norm_title(g["title"]):
                 sub = " ― %s" % e(name)
@@ -524,7 +546,20 @@ def buy_section(g, ed_rows, offers):
                  % (" open" if n_shown == 0 else "", head))
         n_shown += 1
 
+        if incl:
+            b.append('<div class="ed-incl">この作品は『%s』に収録されています。'
+                     '合本なので、ここでは値段を出していません</div>' % e(incl))
+
         for r in live:
+            if is_comp(r):
+                if incl:
+                    continue        # 見出しの下で1度断ってあるので繰り返さない
+                # 本体の版と混在している機種。この作品だけの版も買えるので
+                # 「収録」ではなく「セット」。値段は合本ぜんぶの値段なので出さない
+                b.append('<div class="ed-incl">%s ― 『%s』とのセット。'
+                         '合本なので値段は出していません</div>'
+                         % (e(r["edition_label"] or "通常版"), e(r["rel_title"])))
+                continue
             label = r["edition_label"] or ("通常版" if len(live) > 1 else "")
             if label:
                 b.append('<div class="ed-head">%s%s</div>' % (
