@@ -23,6 +23,16 @@ VNDBの画像は「個々の画像はフェアユース」という立場であ�
 作品ページのパッケージ画像は 220px 幅で出すので、小さい元画像を引き伸ばすと
 粗くなる。楽天ブックス → そのほかの新品 → 中古 の順に選び、
 中古専門店の小さい画像は最後の手段にする。
+
+縦横比もそろえる
+----------------
+検索結果のカードは 90x126 の枠に contain で収めるので、枠と縦横比が違う写真は
+余白ができてパッケージが小さく見える。実測すると表紙551枚のうち 24% が正方形で、
+上下に14%ずつ余っていた。そこで、画質が同じ段のものどうしでは
+「枠をどれだけ埋めるか」が大きい写真を選ぶ。
+
+割り込ませる位置は 機種・新品/中古 の下。ここより上に置くと、Switch版を顔にする
+方針が崩れ、値札シールの写り込みやすい中古の写真が増える（実測で +45枚）。
 """
 import concurrent.futures
 import os
@@ -46,6 +56,18 @@ EX = "?_ex=500x500"
 # 220px幅で出すので、縦500pxあれば2倍の余裕がある
 GOOD_HEIGHT = 400
 POOR_HEIGHT = 300
+
+# 検索結果のカードは 90x126 の枠に contain で収める（style.css）。
+# 枠と縦横比が違う写真ほど余白が増え、パッケージが小さく見える。
+# 実測すると表紙551枚のうち 24% が正方形で、その分だけ上下に14%ずつ余っていた。
+CARD_W, CARD_H = 90, 126
+CARD_RATIO = CARD_W / float(CARD_H)
+
+# 枠のどれだけが埋まるかで3段に分ける。
+# 正方形は 0.71、楽天ブックスの箱写真(741x1200)は 0.86、
+# 枠と同じ比なら 1.00 になる
+FILL_GOOD = 0.90
+FILL_OK = 0.78
 
 RAKUTEN_BOOKS = "book"      # 楽天ブックス。元画像が大きく、帯や中古シールも無い
 
@@ -82,7 +104,8 @@ CREATE TABLE shop_images (
     url TEXT,
     source TEXT,     -- 選んだ店のコード
     height INTEGER,  -- 配信される画像の高さ（実測。分かっていれば）
-    eid TEXT         -- どの版の画像か
+    eid TEXT,        -- どの版の画像か
+    width INTEGER    -- 同じく幅。なぜその1枚を選んだかを後から追うため
 );
 """
 
@@ -121,6 +144,25 @@ def jpeg_size(b):
     return None
 
 
+def fill(wh):
+    """カードの枠に contain で収めたとき、枠のどれだけが埋まるか（0〜1）。
+
+    枠より横長（正方形など）なら幅で決まって上下が余り、
+    枠より縦長なら高さで決まって左右が余る。どちらも同じ尺度で測れる。
+    """
+    if not wh or not wh[0] or not wh[1]:
+        return None
+    r = wh[0] / float(wh[1])
+    return min(CARD_RATIO / r, r / CARD_RATIO)
+
+
+def fill_band(wh):
+    f = fill(wh)
+    if f is None:
+        return 3            # 測れなかったものは最後に回す
+    return 0 if f >= FILL_GOOD else (1 if f >= FILL_OK else 2)
+
+
 def probe(url):
     """配信される画像の大きさを測る。先頭16KBだけ取る"""
     req = urllib.request.Request(url + EX, headers={"Range": "bytes=0-16383",
@@ -134,10 +176,26 @@ def probe(url):
 
 TRY_N = 6          # 1作品あたり実測する候補の上限
 
+# score() の何段目に「枠の埋まり方」を割り込ませるか。
+# (画質band, 機種, 新品/中古, 楽天ブックスか, 版) の次、(発売日, レビュー数) の前。
+#
+# ここより上に置くと、それぞれ次の副作用が出る（551件で実測して比べた）。
+#   機種・新品/中古より上 … Switch版を顔にする方針が崩れ、値札シールの
+#                          写り込みやすい中古の写真が +45枚
+#   版より上             … 通常版より限定版の箱が選ばれ、限定版の表紙が
+#                          36 → 62件。枠の埋まり方は同じ（75%未満 100件）
+# つまり版より下でも効果は変わらないので、いちばん副作用の小さい位置に置く。
+FILL_AT = 5
+
+
+def with_fill(sc, url, cache):
+    """score() の並びに「枠の埋まり方」の段を差し込む"""
+    return sc[:FILL_AT] + (fill_band(cache.get(url)),) + sc[FILL_AT:]
+
 
 def probe_best(con, cands):
-    """候補を上から実測して、十分な高さの最初の1枚を選ぶ。
-    どれも届かなければ、測れた中でいちばん大きいものを使う"""
+    """候補を上から実測し、十分な高さのものの中から枠をいちばん埋める1枚を選ぶ。
+    どれも高さが届かなければ、測れた中でいちばん大きいものを使う"""
     cache = {r[0]: (r[1], r[2]) for r in con.execute("SELECT url,width,height FROM image_probe")}
     todo = []
     for v, lst in cands.items():
@@ -159,9 +217,13 @@ def probe_best(con, cands):
 
     best = {}
     for v, lst in cands.items():
+        # 実測できて初めて縦横比が分かるので、並べ替えはここでもう一度やる。
+        # 高さが足りないものは下のループが読み飛ばすので、形を優先しても画質は落ちない
+        ranked = sorted(lst[:TRY_N],
+                        key=lambda t: with_fill(t[0], t[1]["image_url"], cache))
         picked = None
         fallback = None
-        for sc, it, e in lst[:TRY_N]:
+        for sc, it, e in ranked:
             wh = cache.get(it["image_url"])
             if not wh or not wh[1]:
                 continue
@@ -173,7 +235,7 @@ def probe_best(con, cands):
         chosen = picked or fallback
         if chosen:
             wh, it, e = chosen
-            best[v] = (wh[1], it, e)
+            best[v] = (wh, it, e)
     return best
 
 
@@ -255,15 +317,14 @@ def main():
         h = heights.get(it["shop_code"], 0)
         # 実測した高さで3段階に分ける。同じ段の中では新品・楽天ブックスを優先
         band = 0 if h >= GOOD_HEIGHT else (1 if h >= POOR_HEIGHT else 2)
-        if it["shop_code"] == RAKUTEN_BOOKS:
-            shop = 0
-        elif it["condition"] == "新品":
-            shop = 1
-        else:
-            shop = 2
+        # 「新品か」と「楽天ブックスか」は別の段に分ける。
+        # 枠の埋まり方（FILL_AT）をこの2つの間に割り込ませるため
+        new = 0 if it["condition"] == "新品" else 1
+        books = 0 if it["shop_code"] == RAKUTEN_BOOKS else 1
         return (band,
                 platform_rank(e["platform"], e["plat_group"]),
-                shop,
+                new,
+                books,
                 EDITION_RANK.get(e["edition_kind"], 5),
                 # 今買える版を優先するので新しい順
                 "" if not e["released"] else "".join(chr(255 - ord(c)) for c in e["released"]),
@@ -286,9 +347,9 @@ def main():
     best = probe_best(con, cands)
 
     con.executescript(SCHEMA)
-    rows = [(vid, it["image_url"] + EX, it["shop_code"], h, e["eid"])
-            for vid, (h, it, e) in best.items()]
-    con.executemany("INSERT INTO shop_images VALUES (?,?,?,?,?)", rows)
+    rows = [(vid, it["image_url"] + EX, it["shop_code"], wh[1], e["eid"], wh[0])
+            for vid, (wh, it, e) in best.items()]
+    con.executemany("INSERT INTO shop_images VALUES (?,?,?,?,?,?)", rows)
     con.commit()
 
     q = lambda s: con.execute(s).fetchone()[0]
@@ -310,6 +371,18 @@ def main():
     unk = q("SELECT COUNT(*) FROM shop_images WHERE vid IN (%s) AND height IS NULL" % sub)
     if unk:
         print("  %-24s %4d件" % ("測れなかった", unk))
+    print()
+    print("=== カードの枠(%dx%d)の埋まり方 ===" % (CARD_W, CARD_H))
+    fs = [fill((r[0], r[1])) for r in
+          con.execute("SELECT width, height FROM shop_images WHERE vid IN (%s)" % sub)]
+    fs = sorted(f for f in fs if f is not None)
+    if fs:
+        for label, lo, hi in (("90%以上（ぴったり）", FILL_GOOD, 1.01),
+                              ("78〜89%（少し余る）", FILL_OK, FILL_GOOD),
+                              ("78%未満（大きく余る）", 0.0, FILL_OK)):
+            n = sum(1 for f in fs if lo <= f < hi)
+            print("  %-22s %4d件" % (label, n))
+        print("  中央値 %.0f%%" % (100 * fs[len(fs) // 2]))
     print()
     print("=== 選ばれた店（上位）===")
     for sc, n, h in con.execute("""SELECT source, COUNT(*), MAX(height) FROM shop_images
