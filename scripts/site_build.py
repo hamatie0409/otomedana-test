@@ -548,23 +548,26 @@ def buy_section(g, ed_rows, offers):
 
         if incl:
             b.append('<div class="ed-incl">この作品は『%s』に収録されています。'
-                     '合本なので、ここでは値段を出していません</div>' % e(incl))
+                     'この機種で遊ぶにはこれを買います。'
+                     '以下は合本のリンクです（合本なので値段は出していません）</div>' % e(incl))
 
         for r in live:
-            if is_comp(r):
-                if incl:
-                    continue        # 見出しの下で1度断ってあるので繰り返さない
+            # 合本の版は値段を出さない（合本ぜんぶの値段で、この作品の相場ではない）。
+            # ただし店へのリンクは出す。その機種で遊ぶにはこれを買うしかないので、
+            # 断りだけ出してリンクを消すと行き先が無くなる
+            hide_price = is_comp(r)
+            if hide_price and not incl:
                 # 本体の版と混在している機種。この作品だけの版も買えるので
-                # 「収録」ではなく「セット」。値段は合本ぜんぶの値段なので出さない
+                # 「収録」ではなく「セット」。見出しの代わりにこの断りを出す
                 b.append('<div class="ed-incl">%s ― 『%s』とのセット。'
                          '合本なので値段は出していません</div>'
                          % (e(r["edition_label"] or "通常版"), e(r["rel_title"])))
-                continue
-            label = r["edition_label"] or ("通常版" if len(live) > 1 else "")
-            if label:
-                b.append('<div class="ed-head">%s%s</div>' % (
-                    e(label),
-                    ' <span class="jan">JAN %s</span>' % e(r["gtin"]) if r["gtin"] else ""))
+            else:
+                label = r["edition_label"] or ("通常版" if len(live) > 1 else "")
+                if label:
+                    b.append('<div class="ed-head">%s%s</div>' % (
+                        e(label),
+                        ' <span class="jan">JAN %s</span>' % e(r["gtin"]) if r["gtin"] else ""))
 
             # 新品と中古を行で分ける。店名の横に値段だけ書くと
             # 「楽天 ¥6,190 / 楽天（中古） ¥6,000」のように何の値段か読めない
@@ -592,7 +595,7 @@ def buy_section(g, ed_rows, offers):
                         if cond_name != "ダウンロード" else "")
                 b.append('<div class="cond">%s<ul class="shops">' % head)
                 for o in shops:
-                    price = fresh_price(o)
+                    price = None if hide_price else fresh_price(o)
                     if price:
                         text = "%s ¥%s" % (e(o["channel"]), format(price, ","))
                         fetched.append(o["fetched_at"])
