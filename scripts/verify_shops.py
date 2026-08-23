@@ -38,8 +38,11 @@ QUEUE = os.path.join(ROOT, "corrections", "_queue_shops.tsv")
 KNOWN = os.path.join(ROOT, "corrections", "known_diffs.tsv")
 
 SEARCH = "https://www.suruga-ya.jp/search?search_word=%s"
+EGS = "https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/game.php?game=%s"
 CACHE = """CREATE TABLE IF NOT EXISTS suruga_dates (
-    jan TEXT PRIMARY KEY, released TEXT, fetched_at TEXT)"""
+    jan TEXT PRIMARY KEY, released TEXT, fetched_at TEXT);
+CREATE TABLE IF NOT EXISTS egs_dates (
+    egs_id TEXT PRIMARY KEY, released TEXT, fetched_at TEXT);"""
 UA = "Mozilla/5.0 (compatible; otomedana-test/1.0; date verification)"
 PAUSE = 1.6
 
@@ -62,6 +65,24 @@ def fetch_date(jan):
     t = html.unescape(re.sub("<[^>]+>", " ", s))
     m = DATE.search(t)
     return "%04d-%02d-%02d" % tuple(int(x) for x in m.groups()) if m else None
+
+
+EGS_DATE = re.compile(r"発売日\s*(\d{4}-\d{2}-\d{2})")
+
+
+def fetch_egs(egs_id):
+    """ErogameScapeの発売日。駿河屋に無いPCゲームはこちらが強い。
+
+    VNDBともWikipediaとも独立した日本のデータベース。同人・商業のPCゲームを
+    厚く収録していて、駿河屋が扱わない Windows 作品でも日付を持っていることが多い。
+    """
+    req = urllib.request.Request(EGS % egs_id, headers={
+        "User-Agent": "otomedana-test/1.0 (date verification; "
+                      "https://github.com/hamatie0409/otomedana-test)"})
+    s = urllib.request.urlopen(req, timeout=30).read().decode("utf-8", "replace")
+    t = html.unescape(re.sub("<[^>]+>", " ", s))
+    m = EGS_DATE.search(re.sub(r"\s+", " ", t))
+    return m.group(1) if m else None
 
 
 def load_known():
@@ -129,37 +150,59 @@ def main():
             """SELECT gtin, released, is_dl FROM editions
                WHERE vid=? AND released<>'' ORDER BY released LIMIT 1""",
             (r["vid"],)).fetchone()
-        if first and (first["is_dl"] or not first["gtin"]):
-            nohit += 1
-            out.append((r, None, "最古の版がダウンロード版。駿河屋では判定できない"))
-            continue
-        eds = con.execute(
+        # 最古がDL版なら駿河屋は引かない（パッケージ版の日付が返ってきても
+        # 答えにならない）。ただし ErogameScape はJANが要らないので後で試す
+        dl_first = bool(first and (first["is_dl"] or not first["gtin"]))
+        eds = [] if dl_first else con.execute(
             """SELECT gtin, released FROM editions
                WHERE vid=? AND gtin<>'' AND is_dl=0 AND released<>''
                ORDER BY released""", (r["vid"],)).fetchall()
-        if not eds:
-            nohit += 1
-            out.append((r, None, "パッケージ版が無い"))
-            continue
         # **全部のJANを引く。** 1つだけ見て諦めると、最古の版が駿河屋に無いときに
         # 後年の再販を最古と取り違える
         found = [(e["released"], date_of(e["gtin"]), e["gtin"]) for e in eds]
-        got = [f for f in found if f[1]]
-        if not got:
-            nohit += 1
-            out.append((r, None, "駿河屋に無い"))
-            continue
-        # 最古の版そのものが引けたか。引けていれば、その日付が答え
-        first_ed = eds[0]["released"]
-        same = [f for f in got if f[0] == first_ed]
-        if same:
-            actual, why = same[0][1], "最古の版のJANで確認"
+        hit = [f for f in found if f[1]]
+
+        actual = why = None
+        if hit:
+            # 最古の版そのものが引けたか。引けていれば、その日付が答え
+            first_ed = eds[0]["released"]
+            same = [f for f in hit if f[0] == first_ed]
+            if same:
+                actual, why = same[0][1], "最古の版のJANで確認"
+            else:
+                actual, why = min(f[1] for f in hit), "最古の版は駿河屋に無い。引けた中の最古"
         else:
-            actual, why = min(f[1] for f in got), "最古の版は駿河屋に無い。引けた中の最古"
+            # 駿河屋に無くても ErogameScape にはあることが多い（PCゲーム）
+            eg = con.execute(
+                "SELECT value FROM vndb_links WHERE vid=? AND site='egs' LIMIT 1",
+                (r["vid"],)).fetchone()
+            if eg:
+                c = con.execute("SELECT released FROM egs_dates WHERE egs_id=?",
+                                (eg["value"],)).fetchone()
+                if c:
+                    actual = c["released"] or None
+                else:
+                    try:
+                        actual = fetch_egs(eg["value"])
+                    except Exception:
+                        actual = None
+                    con.execute("INSERT OR REPLACE INTO egs_dates VALUES (?,?,?)",
+                                (eg["value"], actual or "",
+                                 time.strftime("%Y-%m-%d %H:%M:%S")))
+                    con.commit()
+                    time.sleep(PAUSE)
+                if actual:
+                    why = ("ErogameScape。最古の版とも一致"
+                           if actual == r["e0"]
+                           else "ErogameScape。最古の版とは一致せず")
+        if not actual:
+            nohit += 1
+            out.append((r, None, "駿河屋にもErogameScapeにも無い"))
+            continue
         if actual == r["released"]:
             agree += 1
             continue
-        sure = bool(same)
+        sure = why in ("最古の版のJANで確認", "ErogameScape。最古の版とも一致")
         diff += 1
         out.append((r, actual, why))
         print("  %s %-28s %5d票  DB=%s / 駿河屋=%s  (%s)"
@@ -172,10 +215,10 @@ def main():
     print("  食い違い         %d件" % diff)
     print("  引けなかった      %d件" % nohit)
     print()
-    print("  ○ 最古の版のJANで確認できた … %d件  そのまま訂正に使える"
-          % sum(1 for x in out if x[1] and x[2] == "最古の版のJANで確認"))
-    print("  ? 最古の版は駿河屋に無い    … %d件"
-          % sum(1 for x in out if x[1] and x[2] != "最古の版のJANで確認"))
+    print("  ○ 最古の版と一致（駿河屋 or ErogameScape）… %d件  そのまま訂正に使える"
+          % sum(1 for x in out if x[1] and x[2] in ("最古の版のJANで確認", "ErogameScape。最古の版とも一致")))
+    print("  ? 最古の版と一致しない            … %d件"
+          % sum(1 for x in out if x[1] and x[2] not in ("最古の版のJANで確認", "ErogameScape。最古の版とも一致")))
     print("  − 引けなかった            … %d件" % sum(1 for x in out if not x[1]))
     why_n = {}
     for x in out:
@@ -195,7 +238,7 @@ def main():
                     """SELECT gtin FROM editions WHERE vid=? AND gtin<>'' AND is_dl=0
                        ORDER BY released LIMIT 1""", (r["vid"],)).fetchone()
                 f.write("\t".join([r["vid"], r["title"], r["released"], got,
-                                   "確度高" if why == "最古の版のJANで確認" else why,
+                                   "確度高" if why in ("最古の版のJANで確認", "ErogameScape。最古の版とも一致") else why,
                                    SEARCH % (jan[0] if jan else "")]) + "\n")
         print("  → %s" % os.path.relpath(QUEUE, ROOT))
 
