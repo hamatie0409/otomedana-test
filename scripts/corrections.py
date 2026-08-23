@@ -126,14 +126,23 @@ def validate_chars(rows, con):
         def bad(msg):
             errs.append("  %s行目 %s/%s … %s" % (i, vid or "?", who or "?", msg))
 
-        n = con.execute("SELECT COUNT(*) FROM characters WHERE vid=? AND name=?",
-                        (vid, who)).fetchone()[0] if vid and who else 0
+        cid = (r.get("cid") or "").strip()
+        # 同じ名前のキャラが作品内に複数いることがある（VNDB側の重複や同姓同名）。
+        # そのときは cid 列で1人に絞る
+        if cid:
+            n = con.execute("SELECT COUNT(*) FROM characters WHERE vid=? AND cid=?",
+                            (vid, cid)).fetchone()[0] if vid else 0
+            if vid and n == 0:
+                bad("その作品にその cid のキャラクターがいない")
+        else:
+            n = con.execute("SELECT COUNT(*) FROM characters WHERE vid=? AND name=?",
+                            (vid, who)).fetchone()[0] if vid and who else 0
         if not vid:
             bad("vid が空")
-        elif n == 0:
+        elif n == 0 and not cid:
             bad("その作品にそのキャラクターがいない")
         elif n > 1:
-            bad("同じ名前のキャラクターが%d人いる。区別できないので手で直すこと" % n)
+            bad("同じ名前のキャラクターが%d人いる。cid 列で1人に絞ること" % n)
         if field not in CHAR_FIELDS:
             bad("使えない field。使えるのは %s" % " ".join(CHAR_FIELDS))
         if not value:
@@ -147,8 +156,8 @@ def validate_chars(rows, con):
             bad("同じ vid・キャラ・field が2回出てくる")
         seen.add(key)
         if not [e for e in errs if e.startswith("  %s行目" % i)]:
-            ok.append({"vid": vid, "character": who, "field": field, "value": value,
-                       "source_url": src, "checked_at": when,
+            ok.append({"vid": vid, "character": who, "cid": cid, "field": field,
+                       "value": value, "source_url": src, "checked_at": when,
                        "note": (r.get("note") or "").strip()})
     return ok, errs
 
@@ -227,8 +236,9 @@ def main():
     # ---- キャラクター側 ----
     c_change = c_same = 0
     for r in cok:
-        cur = con.execute("SELECT %s v FROM characters WHERE vid=? AND name=?" % r["field"],
-                          (r["vid"], r["character"])).fetchone()
+        where, arg = ("cid=?", r["cid"]) if r["cid"] else ("name=?", r["character"])
+        cur = con.execute("SELECT %s v FROM characters WHERE vid=? AND %s"
+                          % (r["field"], where), (r["vid"], arg)).fetchone()
         old = cur["v"] if cur else None
         if (old or "") == r["value"]:
             c_same += 1
@@ -244,8 +254,8 @@ def main():
             print("    訂正: %s" % r["value"][:70])
             print("    出典: %s（%s 確認）" % (r["source_url"], r["checked_at"]))
         if a.apply:
-            con.execute("UPDATE characters SET %s=? WHERE vid=? AND name=?" % r["field"],
-                        (r["value"], r["vid"], r["character"]))
+            con.execute("UPDATE characters SET %s=? WHERE vid=? AND %s"
+                        % (r["field"], where), (r["value"], r["vid"], arg))
             con.execute("INSERT OR REPLACE INTO char_corrections_log VALUES (?,?,?,?,?,?,?,?,?)",
                         (r["vid"], r["character"], r["field"], old, r["value"],
                          r["source_url"], r["checked_at"], r["note"],

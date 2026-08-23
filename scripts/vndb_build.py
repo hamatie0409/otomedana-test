@@ -337,6 +337,10 @@ def main():
         jawiki[r["id"]] = r["jawiki"]
     vjawiki = {vid: jawiki.get(q) for vid, q in wdq.items() if jawiki.get(q)}
 
+    # VNDB の区分をそのまま訳した値。DB内部の識別子として使い、クエリの絞り込み
+    # （role IN ('主人公','攻略対象')）にも使っているので、値そのものは変えない。
+    # ただし primary は VNDB では「主要キャラクター」の意味で、乙女ゲームの
+    # 「攻略対象」とは違う。表示は site_build.py の ROLE_LABEL で言い換える。
     ROLE_JA = {"main": "主人公", "primary": "攻略対象", "side": "サブキャラ", "appears": "登場のみ"}
     ORDER = {"main": 0, "primary": 1, "side": 2, "appears": 3}
 

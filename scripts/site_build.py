@@ -451,6 +451,28 @@ def norm_title(t):
 PRICE_TTL_HOURS = 24
 
 
+# 表示上の役割名。DBには VNDB の区分をそのまま訳した値が入っているが、
+# VNDB の primary は「主要キャラクター」の意味で、乙女ゲームの「攻略対象」とは違う。
+# 掲載作品で primary の 4,322人のうち 90人が女性で、セーラ・マープル（英国探偵
+# ミステリア）やビバルディ（ハートの国のアリス）のように攻略対象でない重要キャラが
+# 混ざっていた。
+#
+# 乙女ゲームなので、primary の男性はまず攻略対象とみて差し支えない。男性だけを
+# 「攻略対象」と出し、それ以外は「主要キャラ」にする。
+# 取りこぼすのは女性が攻略対象になる作品（百合ルート）だが、その場合も
+# 「主要キャラ」と出るだけで誤りにはならない。
+#
+# DB側の値はクエリの絞り込み（role IN ('主人公','攻略対象')）に使っているので
+# 変えない。表示だけを言い換える。
+ROLE_LABEL = {"攻略対象": "主要キャラ"}
+
+
+def role_label(role, sex=None):
+    if role == "攻略対象":
+        return "攻略対象" if sex == "m" else "主要キャラ"
+    return ROLE_LABEL.get(role or "", role or "")
+
+
 def fresh_price(o):
     """24時間以内に取った価格だけ返す。無ければ None"""
     if not o["price"] or not o["fetched_at"]:
@@ -851,7 +873,7 @@ def main():
                 nm = ('<a href="%s">%s</a>' % (e(cu), e(c["name"]))
                       if cu and c["name"] else e(c["name"] or ""))
                 b.append("<tr><td>%s</td><td>%s</td><td>%s</td></tr>"
-                         % (e(c["role"] or ""), nm, cv))
+                         % (e(role_label(c["role"], c["sex"])), nm, cv))
             b.append("</table></section>")
 
         if sc_by_vid[vid]:
@@ -1157,7 +1179,8 @@ def main():
         for r in sorted(rows, key=lambda x: (games[x["vid"]]["released"] or "9999")):
             g = games[r["vid"]]
             apps.append((slug[("game", g["vid"])], g["title"], ja_date(g["released"]),
-                         (g["platforms"] or "").split(" / ")[0], cover_of(g), r["role"]))
+                         (g["platforms"] or "").split(" / ")[0], cover_of(g),
+                         role_label(r["role"], r["sex"])))
 
         cvs = sorted({r["cv"] for r in rows if r["cv"]})
         cv_links = []
@@ -1170,7 +1193,7 @@ def main():
             cv_links.append('<a href="%s">%s</a>' % (e(u), e(nm)) if u else e(nm))
 
         facts = [("声優", " / ".join(cv_links) or "—"),
-                 ("区分", e("・".join(sorted({r["role"] for r in rows})))),
+                 ("区分", e("・".join(sorted({role_label(r["role"], r["sex"]) for r in rows})))),
                  ("誕生日", e(c0["birthday"] or "—")),
                  ("年齢", e("%d歳" % c0["age"] if c0["age"] else "—")),
                  ("身長", e("%dcm" % c0["height"] if c0["height"] else "—")),
