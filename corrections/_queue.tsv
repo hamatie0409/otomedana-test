@@ -1,0 +1,44 @@
+# 外部照合で食い違ったもの。人が出典を見て判断し、
+# 正しいほうを corrections/works.csv に移すこと。
+# ここは機械が上書きするので、直接書き込んでも消える。
+vid	title	field	db_value	wikipedia_value	source_url
+v7833	OZMAFIA!!	released	2013-04-15	2013-06-28	https://ja.wikipedia.org/wiki/OZMAFIA%21%21
+v16032	大正×対称アリス	released	2015-02-10	2015-02-20	https://ja.wikipedia.org/wiki/%E5%A4%A7%E6%AD%A3%C3%97%E5%AF%BE%E7%A7%B0%E3%82%A2%E3%83%AA%E3%82%B9
+v9846	DIABOLIK LOVERS	released	2012-10-11	2011-12-21	https://ja.wikipedia.org/wiki/DIABOLIK_LOVERS
+v26154	ジャックジャンヌ	released	2021-01-28	2021-03-18	https://ja.wikipedia.org/wiki/%E3%82%B8%E3%83%A3%E3%83%83%E3%82%AF%E3%82%B8%E3%83%A3%E3%83%B3%E3%83%8C
+v14759	あやかしごはん	released	2014-08-13	2014-08-29	https://ja.wikipedia.org/wiki/%E3%81%82%E3%82%84%E3%81%8B%E3%81%97%E3%81%94%E3%81%AF%E3%82%93
+v15070	Re:BIRTHDAY SONG ～恋を唄う死神～	released	2015-01-16	2015-01-30	https://ja.wikipedia.org/wiki/Re%3ABIRTHDAY_SONG%E3%80%9C%E6%81%8B%E3%82%92%E5%94%84%E3%81%86%E6%AD%BB%E7%A5%9E%E3%80%9C
+v11472	剣が君	released	2013-11-01	2013-12-19	https://ja.wikipedia.org/wiki/%E5%89%A3%E3%81%8C%E5%90%9B
+v15231	逆転 吉原	released	2014-04-23	2015-02-19	https://ja.wikipedia.org/wiki/%E7%94%B7%E9%81%8A%E9%83%AD
+v1282	Under the Moon	released	2006-11-08	2006-12-15	https://ja.wikipedia.org/wiki/Under_the_Moon_%28%E3%82%B2%E3%83%BC%E3%83%A0%29
+v13905	絶対階級学園 ~Eden with roses and phantasm~	released	2015-05-21	2015-05-28	https://ja.wikipedia.org/wiki/%E7%B5%B6%E5%AF%BE%E9%9A%8E%E7%B4%9A%E5%AD%A6%E5%9C%92%E3%80%9CEden_with_roses_and_phantasm%E3%80%9C
+v13833	ヴァルプルガの詩	released	2015-03-09	2015-03-26	https://ja.wikipedia.org/wiki/%E3%83%B4%E3%82%A1%E3%83%AB%E3%83%97%E3%83%AB%E3%82%AC%E3%81%AE%E8%A9%A9
+v13090	学園K -Wonderful School Days-	released	2014-10-30	2012-10-18	https://ja.wikipedia.org/wiki/K_%28%E3%82%A2%E3%83%8B%E3%83%A1%29
+v11342	うたの☆プリンスさまっ♪All Star	released	2013-03-07	2010-06-24	https://ja.wikipedia.org/wiki/%E3%81%86%E3%81%9F%E3%81%AE%E2%98%86%E3%83%97%E3%83%AA%E3%83%B3%E3%82%B9%E3%81%95%E3%81%BE%E3%81%A3%E2%99%AA
+v1009	あさき、ゆめみし	released	2008-07-16	2008-07-25	https://ja.wikipedia.org/wiki/%E3%81%82%E3%81%95%E3%81%8D%E3%80%81%E3%82%86%E3%82%81%E3%81%BF%E3%81%97
+v20070	DYNAMIC CHORD feat.Liar-S	released	2015-03-27	2014-12-26	https://ja.wikipedia.org/wiki/DYNAMIC_CHORD
+v10035	うたの☆プリンスさまっ♪Debut	released	2012-05-24	2010-06-24	https://ja.wikipedia.org/wiki/%E3%81%86%E3%81%9F%E3%81%AE%E2%98%86%E3%83%97%E3%83%AA%E3%83%B3%E3%82%B9%E3%81%95%E3%81%BE%E3%81%A3%E2%99%AA
+v20072	DYNAMIC CHORD feat.apple-polisher	released	2016-11-04	2014-12-26	https://ja.wikipedia.org/wiki/DYNAMIC_CHORD
+v20071	DYNAMIC CHORD feat.KYOHSO	released	2015-06-26	2014-12-26	https://ja.wikipedia.org/wiki/DYNAMIC_CHORD
+v6032	夏空のモノローグ	released	2010-05-28	2010-07-29	https://ja.wikipedia.org/wiki/%E5%A4%8F%E7%A9%BA%E3%81%AE%E3%83%A2%E3%83%8E%E3%83%AD%E3%83%BC%E3%82%B0
+v1015	金色のコルダ2	released	2007-03-15	2003-09-19	https://ja.wikipedia.org/wiki/%E9%87%91%E8%89%B2%E3%81%AE%E3%82%B3%E3%83%AB%E3%83%80
+v2170	ネオ アンジェリーク	released	2006-03-02	2006-03-04	https://ja.wikipedia.org/wiki/%E3%83%8D%E3%82%AA_%E3%82%A2%E3%83%B3%E3%82%B8%E3%82%A7%E3%83%AA%E3%83%BC%E3%82%AF
+v7645	華鬼 ～恋い初める刻 永久の印～	released	2011-03-17	2011-05-18	https://ja.wikipedia.org/wiki/%E8%8F%AF%E9%AC%BC
+v1872	Death Connection	released	2009-12-17	2009-11-27	https://ja.wikipedia.org/wiki/%E3%83%87%E3%82%B9%E3%83%BB%E3%82%B3%E3%83%8D%E3%82%AF%E3%82%B7%E3%83%A7%E3%83%B3
+v7019	学園ヘタリア	released	2011-03-24	2008-08-16	https://ja.wikipedia.org/wiki/%E3%83%98%E3%82%BF%E3%83%AA%E3%82%A2
+v9197	アブナイ恋の捜査室	released	2012-02-10	2012-01-19	https://ja.wikipedia.org/wiki/%E3%82%A2%E3%83%96%E3%83%8A%E3%82%A4%E6%81%8B%E3%81%AE%E6%8D%9C%E6%9F%BB%E5%AE%A4
+v4700	Dear Girl~Stories~ 響 響特訓大作戦！	released	2009-12-17	2009-03-23	https://ja.wikipedia.org/wiki/%E7%A5%9E%E8%B0%B7%E6%B5%A9%E5%8F%B2%E3%83%BB%E5%B0%8F%E9%87%8E%E5%A4%A7%E8%BC%94%E3%81%AEDearGirl%E3%80%9CStories%E3%80%9C
+v1668	星空のコミックガーデン	released	2008-09-09	2008-09-11	https://ja.wikipedia.org/wiki/%E6%98%9F%E7%A9%BA%E3%81%AE%E3%82%B3%E3%83%9F%E3%83%83%E3%82%AF%E3%82%AC%E3%83%BC%E3%83%87%E3%83%B3
+v11095	キミカレ	released	2010-06-27	2012-07-19	https://ja.wikipedia.org/wiki/%E3%82%AD%E3%83%9F%E3%82%AB%E3%83%AC
+v16454	アンジェリーク 天空の鎮魂歌	released	1998-03-20	1998-04-02	https://ja.wikipedia.org/wiki/%E3%82%A2%E3%83%B3%E3%82%B8%E3%82%A7%E3%83%AA%E3%83%BC%E3%82%AF_%E5%A4%A9%E7%A9%BA%E3%81%AE%E9%8E%AE%E9%AD%82%E6%AD%8C
+v1763	カヌチ 黒き翼の章	released	2009-04-23	2008-10-02	https://ja.wikipedia.org/wiki/%E3%82%AB%E3%83%8C%E3%83%81
+v17608	LOVE:QUIZ ~恋する乙女のファイナルアンサー~	released	2014-09	2015-12-10	https://ja.wikipedia.org/wiki/LOVE%3AQUIZ%E3%80%9C%E6%81%8B%E3%81%99%E3%82%8B%E4%B9%99%E5%A5%B3%E3%81%AE%E3%83%95%E3%82%A1%E3%82%A4%E3%83%8A%E3%83%AB%E3%82%A2%E3%83%B3%E3%82%B5%E3%83%BC%E3%80%9C
+v2169	アンジェリーク エトワール	released	2003-03-14	2003-12-19	https://ja.wikipedia.org/wiki/%E3%82%A2%E3%83%B3%E3%82%B8%E3%82%A7%E3%83%AA%E3%83%BC%E3%82%AF_%E3%82%A8%E3%83%88%E3%83%AF%E3%83%BC%E3%83%AB
+v4533	花より男子 －恋せよ女子（おとめ）!－	released	2008-07-10	2005-12-07	https://ja.wikipedia.org/wiki/%E8%8A%B1%E3%82%88%E3%82%8A%E7%94%B7%E5%AD%90
+v7866	PANDORA ～君の名前を、僕は知る～	released	2010-11-18	2010-11-25	https://ja.wikipedia.org/wiki/PANDORA_%E5%90%9B%E3%81%AE%E5%90%8D%E5%89%8D%E3%82%92%E5%83%95%E3%81%AF%E7%9F%A5%E3%82%8B
+v1754	L2 Love×Loop	released	2009-07-23	2009-08-20	https://ja.wikipedia.org/wiki/L2_Love%C3%97Loop
+v21334	セイント ビースト ~螺旋の章~	released	2007-09-20	2003-07-25	https://ja.wikipedia.org/wiki/%E3%82%BB%E3%82%A4%E3%83%B3%E3%83%88%E3%83%BB%E3%83%93%E3%83%BC%E3%82%B9%E3%83%88
+v6326	蜜×蜜ドロップス : LOVE X LOVE HONEY LIFE	released	2006-04-06	2006-04-28	https://ja.wikipedia.org/wiki/%E8%9C%9C%C3%97%E8%9C%9C%E3%83%89%E3%83%AD%E3%83%83%E3%83%97%E3%82%B9
+v11972	君に届け〜伝えるキモチ〜	released	2011-04-07	2009-10-15	https://ja.wikipedia.org/wiki/%E5%90%9B%E3%81%AB%E5%B1%8A%E3%81%91
+v23557	クラスターエッジ 〜君を待つ未来への証〜	released	2006-09-14	2006-09-22	https://ja.wikipedia.org/wiki/CLUSTER_EDGE
+v7940	フルハウスキス 2	released	2006-02-23	2004-07-22	https://ja.wikipedia.org/wiki/%E3%83%95%E3%83%AB%E3%83%8F%E3%82%A6%E3%82%B9%E3%82%AD%E3%82%B9
