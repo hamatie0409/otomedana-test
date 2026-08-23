@@ -31,6 +31,7 @@ import sys
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB = os.path.join(ROOT, "data", "vndb_otome.db")
 CSV_PATH = os.path.join(ROOT, "corrections", "works.csv")
+CHAR_CSV = os.path.join(ROOT, "corrections", "characters.csv")
 
 # 触ってよい列だけを列挙する。games に無い列は ALTER で足す
 FIELDS = {
@@ -45,6 +46,9 @@ FIELDS = {
 }
 # games に元から無く、訂正のために足す列
 ADDED = {"description_ja": "TEXT"}
+
+# キャラクター側で触ってよい列
+CHAR_FIELDS = {"cv": "声優", "name": "キャラクター名", "role": "役割"}
 
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 URL = re.compile(r"^https?://", re.I)
@@ -100,11 +104,64 @@ def validate(rows, con):
     return ok, errs
 
 
+def read_char_rows():
+    if not os.path.exists(CHAR_CSV):
+        return []
+    with open(CHAR_CSV, encoding="utf-8") as f:
+        lines = [l for l in f if l.strip() and not l.lstrip().startswith("#")]
+    return list(csv.DictReader(lines))
+
+
+def validate_chars(rows, con):
+    """キャラクター側の検証。作品と同じく、1件でも落ちたら何も適用しない"""
+    errs, ok, seen = [], [], set()
+    for i, r in enumerate(rows, 2):
+        vid = (r.get("vid") or "").strip()
+        who = (r.get("character") or "").strip()
+        field = (r.get("field") or "").strip()
+        value = (r.get("value") or "").strip()
+        src = (r.get("source_url") or "").strip()
+        when = (r.get("checked_at") or "").strip()
+
+        def bad(msg):
+            errs.append("  %s行目 %s/%s … %s" % (i, vid or "?", who or "?", msg))
+
+        n = con.execute("SELECT COUNT(*) FROM characters WHERE vid=? AND name=?",
+                        (vid, who)).fetchone()[0] if vid and who else 0
+        if not vid:
+            bad("vid が空")
+        elif n == 0:
+            bad("その作品にそのキャラクターがいない")
+        elif n > 1:
+            bad("同じ名前のキャラクターが%d人いる。区別できないので手で直すこと" % n)
+        if field not in CHAR_FIELDS:
+            bad("使えない field。使えるのは %s" % " ".join(CHAR_FIELDS))
+        if not value:
+            bad("value が空")
+        if not URL.match(src):
+            bad("source_url が無いか http(s) で始まらない")
+        if not DATE.match(when):
+            bad("checked_at が YYYY-MM-DD でない")
+        key = (vid, who, field)
+        if key in seen:
+            bad("同じ vid・キャラ・field が2回出てくる")
+        seen.add(key)
+        if not [e for e in errs if e.startswith("  %s行目" % i)]:
+            ok.append({"vid": vid, "character": who, "field": field, "value": value,
+                       "source_url": src, "checked_at": when,
+                       "note": (r.get("note") or "").strip()})
+    return ok, errs
+
+
 def ensure_columns(con):
     have = {d[1] for d in con.execute("PRAGMA table_info(games)")}
     for col, typ in ADDED.items():
         if col not in have:
             con.execute("ALTER TABLE games ADD COLUMN %s %s" % (col, typ))
+    con.execute("""CREATE TABLE IF NOT EXISTS char_corrections_log (
+        vid TEXT, character TEXT, field TEXT, old_value TEXT, new_value TEXT,
+        source_url TEXT, checked_at TEXT, note TEXT, applied_at TEXT,
+        PRIMARY KEY (vid, character, field))""")
     con.execute("""CREATE TABLE IF NOT EXISTS corrections_log (
         vid TEXT, field TEXT, old_value TEXT, new_value TEXT,
         source_url TEXT, checked_at TEXT, note TEXT, applied_at TEXT,
@@ -124,16 +181,21 @@ def main():
 
     rows = read_rows()
     ok, errs = validate(rows, con)
+    crows = read_char_rows()
+    cok, cerrs = validate_chars(crows, con)
+    errs = errs + cerrs
 
     print("訂正ファイル: %s" % os.path.relpath(CSV_PATH, ROOT))
-    print("  読めた行 %d / 通った行 %d / 弾かれた行 %d" % (len(rows), len(ok), len(errs)))
+    print("  作品      読めた行 %d / 通った行 %d" % (len(rows), len(ok)))
+    print("  キャラクター 読めた行 %d / 通った行 %d" % (len(crows), len(cok)))
+    print("  弾かれた行 %d" % len(errs))
     if errs:
         print()
         print("=== 直すまで適用しません ===")
         for e in errs:
             print(e)
         sys.exit(1)
-    if not ok:
+    if not ok and not cok:
         print("  適用するものはありません")
         return
 
@@ -162,10 +224,38 @@ def main():
                         (r["vid"], r["field"], old, r["value"], r["source_url"],
                          r["checked_at"], r["note"],
                          datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    # ---- キャラクター側 ----
+    c_change = c_same = 0
+    for r in cok:
+        cur = con.execute("SELECT %s v FROM characters WHERE vid=? AND name=?" % r["field"],
+                          (r["vid"], r["character"])).fetchone()
+        old = cur["v"] if cur else None
+        if (old or "") == r["value"]:
+            c_same += 1
+            continue
+        c_change += 1
+        if a.diff or not a.apply:
+            t = con.execute("SELECT title FROM games WHERE vid=?", (r["vid"],)).fetchone()
+            print()
+            print("  %s %s / %s（%s）"
+                  % (r["vid"], t["title"] if t else "?", r["character"],
+                     CHAR_FIELDS[r["field"]]))
+            print("    いま: %s" % ((old or "(空)")[:70]))
+            print("    訂正: %s" % r["value"][:70])
+            print("    出典: %s（%s 確認）" % (r["source_url"], r["checked_at"]))
+        if a.apply:
+            con.execute("UPDATE characters SET %s=? WHERE vid=? AND name=?" % r["field"],
+                        (r["value"], r["vid"], r["character"]))
+            con.execute("INSERT OR REPLACE INTO char_corrections_log VALUES (?,?,?,?,?,?,?,?,?)",
+                        (r["vid"], r["character"], r["field"], old, r["value"],
+                         r["source_url"], r["checked_at"], r["note"],
+                         datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+
     if a.apply:
         con.commit()
     print()
-    print("  値が変わるもの %d件 / 既に同じ %d件" % (n_change, n_same))
+    print("  作品      値が変わる %d件 / 既に同じ %d件" % (n_change, n_same))
+    print("  キャラクター 値が変わる %d件 / 既に同じ %d件" % (c_change, c_same))
     print("  %s" % ("DBに適用しました" if a.apply else "適用するには --apply"))
 
 
