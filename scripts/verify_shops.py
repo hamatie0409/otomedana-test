@@ -101,66 +101,101 @@ def main():
         rows = rows[:a.limit]
 
     print("駿河屋で発売日を確かめます: %d件（判断済みは除く）" % len(rows))
+    print("  版ごとにJANで引き、その版の記録と突き合わせる")
     print()
+
+    def date_of(jan):
+        """JANの発売日。DBにキャッシュする。見つからなければ None"""
+        c = con.execute("SELECT released FROM suruga_dates WHERE jan=?", (jan,)).fetchone()
+        if c:
+            return c["released"] or None
+        try:
+            got = fetch_date(jan)
+        except Exception:
+            got = None
+        con.execute("INSERT OR REPLACE INTO suruga_dates VALUES (?,?,?)",
+                    (jan, got or "", time.strftime("%Y-%m-%d %H:%M:%S")))
+        con.commit()
+        time.sleep(PAUSE)
+        return got
+
     agree = diff = nohit = 0
     out = []
-    for i, r in enumerate(rows, 1):
-        # パッケージのある版だけ。ダウンロード版にJANは無い
-        jans = [x[0] for x in con.execute(
-            """SELECT gtin FROM editions WHERE vid=? AND gtin<>'' AND is_dl=0
-               ORDER BY released""", (r["vid"],))]
-        got = None
-        for j in jans[:2]:
-            c = con.execute("SELECT released FROM suruga_dates WHERE jan=?", (j,)).fetchone()
-            if c:
-                got = c["released"] or None
-            else:
-                try:
-                    got = fetch_date(j)
-                except Exception:
-                    got = None
-                con.execute("INSERT OR REPLACE INTO suruga_dates VALUES (?,?,?)",
-                            (j, got or "", time.strftime("%Y-%m-%d %H:%M:%S")))
-                con.commit()
-                time.sleep(PAUSE)
-            if got:
-                break
+    for r in rows:
+        # 比べる相手は「最古の版」であって「最古のパッケージ版」ではない。
+        # ダウンロード版が最古の作品では、駿河屋を引いても答えにならない
+        # （文字化化は最古がDL版 2024-11-01、最古のパッケージ版は 2026-03-26）
+        first = con.execute(
+            """SELECT gtin, released, is_dl FROM editions
+               WHERE vid=? AND released<>'' ORDER BY released LIMIT 1""",
+            (r["vid"],)).fetchone()
+        if first and (first["is_dl"] or not first["gtin"]):
+            nohit += 1
+            out.append((r, None, "最古の版がダウンロード版。駿河屋では判定できない"))
+            continue
+        eds = con.execute(
+            """SELECT gtin, released FROM editions
+               WHERE vid=? AND gtin<>'' AND is_dl=0 AND released<>''
+               ORDER BY released""", (r["vid"],)).fetchall()
+        if not eds:
+            nohit += 1
+            out.append((r, None, "パッケージ版が無い"))
+            continue
+        # **全部のJANを引く。** 1つだけ見て諦めると、最古の版が駿河屋に無いときに
+        # 後年の再販を最古と取り違える
+        found = [(e["released"], date_of(e["gtin"]), e["gtin"]) for e in eds]
+        got = [f for f in found if f[1]]
         if not got:
             nohit += 1
+            out.append((r, None, "駿河屋に無い"))
             continue
-        if got == r["released"]:
+        # 最古の版そのものが引けたか。引けていれば、その日付が答え
+        first_ed = eds[0]["released"]
+        same = [f for f in got if f[0] == first_ed]
+        if same:
+            actual, why = same[0][1], "最古の版のJANで確認"
+        else:
+            actual, why = min(f[1] for f in got), "最古の版は駿河屋に無い。引けた中の最古"
+        if actual == r["released"]:
             agree += 1
             continue
-        # 最初のJANが駿河屋に無いと、後年の再販に当たってしまう。
-        # 駿河屋の日付が最古の版と一致するときだけ、その版の実際の発売日とみなす
-        sure = (got == r["e0"])
+        sure = bool(same)
         diff += 1
-        out.append((r, got, sure))
-        print("  %s %-28s %5d票  DB=%s / 駿河屋=%s（最古の版 %s）"
+        out.append((r, actual, why))
+        print("  %s %-28s %5d票  DB=%s / 駿河屋=%s  (%s)"
               % ("○" if sure else "?", r["title"][:28], r["votecount"] or 0,
-                 r["released"], got, r["e0"]))
+                 r["released"], actual, why))
 
     print()
     print("=== 結果 ===")
     print("  DBと一致        %d件" % agree)
     print("  食い違い         %d件" % diff)
-    print("  駿河屋に無い      %d件" % nohit)
+    print("  引けなかった      %d件" % nohit)
     print()
-    print("  ○ 駿河屋＝最古の版 … %d件  そのまま訂正に使える"
-          % sum(1 for x in out if x[2]))
-    print("  ? 別の版に当たった  … %d件  最初のJANが駿河屋に無く後年の再販を拾っている"
-          % sum(1 for x in out if not x[2]))
+    print("  ○ 最古の版のJANで確認できた … %d件  そのまま訂正に使える"
+          % sum(1 for x in out if x[1] and x[2] == "最古の版のJANで確認"))
+    print("  ? 最古の版は駿河屋に無い    … %d件"
+          % sum(1 for x in out if x[1] and x[2] != "最古の版のJANで確認"))
+    print("  − 引けなかった            … %d件" % sum(1 for x in out if not x[1]))
+    why_n = {}
+    for x in out:
+        if not x[1]:
+            why_n[x[2]] = why_n.get(x[2], 0) + 1
+    for k, v in sorted(why_n.items(), key=lambda x: -x[1]):
+        print("        %-40s %d件" % (k, v))
 
     if a.queue and out:
         with open(QUEUE, "w", encoding="utf-8") as f:
             f.write("# 駿河屋（JAN一致）と食い違ったもの。\n")
             f.write("vid\ttitle\tdb_value\tsuruga_value\tconfidence\tsource_url\n")
-            for r, got, sure in out:
+            for r, got, why in out:
+                if not got:
+                    continue
                 jan = con.execute(
                     """SELECT gtin FROM editions WHERE vid=? AND gtin<>'' AND is_dl=0
                        ORDER BY released LIMIT 1""", (r["vid"],)).fetchone()
                 f.write("\t".join([r["vid"], r["title"], r["released"], got,
-                                   "確度高" if sure else "別の版の可能性",
+                                   "確度高" if why == "最古の版のJANで確認" else why,
                                    SEARCH % (jan[0] if jan else "")]) + "\n")
         print("  → %s" % os.path.relpath(QUEUE, ROOT))
 
