@@ -1,0 +1,28 @@
+# 外部と食い違うが、調べた結果このままでよいと判断したもの。
+# verify_external.py はここに載っている vid+field を要確認リストから外す。
+#
+# 消すのではなく残すのは、次に見た人が同じ調査を繰り返さないため。
+# 判断が変わったらこの行を消せば、また要確認に戻る。
+vid	field	reason	source_url	checked_at	note
+v9846	released	別作品	https://ja.wikipedia.org/wiki/DIABOLIK_LOVERS	2026-08-23	Wikipediaの2011-12-21はドラマCD第1弾（〜2012-05-23の連続シリーズ）。ゲームは2012-10-11
+v13090	released	別作品	https://ja.wikipedia.org/wiki/%E5%AD%A6%E5%9C%92K	2026-08-23	Wikipediaの2012-10-18はアニメ「K」の放送開始
+v11342	released	別作品	https://ja.wikipedia.org/wiki/%E3%81%86%E3%81%9F%E3%81%AE%E2%98%86%E3%83%97%E3%83%AA%E3%83%B3%E3%82%B9%E3%81%95%E3%81%BE%E3%81%A3%E3%81%B4	2026-08-23	記事がシリーズ全体を扱う。2010-06-24はうたプリ無印
+v10035	released	別作品	https://ja.wikipedia.org/wiki/%E3%81%86%E3%81%9F%E3%81%AE%E2%98%86%E3%83%97%E3%83%AA%E3%83%B3%E3%82%B9%E3%81%95%E3%81%BE%E3%81%A3%E3%81%B4	2026-08-23	同上
+v20070	released	別作品	https://ja.wikipedia.org/wiki/DYNAMIC_CHORD	2026-08-23	2014-12-26はDYNAMIC CHORD第1作
+v20071	released	別作品	https://ja.wikipedia.org/wiki/DYNAMIC_CHORD	2026-08-23	同上
+v20072	released	別作品	https://ja.wikipedia.org/wiki/DYNAMIC_CHORD	2026-08-23	同上
+v1015	released	別作品	https://ja.wikipedia.org/wiki/%E9%87%91%E8%89%B2%E3%81%AE%E3%82%B3%E3%83%AB%E3%83%80	2026-08-23	2003-09-19は金色のコルダ（1作目・Win版）
+v7019	released	別作品	https://ja.wikipedia.org/wiki/%E5%AD%A6%E5%9C%92%E3%83%98%E3%82%BF%E3%83%AA%E3%82%A2	2026-08-23	2008-08-16は原作のコミケ先行発売。infoboxの「開始」欄を拾っていた
+v4700	released	別作品	https://ja.wikipedia.org/wiki/Dear_Girl%EF%BD%9EStories%EF%BD%9E	2026-08-23	2009-03-23はラジオ番組の開始日。infoboxの「開始日」欄
+v1763	released	別作品	https://ja.wikipedia.org/wiki/%E3%82%AB%E3%83%8C%E3%83%81	2026-08-23	記事が姉妹作を両方扱う。2008-10-02は「白き翼の章」、本作「黒」は2009-04-23でDBと一致
+v4533	released	別作品	https://ja.wikipedia.org/wiki/%E8%8A%B1%E3%82%88%E3%82%8A%E7%94%B7%E5%AD%90	2026-08-23	2005-12-07は同シリーズの別ゲーム
+v21334	released	別作品	https://ja.wikipedia.org/wiki/%E3%82%BB%E3%82%A4%E3%83%B3%E3%83%88%E3%83%BB%E3%83%93%E3%83%BC%E3%82%B9%E3%83%88	2026-08-23	2003-07-25はシリーズ開始（〜2005-01-21）
+v11972	released	別作品	https://ja.wikipedia.org/wiki/%E5%90%9B%E3%81%AB%E5%B1%8A%E3%81%91	2026-08-23	2009-10-15は第1弾。本作は第2弾で2011-04-07。DBが正しい
+v7940	released	別作品	https://ja.wikipedia.org/wiki/%E3%83%95%E3%83%AB%E3%83%8F%E3%82%A6%E3%82%B9%E3%82%AD%E3%82%B9	2026-08-23	2004-07-22はフルハウスキス（1作目・PS2）
+v15231	released	移植版	https://ja.wikipedia.org/wiki/%E9%80%86%E8%BB%A2_%E5%90%89%E5%8E%9F	2026-08-23	2015-02-19はPS Vita版。DBの2014-04-23が原作
+v11095	released	移植版	https://ja.wikipedia.org/wiki/%E3%82%AD%E3%83%9F%E3%82%AB%E3%83%AC	2026-08-23	2012-07-19はPSP版。DBの2010-06-27が原作
+v17608	released	移植版	https://ja.wikipedia.org/wiki/LOVE:QUIZ	2026-08-23	2015-12-10はPS Vita版。ただしDB側は2014-09と日が欠けており別途要対応
+v2169	released	移植版	https://ja.wikipedia.org/wiki/%E3%82%A2%E3%83%B3%E3%82%B8%E3%82%A7%E3%83%AA%E3%83%BC%E3%82%AF_%E3%82%A8%E3%83%88%E3%83%AF%E3%83%BC%E3%83%AB	2026-08-23	2003-12-19はWindows版。DBの2003-03-14はそれ以前の版
+v1872	released	第三の出典で確認	https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/game.php?game=13707	2026-08-23	ErogameScapeが2009-12-17でDBと一致。Wikipediaの2009-11-27は採らない
+v6326	released	第三の出典で確認	https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/game.php?game=7305	2026-08-23	ErogameScapeが2006-04-06でDBと一致
+v7645	released	第三の出典で確認	https://erogamescape.dyndns.org/~ap2/ero/toukei_kaiseki/game.php?game=33127	2026-08-23	ErogameScapeが2011-03-17でDBと一致。Wikipediaの2011-05-18は採らない

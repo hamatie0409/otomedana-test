@@ -31,6 +31,7 @@ import urllib.request
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DB = os.path.join(ROOT, "data", "vndb_otome.db")
 QUEUE = os.path.join(ROOT, "corrections", "_queue.tsv")
+KNOWN = os.path.join(ROOT, "corrections", "known_diffs.tsv")
 
 API = "https://ja.wikipedia.org/w/api.php"
 # Wikimedia は連絡先の分かる User-Agent を求めている
@@ -132,7 +133,16 @@ def main():
     if a.limit:
         rows = rows[:a.limit]
 
-    print("日本語Wikipediaと照合します: %d件" % len(rows))
+    # 調べたうえで「このままでよい」と判断したものは出さない
+    known = set()
+    if os.path.exists(KNOWN):
+        for l in open(KNOWN, encoding="utf-8"):
+            if l.strip() and not l.startswith("#") and not l.startswith("vid\t"):
+                c = l.split("\t")
+                if len(c) >= 2:
+                    known.add((c[0].strip(), c[1].strip()))
+
+    print("日本語Wikipediaと照合します: %d件（判断済み %d件は除く）" % (len(rows), len(known)))
     pages = fetch([wiki_title(r["jawiki_url"]) for r in rows])
     print("  本文を取れた記事: %d件" % len(pages))
     print()
@@ -161,6 +171,7 @@ def main():
             a_, b_ = r["publishers"], w_pub
             if a_ not in b_ and b_ not in a_ and a_.split("/")[0].strip() not in b_:
                 diffs.append(("publishers", a_, b_[:60]))
+        diffs = [d for d in diffs if (r["vid"], d[0]) not in known]
         if diffs:
             found.append((r, diffs))
         else:
