@@ -751,6 +751,13 @@ def main():
         return "%s（%s）" % (g["title"], (g["platforms"] or "").split(" / ")[0])
 
     # ---------------- 作品ページ ----------------
+    # あらすじの出典。corrections.py が適用したときに残す記録から引く
+    try:
+        corr_src = {r[0]: r[1] for r in con.execute(
+            "SELECT vid, source_url FROM corrections_log WHERE field='description_ja'")}
+    except sqlite3.OperationalError:      # まだ訂正を一度も適用していない
+        corr_src = {}
+
     for vid, g in games.items():
         url = slug[("game", vid)]
         cs = chars[vid]
@@ -809,6 +816,20 @@ def main():
         b.append('<table class="facts">' + "".join(
             "<tr><th>%s</th><td>%s</td></tr>" % (k, v) for k, v in rows) + "</table>")
         b.append("</div></div>")
+
+        # あらすじ。corrections/works.csv に人が書いたものだけを出す。
+        # VNDB の説明文は英語なので出さない（訳すと二次的著作物になるうえ、
+        # 公式の文をなぞると翻案の問題が残る）。出典は必ず添える
+        syn = g["description_ja"] if "description_ja" in g.keys() else None
+        if syn:
+            src = corr_src.get(vid)
+            b.append('<section id="story"><h2>あらすじ</h2>')
+            b.append('<p class="story">%s</p>' % e(syn))
+            if src:
+                b.append('<p class="story-src">出典: <a href="%s" rel="nofollow noopener"'
+                         ' target="_blank">%s</a> を参照して作成</p>'
+                         % (e(src), e(re.sub(r"^https?://([^/]+).*", r"\1", src))))
+            b.append("</section>")
 
         b += buy_section(g, eds[vid], offers)
 

@@ -63,6 +63,18 @@ jobs:
           assert n > 3000 and e > 5000, "カタログの中身が足りません"
           PY
 
+      - name: 作品情報の訂正を反映する
+        # corrections/works.csv（git 管理下）に書いた訂正と日本語あらすじ。
+        # data/ は git 管理外で、カタログを作り直すとDBの中身は再生成されるので、
+        # ビルドのたびにここで流し込む。1件でも検証に落ちればビルドを止める
+        run: python3 scripts/corrections.py --apply
+
+      - name: 発売元から有志翻訳グループを外す
+        # VNDB の publishers には世界中のリリースの発売元が入り、有志の翻訳
+        # グループや個人が混ざる。VNDB API で言語と種別を引いて選り分ける。
+        # 取得済みの分はDBに残るので、2回目以降はほぼ待ち時間なしで終わる
+        run: python3 scripts/producers.py --apply
+
       - name: 購入先URLを作る
         run: python3 scripts/offers.py
 

@@ -247,3 +247,5 @@ ul.browse small{color:var(--muted);font-size:12.5px;line-height:1.6}
   .list-tools select{flex:1 1 100%;min-width:0;max-width:none;min-height:50px}
   .list-reset{flex:1 1 100%;margin-left:0;min-height:50px}
 }
+.story{margin:10px 0 4px;line-height:1.85}
+.story-src{margin:0 0 8px;font-size:12px;color:var(--muted)}
