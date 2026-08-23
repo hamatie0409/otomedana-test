@@ -1,0 +1,29 @@
+# 作品情報の訂正・追記。1行1項目。
+#
+# data/ は git 管理外で、rebuild-db.yml がカタログを作り直すとDBの中身は再生成される。
+# DBに直接書いた訂正は消えるので、ここに書いて毎回適用する。
+#
+# vid         VNDBの作品ID（v12345）
+# field       下の一覧のいずれか
+# value       入れる値
+# source_url  出典。http(s) 必須。これが無い訂正は入れない
+# checked_at  出典を実際に見て確認した日（YYYY-MM-DD）
+# note        判断の理由。空でよいが、迷ったものは必ず書く
+#
+# 使える field:
+#   released      発売日 YYYY-MM-DD
+#   title         作品名
+#   publishers    発売元（/ 区切り）
+#   developers    開発元（/ 区切り）
+#   staff         スタッフ（役割:名前 を / 区切り）
+#   description_ja  日本語のあらすじ。自分の言葉で書くこと（下記）
+#   jawiki_url    日本語Wikipediaのページ
+#   url           公式サイト
+#
+# あらすじ（description_ja）の注意:
+#   公式サイトやWikipediaの文章をそのまま貼らないこと。
+#   公式の文は著作権があり、あらすじ欄を丸ごと引用で埋めると主従関係が逆転して
+#   引用の要件を満たさない。Wikipedia は CC BY-SA なので転載すると継承義務が生じる。
+#   事実・筋書きに著作権は及ばないので、読んで理解した内容を自分の表現で書く。
+#   source_url には根拠にした公式ページを入れる。
+vid,field,value,source_url,checked_at,note
