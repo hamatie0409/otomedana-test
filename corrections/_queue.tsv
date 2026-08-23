@@ -2,10 +2,4 @@
 # 正しいほうを corrections/works.csv に移すこと。
 # ここは機械が上書きするので、直接書き込んでも消える。
 vid	title	field	db_value	wikipedia_value	source_url
-v2170	ネオ アンジェリーク	released	2006-03-02	2006-03-04	https://ja.wikipedia.org/wiki/%E3%83%8D%E3%82%AA_%E3%82%A2%E3%83%B3%E3%82%B8%E3%82%A7%E3%83%AA%E3%83%BC%E3%82%AF
 v9197	アブナイ恋の捜査室	released	2012-02-10	2012-01-19	https://ja.wikipedia.org/wiki/%E3%82%A2%E3%83%96%E3%83%8A%E3%82%A4%E6%81%8B%E3%81%AE%E6%8D%9C%E6%9F%BB%E5%AE%A4
-v1668	星空のコミックガーデン	released	2008-09-09	2008-09-11	https://ja.wikipedia.org/wiki/%E6%98%9F%E7%A9%BA%E3%81%AE%E3%82%B3%E3%83%9F%E3%83%83%E3%82%AF%E3%82%AC%E3%83%BC%E3%83%87%E3%83%B3
-v16454	アンジェリーク 天空の鎮魂歌	released	1998-03-20	1998-04-02	https://ja.wikipedia.org/wiki/%E3%82%A2%E3%83%B3%E3%82%B8%E3%82%A7%E3%83%AA%E3%83%BC%E3%82%AF_%E5%A4%A9%E7%A9%BA%E3%81%AE%E9%8E%AE%E9%AD%82%E6%AD%8C
-v7866	PANDORA ～君の名前を、僕は知る～	released	2010-11-18	2010-11-25	https://ja.wikipedia.org/wiki/PANDORA_%E5%90%9B%E3%81%AE%E5%90%8D%E5%89%8D%E3%82%92%E5%83%95%E3%81%AF%E7%9F%A5%E3%82%8B
-v1754	L2 Love×Loop	released	2009-07-23	2009-08-20	https://ja.wikipedia.org/wiki/L2_Love%C3%97Loop
-v23557	クラスターエッジ 〜君を待つ未来への証〜	released	2006-09-14	2006-09-22	https://ja.wikipedia.org/wiki/CLUSTER_EDGE
