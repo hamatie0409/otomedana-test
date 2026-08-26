@@ -26,6 +26,7 @@
 人が上から見るのが結局いちばん速い。
 """
 import argparse
+import datetime
 import json
 import os
 import re
@@ -217,6 +218,10 @@ JA_CHARS = re.compile(r"[぀-ヿ一-鿿]")
 H_MIN, H_MAX = 100, 250      # cm
 W_MIN, W_MAX = 20, 200       # kg
 AGE_MAX = 120                # 歳
+
+# 未発売かどうかの境目。発売前の作品はキャストが未発表なのがふつうなので、
+# 「声優が空」の検査はここより後の発売日を持つ作品には当てない
+TODAY = datetime.date.today().isoformat()
 
 
 def chars_structure(con):
@@ -422,8 +427,12 @@ def chars_review(con):
         # の意味で、女性が入っているのは誤りではない（掲載作品で90人）。表示側は
         # すでに男性だけを攻略対象と出す形に直してあるので、拾っても全件が空振りになる。
 
+        # 未発売の作品はキャストがまだ発表されていないほうがふつうで、声優が空でも
+        # 誤りではない。発売日が未定（空）か先の日付なら、この検査からは外す
+        rel = (r["released"] or "").strip()
+        unreleased = not rel or rel > TODAY
         if r["voiced"] == "フルボイス" and not (r["cv"] or "").strip() \
-                and r["role"] == "攻略対象" and r["sex"] == "m":
+                and r["role"] == "攻略対象" and r["sex"] == "m" and not unreleased:
             why.append("フルボイス作品の攻略対象なのに声優が空")
             risk += 3
 
