@@ -201,6 +201,19 @@ ROLE_OK = ("攻略対象", "サブキャラ", "主人公", "登場のみ")
 
 # 人の身体としてありえない範囲。VNDBは非人間キャラも扱うので、
 # 「ありえない」ではなく「転記ミスを疑う」ための緩い枠にしてある
+# VNDBが「名前が無い」ことを示すために置く英語の符丁。日本語サイトにそのまま
+# 出ると読めないので vndb_build.py で「主人公」に寄せている。ここは再発の見張り。
+#   「???」「？？？」は符丁ではなく、作中で名前が伏せられているキャラの表記
+#   （幻奏喫茶アンシャンテ・ピオフィオーレなど10人）。正しいので対象にしない。
+PLACEHOLDER = ("Protagonist", "protagonist", "MC")
+
+# 作中で名前が伏せられているキャラの表記。日本語が1文字も無いが誤りではない
+MASKED = ("???", "？？？", "?????", "―", "－")
+
+# 日本語が1文字も無い名前。VNDBに日本語表記が無いだけで、人物としては
+# 日本人という例が多い（Arisugawa Yuki など）。誤りではないが読みにくい
+JA_CHARS = re.compile(r"[぀-ヿ一-鿿]")
+
 H_MIN, H_MAX = 100, 250      # cm
 W_MIN, W_MAX = 20, 200       # kg
 AGE_MAX = 120                # 歳
@@ -267,11 +280,18 @@ def chars_structure(con):
           "slug の生成と見出しが壊れる")
 
     # 声優名の表記。DBの慣習は「姓 名」で、間は半角スペース1つ。
-    # 全角スペースが混じると別人として扱われ、声優ページが生成されず
-    # キャラページの声優名がリンクにならない（実例: 篁　莎耶）
-    check("声優名に全角スペースが混じる",
-          "SELECT DISTINCT cv FROM characters WHERE cv LIKE '%　%'",
-          "別名義として扱われ、声優ページが立たない")
+    # 全角スペースそのものは誤りではない（VNDB側が「篁　莎耶」で登録している
+    # 例がある）。困るのは、同じ人が空白の使い方だけ違う2通りで入って
+    # 別人に分裂するとき。声優ページが2つに割れて担当作品が半分ずつになる
+    check("空白の使い方だけが違う声優名が両方ある",
+          """SELECT a.cv, b.cv FROM (SELECT DISTINCT cv FROM characters
+                                     WHERE vid IN (%s) AND cv <> '') a
+             JOIN (SELECT DISTINCT cv FROM characters
+                   WHERE vid IN (%s) AND cv <> '') b
+               ON a.cv < b.cv
+              AND REPLACE(REPLACE(a.cv, '　', ''), ' ', '')
+                = REPLACE(REPLACE(b.cv, '　', ''), ' ', '')""" % (PUB_GAMES, PUB_GAMES),
+          "同一人物が2ページに割れ、担当作品が分散する")
 
     check("声優名の前後に空白",
           "SELECT DISTINCT cv FROM characters WHERE cv <> '' AND cv <> TRIM(cv)",
@@ -288,12 +308,19 @@ def chars_structure(con):
              WHERE c.vid IN (%s) AND g.voiced = 'ボイスなし' AND c.cv <> ''""" % PUB_GAMES,
           "作品のボイス情報かキャストのどちらかが誤り")
 
-    # 声優名から声優ページへ辿れること。別名義は slug_aliases で本名義に寄せる
-    check("声優ページにも別名義表にも無い声優",
-          """SELECT DISTINCT cv FROM characters WHERE vid IN (%s) AND cv <> ''
+    # 声優名から声優ページへ辿れること。別名義は slug_aliases で本名義に寄せる。
+    # 担当1作品の人にページが無いのは正しい（MIN_WORKS["cv"]=2）。site_build は
+    # ページのある行き先だけをリンクにするので、その人の名前は素の文字列で出る。
+    # 異常なのは、2作品以上を担当しているのにページが無いとき＝ slugs が古い。
+    # corrections.py は毎日走るが slugs.py はDBを作り直すときしか走らないので、
+    # 訂正で声優を足すとこの差が出る
+    check("担当2作品以上なのに声優ページが無い",
+          """SELECT cv, COUNT(DISTINCT vid) FROM characters
+             WHERE vid IN (%s) AND cv <> ''
              AND cv NOT IN (SELECT key FROM slugs WHERE kind='cv')
-             AND cv NOT IN (SELECT alias FROM slug_aliases)""" % PUB_GAMES,
-          "キャラページで声優名がただの文字列になる（訂正で足した声優に起きやすい）")
+             AND cv NOT IN (SELECT alias FROM slug_aliases)
+             GROUP BY cv HAVING COUNT(DISTINCT vid) >= 2""" % PUB_GAMES,
+          "slugs が訂正に追いついていない。DBを作り直すと解消する")
 
     return out
 
@@ -375,6 +402,14 @@ def chars_review(con):
         why, risk = [], 0
         is_page = r["cid"] in paged
 
+        nm = (r["name"] or "").strip()
+        if nm in PLACEHOLDER:
+            why.append("名前がVNDBの符丁のまま（%s）" % nm)
+            risk += 3
+        elif nm and nm not in MASKED and not JA_CHARS.search(nm):
+            why.append("名前に日本語表記が無い（%s）" % nm)
+            risk += 1 + (1 if is_page else 0)
+
         if (r["vid"], r["name"]) in name_dup:
             why.append("同じ作品に同じ名前のキャラが複数いる")
             risk += 2
@@ -383,9 +418,9 @@ def chars_review(con):
             why.append("性別が空（攻略対象の出し分けに使う）")
             risk += 2
 
-        if r["role"] == "攻略対象" and r["sex"] == "f":
-            why.append("女性なのに区分が攻略対象（VNDBのprimaryは「主要キャラ」の意味）")
-            risk += 1
+        # 「女性なのに攻略対象」は検査しない。VNDBの primary は「主要キャラクター」
+        # の意味で、女性が入っているのは誤りではない（掲載作品で90人）。表示側は
+        # すでに男性だけを攻略対象と出す形に直してあるので、拾っても全件が空振りになる。
 
         if r["voiced"] == "フルボイス" and not (r["cv"] or "").strip() \
                 and r["role"] == "攻略対象" and r["sex"] == "m":
@@ -463,6 +498,8 @@ def main():
                     help="要確認が残っていても異常終了する（CIで回帰を止める用）")
     ap.add_argument("--only", choices=("works", "chars"),
                     help="作品側／キャラクター側のどちらかだけを見る")
+    ap.add_argument("--queue", action="store_true",
+                    help="キャラクターの要確認を corrections/_queue_chars.tsv に書き出す")
     a = ap.parse_args()
 
     if not os.path.exists(DB):
@@ -480,6 +517,28 @@ def main():
     high = [t for t in todo if t["risk"] >= RISK_SHOW]
     c_todo, c_work, c_total = chars_review(con) if do_c else ([], [], 0)
     c_high = [t for t in c_todo if t["risk"] >= RISK_SHOW]
+
+    if a.queue:
+        # verify_external.py と同じ流儀。ここでは直さず、人が出典を見て
+        # corrections/characters.csv に移すための材料だけを置く
+        path = os.path.join(ROOT, "corrections", "_queue_chars.tsv")
+        with open(path, "w", encoding="utf-8") as fh:
+            fh.write("# audit.py --queue が書いた要確認リスト。直す気になった行を\n"
+                     "# corrections/characters.csv に移すこと（値・出典URL・確認日の3点が要る）。\n"
+                     "# 正しいと確認できた行は audit_ok.py の CHAR_ACK に理由つきで入れる。\n")
+            fh.write("risk\t得票\t作品\tvid\tcid\tキャラ\t区分\tページ\t理由\t照合先\n")
+            for t in c_todo:
+                fh.write("%d\t%d\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n"
+                         % (t["risk"], t["votecount"], t["title"], t["vid"], t["cid"],
+                            t["name"], t["role"], "有" if t["is_page"] else "無",
+                            " / ".join(t["why"]), t["jawiki"]))
+            for t in c_work:
+                fh.write("%d\t%d\t%s\t%s\t\t（作品全体）\t\t\t%s\t%s\n"
+                         % (t["risk"], t["votecount"], t["title"], t["vid"],
+                            " / ".join(t["why"]), t["jawiki"]))
+        print("書き出した: %s（%d人 + %d作品）"
+              % (os.path.relpath(path, ROOT), len(c_todo), len(c_work)))
+        return
 
     if a.json:
         print(json.dumps({"structure": bugs, "join_total": total,

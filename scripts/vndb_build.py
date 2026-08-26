@@ -344,10 +344,27 @@ def main():
     ROLE_JA = {"main": "主人公", "primary": "攻略対象", "side": "サブキャラ", "appears": "登場のみ"}
     ORDER = {"main": 0, "primary": 1, "side": 2, "appears": 3}
 
+    # VNDBは名前を持たない主人公に英語の符丁 "Protagonist" を置く。日本語で
+    # 登録されている同種のキャラは「主人公」なので（16作品）、表記をそちらへ寄せる。
+    # 名前そのものが未登録なのは変わらないが、日本語のサイトに Protagonist と
+    # 出るのは読めない。ローマ字（slug の元）は触らないのでURLは動かない
+    PROTAGONIST_JA = "主人公"
+
+    def ja_name(nm, lt):
+        """キャラ名の表記をそろえる。日本語表記そのものは作り変えない"""
+        if nm is None:
+            return None
+        if nm.strip() == "Protagonist":
+            return PROTAGONIST_JA
+        # 姓名の間の全角スペースを半角にそろえる（VNDB側の登録がまちまちで、
+        # 掲載作品で24人が全角。同じ画面に両方の書き方が並ぶのを避ける）
+        return nm.replace("\u3000", " ").strip()
+
     for vid, v in vns.items():
         chars = []
         for cid, role in sorted(roles.get(vid, {}).items(), key=lambda kv: ORDER.get(kv[1], 9)):
             nm, lt = cname.get(cid, (None, None))
+            nm = ja_name(nm, lt)
             cvn, cvl = cv.get(vid, {}).get(cid, (None, None))
             tg = ctraits.get(cid, [])
             chars.append({
