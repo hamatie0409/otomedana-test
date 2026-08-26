@@ -676,6 +676,17 @@ def main():
         label[(r["kind"], r["key"])] = r["label"]
         npages[(r["kind"], r["key"])] = (r["n_works"], r["is_page"])
 
+    def page_url(kind, key):
+        """ページが実際に生成される行き先だけを返す。
+
+        slugs には is_page=0 の行も入っている（声優624人・属性など、
+        担当作品が MIN_WORKS に届かず一覧ページを作らない人たち）。
+        url 列は is_page に関わらず埋まっているので、そのまま href にすると
+        生成されないページへのリンクになる。実測で 789本が 404 だった。
+        """
+        n = npages.get((kind, key))
+        return slug.get((kind, key)) if n and n[1] else None
+
     chars = defaultdict(list)
     for r in con.execute("SELECT * FROM characters WHERE vid IN (%s)" % ph, vids):
         chars[r["vid"]].append(r)
@@ -863,13 +874,13 @@ def main():
                 cv = ""
                 if c["cv"]:
                     key = c["cv"]
-                    u = slug.get(("cv", key))
+                    u = page_url("cv", key)
                     if not u:
                         for canon, alist in alias_of.items():
                             if key in alist:
-                                u = slug.get(("cv", canon)); break
+                                u = page_url("cv", canon); break
                     cv = '<a href="%s">%s</a>' % (e(u), e(c["cv"])) if u else e(c["cv"])
-                cu = slug.get(("character", c["cid"]))
+                cu = page_url("character", c["cid"])
                 nm = ('<a href="%s">%s</a>' % (e(cu), e(c["name"]))
                       if cu and c["name"] else e(c["name"] or ""))
                 b.append("<tr><td>%s</td><td>%s</td><td>%s</td></tr>"
@@ -1185,11 +1196,11 @@ def main():
         cvs = sorted({r["cv"] for r in rows if r["cv"]})
         cv_links = []
         for nm in cvs:
-            u = slug.get(("cv", nm))
+            u = page_url("cv", nm)
             if not u:
                 for canon, alist in alias_of.items():
                     if nm in alist:
-                        u = slug.get(("cv", canon)); break
+                        u = page_url("cv", canon); break
             cv_links.append('<a href="%s">%s</a>' % (e(u), e(nm)) if u else e(nm))
 
         facts = [("声優", " / ".join(cv_links) or "—"),
@@ -1211,7 +1222,7 @@ def main():
             out = []
             for cat in cats:
                 for v in bycat.get(cat, []):
-                    u = slug.get(("trait", "%s:%s" % (cat, v)))
+                    u = page_url("trait", "%s:%s" % (cat, v))
                     out.append('<a href="%s">%s</a>' % (e(u), e(v)) if u else
                                '<span>%s</span>' % e(v))
             return " ".join(out)

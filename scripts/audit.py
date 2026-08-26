@@ -33,12 +33,13 @@ import sqlite3
 import statistics
 import sys
 import unicodedata
+from collections import Counter, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
-    from audit_ok import ACK, COMPILATION_OK
+    from audit_ok import ACK, COMPILATION_OK, CHAR_ACK
 except ImportError:
-    ACK, COMPILATION_OK = set(), {}
+    ACK, COMPILATION_OK, CHAR_ACK = set(), {}, set()
 try:
     from rakuten_prices import not_the_game
 except ImportError:
@@ -190,12 +191,278 @@ def joins(con):
     return found, len(rows)
 
 
+# ------------------------------------------------------- キャラクターの検査
+
+PUB_GAMES = "SELECT key FROM slugs WHERE kind='game' AND is_page=1"
+
+# 想定される値。ここに無い値が入っていたら取り込みが壊れている
+SEX_OK = ("m", "f", "b", "")
+ROLE_OK = ("攻略対象", "サブキャラ", "主人公", "登場のみ")
+
+# 人の身体としてありえない範囲。VNDBは非人間キャラも扱うので、
+# 「ありえない」ではなく「転記ミスを疑う」ための緩い枠にしてある
+H_MIN, H_MAX = 100, 250      # cm
+W_MIN, W_MAX = 20, 200       # kg
+AGE_MAX = 120                # 歳
+
+
+def chars_structure(con):
+    """キャラクター側の構造の検査。満たされていなければバグ"""
+    out = []
+
+    def check(name, sql, hint):
+        rows = con.execute(sql).fetchall()
+        if rows:
+            out.append({"name": name, "n": len(rows), "hint": hint,
+                        "sample": [list(r) for r in rows[:5]]})
+
+    check("キャラページのcidがcharactersに無い",
+          """SELECT key FROM slugs WHERE kind='character' AND is_page=1
+             AND key NOT IN (SELECT cid FROM characters)""",
+          "中身の無いページが出る")
+
+    check("traitsのcidがcharactersに無い",
+          """SELECT DISTINCT t.cid FROM traits t WHERE t.vid IN (%s)
+             AND t.cid NOT IN (SELECT cid FROM characters)""" % PUB_GAMES,
+          "属性が誰のものか辿れない")
+
+    check("同じ作品の中でcidが重複",
+          """SELECT vid, cid, COUNT(*) FROM characters WHERE vid IN (%s)
+             GROUP BY vid, cid HAVING COUNT(*) > 1""" % PUB_GAMES,
+          "同じキャラが作品ページに二重に出る")
+
+    check("同じcidなのに作品ごとに名前が違う",
+          """SELECT cid, COUNT(DISTINCT name) FROM characters WHERE vid IN (%s)
+             GROUP BY cid HAVING COUNT(DISTINCT name) > 1""" % PUB_GAMES,
+          "1つのキャラページに複数の名前が候補として立つ")
+
+    check("性別が想定外の値",
+          "SELECT DISTINCT sex FROM characters WHERE sex IS NOT NULL AND sex NOT IN %s"
+          % (SEX_OK,),
+          "攻略対象の出し分けが性別を見ているので表示が崩れる")
+
+    check("区分が想定外の値",
+          "SELECT DISTINCT role FROM characters WHERE role NOT IN %s" % (ROLE_OK,),
+          "role_label が対応していない値はそのまま画面に出る")
+
+    check("誕生日が「n月n日」の形でない",
+          """SELECT cid, birthday FROM characters WHERE vid IN (%s)
+             AND birthday <> '' AND birthday NOT GLOB '*月*日'""" % PUB_GAMES,
+          "取り込みで月日の組み立てが崩れている")
+
+    check("身長・体重・年齢が0以下",
+          """SELECT cid, height, weight, age FROM characters WHERE vid IN (%s)
+             AND (height <= 0 OR weight <= 0 OR age < 0)""" % PUB_GAMES,
+          "数値カラムに欠測値の記号が入っている")
+
+    check("立ち絵がVNDB以外のホストから来ている",
+          """SELECT DISTINCT SUBSTR(image_url, 1, 40) FROM characters
+             WHERE vid IN (%s) AND image_url <> ''
+             AND image_url NOT LIKE 'https://t.vndb.org/%%'""" % PUB_GAMES,
+          "画像の出どころが変わっている（利用条件が別になる）")
+
+    check("キャラ名が空、または前後に空白",
+          """SELECT cid, name FROM characters WHERE vid IN (%s)
+             AND (name IS NULL OR name = '' OR name <> TRIM(name))""" % PUB_GAMES,
+          "slug の生成と見出しが壊れる")
+
+    # 声優名の表記。DBの慣習は「姓 名」で、間は半角スペース1つ。
+    # 全角スペースが混じると別人として扱われ、声優ページが生成されず
+    # キャラページの声優名がリンクにならない（実例: 篁　莎耶）
+    check("声優名に全角スペースが混じる",
+          "SELECT DISTINCT cv FROM characters WHERE cv LIKE '%　%'",
+          "別名義として扱われ、声優ページが立たない")
+
+    check("声優名の前後に空白",
+          "SELECT DISTINCT cv FROM characters WHERE cv <> '' AND cv <> TRIM(cv)",
+          "同上")
+
+    check("声優欄に注記が混じる",
+          """SELECT DISTINCT cv FROM characters WHERE vid IN (%s)
+             AND (cv LIKE '%%(%%' OR cv LIKE '%%（%%' OR cv LIKE '%%/%%'
+                  OR cv LIKE '%%、%%')""" % PUB_GAMES,
+          "1つの欄に複数人が入っている可能性がある")
+
+    check("ボイスなしの作品なのに声優が入っている",
+          """SELECT c.vid, c.name, c.cv FROM characters c JOIN games g ON g.vid = c.vid
+             WHERE c.vid IN (%s) AND g.voiced = 'ボイスなし' AND c.cv <> ''""" % PUB_GAMES,
+          "作品のボイス情報かキャストのどちらかが誤り")
+
+    # 声優名から声優ページへ辿れること。別名義は slug_aliases で本名義に寄せる
+    check("声優ページにも別名義表にも無い声優",
+          """SELECT DISTINCT cv FROM characters WHERE vid IN (%s) AND cv <> ''
+             AND cv NOT IN (SELECT key FROM slugs WHERE kind='cv')
+             AND cv NOT IN (SELECT alias FROM slug_aliases)""" % PUB_GAMES,
+          "キャラページで声優名がただの文字列になる（訂正で足した声優に起きやすい）")
+
+    return out
+
+
+def dead_links(_con):
+    """生成済みの docs/ から、行き先の無い内部リンクを探す。
+
+    slugs の url 列は is_page に関わらず埋まっている。site_build が
+    そのまま href にすると、ページを作らない行き先（声優624人・属性など）への
+    リンクになる。実測で 789本が 404 だった。DBだけを見ても分からないので、
+    ここだけ生成物を読む。docs/ が無ければ何も言わずに飛ばす。
+    """
+    docs = os.path.join(ROOT, "docs")
+    if not os.path.isdir(docs):
+        return []
+    pages, files_ = {"/"}, set()
+    for dirpath, _dirs, files in os.walk(docs):
+        rel = os.path.relpath(dirpath, docs).replace(os.sep, "/")
+        base = "/" if rel == "." else "/%s/" % rel
+        if "index.html" in files:
+            pages.add(base)
+        for fn in files:
+            files_.add(base + fn)
+
+    # root相対のリンクだけを見る。//example.com や http(s):// は外部
+    href = re.compile(r'href="(/(?!/)[^"#?]*)"')
+    prefix = "/" + os.path.basename(ROOT)     # BASE_URL の接頭辞
+    dead = {}
+    for dirpath, _dirs, files in os.walk(docs):
+        if "index.html" not in files:
+            continue
+        f = os.path.join(dirpath, "index.html")
+        with open(f, encoding="utf-8") as fh:
+            html = fh.read()
+        for m in set(href.findall(html)):
+            t = m[len(prefix):] or "/" if m.startswith(prefix + "/") or m == prefix else m
+            if t in pages or t in files_:
+                continue
+            dead.setdefault(t, os.path.relpath(f, ROOT))
+    if not dead:
+        return []
+    return [{"name": "行き先の無い内部リンク", "n": len(dead),
+             "hint": "ページを作らない slug（is_page=0）へリンクしている。"
+                     "site_build の page_url() を通していない箇所がある",
+             "sample": [[k, v] for k, v in list(dead.items())[:5]]}]
+
+
+def chars_review(con):
+    """キャラクター側の、白黒つかないものを risk 順に並べる
+
+    作品側の「結合の検査」に当たる。違いは、疑うのが商品との結び付きではなく
+    **VNDBに入っている値そのもの**だという点。外部と照らさないと決着しないので、
+    ここでは順位を付けるところまでしかやらない。
+    """
+    rows = con.execute("""
+        SELECT c.vid, c.cid, c.name, c.name_latin, c.role, c.sex, c.cv,
+               c.birthday, c.height, c.weight, c.age, c.image_url,
+               g.title, g.votecount, g.voiced, g.released, g.jawiki_url
+        FROM characters c JOIN games g ON g.vid = c.vid
+        WHERE c.vid IN (%s)
+    """ % PUB_GAMES).fetchall()
+
+    paged = {r[0] for r in con.execute(
+        "SELECT key FROM slugs WHERE kind='character' AND is_page=1")}
+
+    # 作品ごとの人数構成。主人公の有無や同名の重なりは作品単位でしか見えない
+    by_vid = defaultdict(list)
+    for r in rows:
+        by_vid[r["vid"]].append(r)
+    name_dup = set()      # (vid, name) が2人以上いる
+    for vid, rs in by_vid.items():
+        seen = Counter(x["name"] for x in rs)
+        for nm, n in seen.items():
+            if n > 1:
+                name_dup.add((vid, nm))
+
+    found = []
+    for r in rows:
+        why, risk = [], 0
+        is_page = r["cid"] in paged
+
+        if (r["vid"], r["name"]) in name_dup:
+            why.append("同じ作品に同じ名前のキャラが複数いる")
+            risk += 2
+
+        if not (r["sex"] or "").strip():
+            why.append("性別が空（攻略対象の出し分けに使う）")
+            risk += 2
+
+        if r["role"] == "攻略対象" and r["sex"] == "f":
+            why.append("女性なのに区分が攻略対象（VNDBのprimaryは「主要キャラ」の意味）")
+            risk += 1
+
+        if r["voiced"] == "フルボイス" and not (r["cv"] or "").strip() \
+                and r["role"] == "攻略対象" and r["sex"] == "m":
+            why.append("フルボイス作品の攻略対象なのに声優が空")
+            risk += 3
+
+        h, w, ag = r["height"], r["weight"], r["age"]
+        if h and not (H_MIN <= h <= H_MAX):
+            why.append("身長が%dcm" % h)
+            risk += 2
+        if w and not (W_MIN <= w <= W_MAX):
+            why.append("体重が%dkg" % w)
+            risk += 2
+        if ag and ag > AGE_MAX:
+            why.append("年齢が%d歳" % ag)
+            risk += 1
+
+        if is_page and not (r["image_url"] or "").strip():
+            why.append("ページがあるのに立ち絵が無い")
+            risk += 1
+        if is_page and not (r["name_latin"] or "").strip():
+            why.append("ページがあるのにローマ字が無い（slugが名前から作れない）")
+            risk += 1
+
+        if not why:
+            continue
+        if "%s:%s" % (r["vid"], r["cid"]) in CHAR_ACK:
+            continue
+        found.append({"vid": r["vid"], "cid": r["cid"], "name": r["name"],
+                      "title": r["title"], "votecount": r["votecount"] or 0,
+                      "role": r["role"], "sex": r["sex"], "cv": r["cv"],
+                      "is_page": is_page, "jawiki": r["jawiki_url"] or "",
+                      "risk": risk, "why": why})
+
+    # 作品単位の疑い。人単位の行に混ぜると同じ作品で何十行も出るので分けて持つ
+    per_work = []
+    for vid, rs in by_vid.items():
+        g = rs[0]
+        why, risk = [], 0
+        n_hero = sum(1 for x in rs if x["role"] == "主人公")
+        if n_hero == 0:
+            why.append("主人公が1人もいない")
+            risk += 2
+        elif n_hero >= 2:
+            why.append("主人公が%d人いる" % n_hero)
+            risk += 1
+        if why and vid not in CHAR_ACK:
+            per_work.append({"vid": vid, "title": g["title"],
+                             "votecount": g["votecount"] or 0,
+                             "n": len(rs), "risk": risk, "why": why,
+                             "jawiki": g["jawiki_url"] or ""})
+
+    # キャラが1人も居ない作品は上のループに現れないので別に拾う
+    for vid, title, vc, jw in con.execute("""
+            SELECT vid, title, votecount, jawiki_url FROM games WHERE vid IN (%s)
+            AND vid NOT IN (SELECT vid FROM characters)""" % PUB_GAMES):
+        if vid in CHAR_ACK:
+            continue
+        per_work.append({"vid": vid, "title": title, "votecount": vc or 0,
+                         "n": 0, "risk": 4 if (vc or 0) > 0 else 1,
+                         "why": ["キャラクターが1人も登録されていない"],
+                         "jawiki": jw or ""})
+
+    # 得票の多い作品ほど人目に触れる。同じ risk なら票の多い順に見るのが得
+    found.sort(key=lambda x: (-x["risk"], -x["votecount"]))
+    per_work.sort(key=lambda x: (-x["risk"], -x["votecount"]))
+    return found, per_work, len(rows)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--json", action="store_true")
     ap.add_argument("--limit", type=int, default=30)
     ap.add_argument("--strict", action="store_true",
                     help="要確認が残っていても異常終了する（CIで回帰を止める用）")
+    ap.add_argument("--only", choices=("works", "chars"),
+                    help="作品側／キャラクター側のどちらかだけを見る")
     a = ap.parse_args()
 
     if not os.path.exists(DB):
@@ -204,14 +471,24 @@ def main():
 
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
-    bugs = structure(con)
-    todo, total = joins(con)
+    do_w = a.only in (None, "works")
+    do_c = a.only in (None, "chars")
+
+    bugs = ((structure(con) + dead_links(con)) if do_w else []) \
+        + (chars_structure(con) if do_c else [])
+    todo, total = joins(con) if do_w else ([], 0)
     high = [t for t in todo if t["risk"] >= RISK_SHOW]
+    c_todo, c_work, c_total = chars_review(con) if do_c else ([], [], 0)
+    c_high = [t for t in c_todo if t["risk"] >= RISK_SHOW]
 
     if a.json:
         print(json.dumps({"structure": bugs, "join_total": total,
                           "join_todo": len(todo), "join_high": len(high),
-                          "items": todo}, ensure_ascii=False, indent=2))
+                          "items": todo,
+                          "char_total": c_total, "char_todo": len(c_todo),
+                          "char_high": len(c_high), "chars": c_todo,
+                          "char_works": c_work},
+                         ensure_ascii=False, indent=2))
     else:
         print("=== 構造の検査 ===")
         if not bugs:
@@ -222,7 +499,8 @@ def main():
             for s in b["sample"]:
                 print("      %s" % (s,))
         print()
-        print("=== 結合の検査 ===")
+    if not a.json and do_w:
+        print("=== 作品：結合の検査 ===")
         print("  商品リンク総数   %d行" % total)
         print("  要確認          %d行 / %d作品（うち risk>=%d が %d行）"
               % (len(todo), len({t['vid'] for t in todo}), RISK_SHOW, len(high)))
@@ -246,9 +524,52 @@ def main():
         if len(todo) > a.limit:
             print("  ほか %d行（--limit で増やす / --json で全件）" % (len(todo) - a.limit))
 
+    if not a.json and do_c:
+        print("=== キャラクター：内容の検査 ===")
+        print("  掲載作品のキャラ   %d行" % c_total)
+        print("  要確認            %d人 / %d作品（うち risk>=%d が %d人）"
+              % (len(c_todo), len({t["vid"] for t in c_todo}), RISK_SHOW, len(c_high)))
+        print("  作品単位の疑い     %d作品" % len(c_work))
+        print("  承認済み          %d件" % len(CHAR_ACK))
+        print()
+        tally = {}
+        for t in c_todo:
+            for w in t["why"]:
+                k = w.split("（")[0].split("が%d" % 0)[0]
+                k = re.sub(r"\d+", "n", k)
+                tally[k] = tally.get(k, 0) + 1
+        print("  理由別の内訳（1人が複数該当する）:")
+        for k, v in sorted(tally.items(), key=lambda x: -x[1]):
+            print("    %-40s %5d人" % (k, v))
+        print()
+        if c_work:
+            print("  作品単位:")
+            for t in c_work[:a.limit]:
+                print("    [risk %d] %s（%d票・キャラ%d人）"
+                      % (t["risk"], t["title"], t["votecount"], t["n"]))
+                print("        → %s" % " / ".join(t["why"]))
+                if t["jawiki"]:
+                    print("        照合先: %s" % t["jawiki"])
+            if len(c_work) > a.limit:
+                print("    ほか %d作品" % (len(c_work) - a.limit))
+            print()
+        for t in c_todo[:a.limit]:
+            print("  [risk %d] %s ｜ %s（%d票）"
+                  % (t["risk"], t["name"], t["title"], t["votecount"]))
+            print("      区分 %s / 性別 %s / 声優 %s%s"
+                  % (t["role"], t["sex"] or "—", t["cv"] or "—",
+                     "" if t["is_page"] else " ／ページ無し"))
+            print("      → %s" % " / ".join(t["why"]))
+            if t["jawiki"]:
+                print("      照合先: %s" % t["jawiki"])
+            print("      承認するなら audit_ok.py の CHAR_ACK に \"%s:%s\"" % (t["vid"], t["cid"]))
+            print()
+        if len(c_todo) > a.limit:
+            print("  ほか %d人（--limit で増やす / --json で全件）" % (len(c_todo) - a.limit))
+
     if bugs:
         sys.exit(1)
-    if a.strict and high:
+    if a.strict and (high or c_high):
         sys.exit(1)
 
 
