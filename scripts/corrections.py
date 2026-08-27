@@ -47,8 +47,11 @@ FIELDS = {
 # games に元から無く、訂正のために足す列
 ADDED = {"description_ja": "TEXT"}
 
-# キャラクター側で触ってよい列
-CHAR_FIELDS = {"cv": "声優", "name": "キャラクター名", "role": "役割"}
+# キャラクター側で触ってよい列。sex は表示で「攻略対象」と「主要キャラ」を
+# 出し分けるのに使うので、値は DB と同じ m / f だけを受け付ける
+CHAR_FIELDS = {"cv": "声優", "name": "キャラクター名", "role": "役割",
+               "sex": "性別"}
+SEX_VALUES = ("m", "f")
 
 DATE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 URL = re.compile(r"^https?://", re.I)
@@ -147,6 +150,8 @@ def validate_chars(rows, con):
             bad("使えない field。使えるのは %s" % " ".join(CHAR_FIELDS))
         if not value:
             bad("value が空")
+        elif field == "sex" and value not in SEX_VALUES:
+            bad("sex は %s のどちらか（DBに入っている値そのまま）" % " / ".join(SEX_VALUES))
         if not URL.match(src):
             bad("source_url が無いか http(s) で始まらない")
         if not DATE.match(when):

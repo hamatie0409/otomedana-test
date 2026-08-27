@@ -419,7 +419,11 @@ def chars_review(con):
             why.append("同じ作品に同じ名前のキャラが複数いる")
             risk += 2
 
-        if not (r["sex"] or "").strip():
+        # 性別は site_build の role_label でしか使わず、そこで分岐するのは
+        # role が「攻略対象」のときだけ（男性なら「攻略対象」、それ以外は
+        # 「主要キャラ」と出す）。サブキャラや登場のみの人は性別が空でも表示は
+        # 変わらないので、拾っても直しようのない空振りにしかならない
+        if r["role"] == "攻略対象" and not (r["sex"] or "").strip():
             why.append("性別が空（攻略対象の出し分けに使う）")
             risk += 2
 
