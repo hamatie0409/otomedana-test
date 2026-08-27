@@ -10,6 +10,7 @@ from common import DATA, ROOT
 
 import affiliate_config as AF
 from series import build_series
+from overrides import CAPTURE_TARGETS
 from site_config import (SITE_NAME, SITE_DESC, SITE_URL, REPO_URL, SCOPE_NOTE,
                          PUBLISH, BASE_PATH, IMAGE_MODE,
                          AGE_TIERS, age_tier, year_bucket, year_label, year_sort)
@@ -459,18 +460,34 @@ PRICE_TTL_HOURS = 24
 #
 # 乙女ゲームなので、primary の男性はまず攻略対象とみて差し支えない。男性だけを
 # 「攻略対象」と出し、それ以外は「主要キャラ」にする。
-# 取りこぼすのは女性が攻略対象になる作品（百合ルート）だが、その場合も
-# 「主要キャラ」と出るだけで誤りにはならない。
+# 取りこぼすのは女性が攻略対象になる作品と、性別が設定として決まっていない
+# キャラ。実例が出てきたので overrides.CAPTURE_TARGETS に個別に書いて拾う
+# （白虎隊 志士異聞記の山本十和子など）。
 #
 # DB側の値はクエリの絞り込み（role IN ('主人公','攻略対象')）に使っているので
 # 変えない。表示だけを言い換える。
 ROLE_LABEL = {"攻略対象": "主要キャラ"}
 
 
-def role_label(role, sex=None):
+def role_label(role, sex=None, vid=None, cid=None):
+    """VNDBの role を表示用の言い方に直す。
+
+    primary（DBでは「攻略対象」）は男性のときだけ「攻略対象」と出す。
+    女性が攻略対象になる作品や、性別が設定として決まっていないキャラは
+    overrides.CAPTURE_TARGETS に個別に書いて拾う。
+    """
     if role == "攻略対象":
-        return "攻略対象" if sex == "m" else "主要キャラ"
+        if sex == "m" or is_capture_target(vid, cid):
+            return "攻略対象"
+        return "主要キャラ"
     return ROLE_LABEL.get(role or "", role or "")
+
+
+def is_capture_target(vid, cid):
+    """overrides.CAPTURE_TARGETS に載っているか。作品を限らない書き方も許す"""
+    if not cid:
+        return False
+    return cid in CAPTURE_TARGETS or ("%s:%s" % (vid, cid)) in CAPTURE_TARGETS
 
 
 def fresh_price(o):
@@ -884,7 +901,7 @@ def main():
                 nm = ('<a href="%s">%s</a>' % (e(cu), e(c["name"]))
                       if cu and c["name"] else e(c["name"] or ""))
                 b.append("<tr><td>%s</td><td>%s</td><td>%s</td></tr>"
-                         % (e(role_label(c["role"], c["sex"])), nm, cv))
+                         % (e(role_label(c["role"], c["sex"], c["vid"], c["cid"])), nm, cv))
             b.append("</table></section>")
 
         if sc_by_vid[vid]:
@@ -1191,7 +1208,7 @@ def main():
             g = games[r["vid"]]
             apps.append((slug[("game", g["vid"])], g["title"], ja_date(g["released"]),
                          (g["platforms"] or "").split(" / ")[0], cover_of(g),
-                         role_label(r["role"], r["sex"])))
+                         role_label(r["role"], r["sex"], r["vid"], r["cid"])))
 
         cvs = sorted({r["cv"] for r in rows if r["cv"]})
         cv_links = []
@@ -1204,7 +1221,8 @@ def main():
             cv_links.append('<a href="%s">%s</a>' % (e(u), e(nm)) if u else e(nm))
 
         facts = [("声優", " / ".join(cv_links) or "—"),
-                 ("区分", e("・".join(sorted({role_label(r["role"], r["sex"]) for r in rows})))),
+                 ("区分", e("・".join(sorted({role_label(r["role"], r["sex"], r["vid"], r["cid"])
+                                     for r in rows})))),
                  ("誕生日", e(c0["birthday"] or "—")),
                  ("年齢", e("%d歳" % c0["age"] if c0["age"] else "—")),
                  ("身長", e("%dcm" % c0["height"] if c0["height"] else "—")),

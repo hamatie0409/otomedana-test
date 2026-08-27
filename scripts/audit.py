@@ -42,6 +42,10 @@ try:
 except ImportError:
     ACK, COMPILATION_OK, CHAR_ACK = set(), {}, set()
 try:
+    from overrides import CAPTURE_TARGETS
+except ImportError:
+    CAPTURE_TARGETS = set()
+try:
     from rakuten_prices import not_the_game
 except ImportError:
     def not_the_game(_name):
@@ -326,6 +330,26 @@ def chars_structure(con):
              AND cv NOT IN (SELECT alias FROM slug_aliases)
              GROUP BY cv HAVING COUNT(DISTINCT vid) >= 2""" % PUB_GAMES,
           "slugs が訂正に追いついていない。DBを作り直すと解消する")
+
+    # overrides.CAPTURE_TARGETS は「性別を見ずに攻略対象と出す」例外リスト。
+    # 書き間違えても表示は元のまま（＝主要キャラ）なので、間違いに気付けない。
+    # 指す先が実在して、しかも role が「攻略対象」であることをここで見張る
+    if CAPTURE_TARGETS:
+        primary = {(vid, cid) for vid, cid in con.execute(
+            "SELECT vid, cid FROM characters WHERE role='攻略対象' AND vid IN (%s)"
+            % PUB_GAMES)}
+        any_cid = {cid for _, cid in primary}
+        dead = []
+        for key in sorted(CAPTURE_TARGETS):
+            if ":" in key:
+                if tuple(key.split(":", 1)) not in primary:
+                    dead.append([key, "その作品にその cid の攻略対象がいない"])
+            elif key not in any_cid:
+                dead.append([key, "掲載作品に攻略対象としてのその cid がいない"])
+        if dead:
+            out.append({"name": "CAPTURE_TARGETS の行き先が無い", "n": len(dead),
+                        "hint": "overrides.py の書き間違い。例外が効かないまま気付けない",
+                        "sample": dead[:5]})
 
     return out
 
