@@ -90,6 +90,11 @@ img { display: block; max-width: 100%; }
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
+/* hidden 属性は「display:none をブラウザ既定のスタイルで当てる」だけなので、
+   こちらで display を指定した要素には負ける。実際 .callout{display:flex} が
+   勝ってしまい、積みゲー0本でも空のピンクの帯が84px出ていた。
+   JS は el.hidden で出し分けているので、ここで必ず効くようにする。 */
+[hidden] { display: none !important; }
 
 /* — 枠。デザインは左右に2pxの罫を立てて紙面の幅を見せる — */
 .page {
@@ -183,6 +188,15 @@ textarea.input { min-height: 80px; resize: vertical; }
 }
 .ph span { font-family: ui-monospace, monospace; font-size: 11px; color: var(--color-neutral-700); }
 .cover { aspect-ratio: 3/4; object-fit: cover; width: 100%; background: var(--color-neutral-200); }
+/* ヒーローの表紙だけは比率を決め打ちしない。
+   パッケージの実測は 0.562〜1.667 とばらつき、最多は「とても縦長」の203枚。
+   3:4 に押し込むと縦長の箱ほど上下が切れるので、実寸の比率のまま出す。
+   （一覧のサムネイルは升目を揃えたいので 3:4 の切り抜きのまま） */
+.cover-hero {
+  aspect-ratio: auto; object-fit: contain;
+  width: auto; height: auto; max-width: 100%;
+  margin-inline: auto;
+}
 /* flex の子は既定で min-width:auto（＝中身の実寸より小さくできない）。
    画像に width/height 属性が無いと JPEG の実寸がそのまま最小幅になり、
    flex-basis:92px と書いてあっても 353px まで伸びる。実際に MY棚で起きた。
@@ -429,6 +443,9 @@ dialog.modal::backdrop { background: color-mix(in srgb, var(--color-neutral-900)
 
 @media (max-width: 700px) {
   body { font-size: 14px; }
+  /* 縦長のまま全幅で出すと画面の3/4を占め、タイトルも購入導線も見えなくなる。
+     高さで頭打ちにすると、幅のほうが縮んで「背の高い箱」らしい形に落ち着く */
+  .cover-hero { max-height: 58vh; }
   .page { border-left: 0; border-right: 0; }
   .pad { padding: var(--space-4); }
   .nav { padding: 12px var(--space-4); }

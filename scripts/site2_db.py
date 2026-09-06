@@ -78,6 +78,10 @@ CREATE TABLE work (
   n_capture INTEGER, n_char INTEGER, n_platform INTEGER, n_edition INTEGER,
   platforms TEXT, platform_top TEXT,
   cover TEXT,
+  -- 表紙の実寸。パッケージの縦横比は 0.562〜1.667 とばらつきがあり
+  -- （最多は「とても縦長」の203枚）、3:4 に固定すると上下が切れる。
+  -- img に実寸を書いて本来の形のまま出し、場所も正しく確保する。
+  cover_w INTEGER, cover_h INTEGER,
   description TEXT, description_ja TEXT,     -- description_ja は現状すべて空
   genre_label TEXT,
   series_key TEXT, series_name TEXT,
@@ -254,6 +258,13 @@ def main():
         plats[r["vid"]].append(r["platform"])
 
     shop_img = dict(src.execute("SELECT vid, url FROM shop_images"))
+    # 表紙の実寸。shop_images に無ければ image_probe（URL単位の実測）から引く
+    img_size = {}
+    for vid, w, h in src.execute(
+            "SELECT vid, width, height FROM shop_images WHERE width>0 AND height>0"):
+        img_size[vid] = (w, h)
+    probe = {u: (w, h) for u, w, h in src.execute(
+        "SELECT url, width, height FROM image_probe WHERE width>0 AND height>0")}
     dl_only = {r[0] for r in src.execute("SELECT vid FROM vndb_image_ok")}
     person = {sid: (u, lab, kind) for sid, u, lab, kind in
               src.execute("SELECT sid,url,label,kind FROM person_pages")}
@@ -313,6 +324,7 @@ def main():
             n_capture, len(cs), len(set(plats[vid])), len(ed),
             g["platforms"], top_platform(g["platforms"]),
             cover_of(g),
+            *(img_size.get(vid) or probe.get(cover_of(g) or "") or (None, None)),
             g["description"], g["description_ja"],
             genre,
             skey, series[skey]["name"] if skey else None,
@@ -358,7 +370,7 @@ def main():
                            o["link_type"], o["url"], o["price"], o["fetched_at"],
                            o["availability"], o["priority"]))
 
-    dst.executemany("INSERT INTO work VALUES (%s)" % ",".join("?" * 35), W)
+    dst.executemany("INSERT INTO work VALUES (%s)" % ",".join("?" * 37), W)
     dst.executemany("INSERT INTO work_char VALUES (%s)" % ",".join("?" * 15), WC)
     dst.executemany("INSERT INTO work_trait VALUES (?,?,?,?,?)", WT)
     dst.executemany("INSERT INTO work_tag VALUES (?,?,?,?)", WG)
