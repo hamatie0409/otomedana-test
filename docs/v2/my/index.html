@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MY棚 | オトメ棚</title>
+<meta name="description" content="所持・欲しい・プレイ状況を記録して、好みの傾向を見る。">
+<link rel="canonical" href="https://hamatie0409.github.io/otomedana-test/v2/my/">
+<meta name="robots" content="noindex,nofollow">
+<meta property="og:type" content="website">
+<meta property="og:title" content="MY棚 | オトメ棚">
+<meta property="og:description" content="所持・欲しい・プレイ状況を記録して、好みの傾向を見る。">
+<meta property="og:url" content="https://hamatie0409.github.io/otomedana-test/v2/my/">
+<meta property="og:site_name" content="オトメ棚">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="/otomedana-test/v2/assets/style.css">
+</head>
+<body>
+<div class="page">
+<p class="banner">テスト環境 — 内容は未確定です。購入リンクはアフィリエイトリンクです</p>
+<header class="nav">
+  <div class="nav-l">
+    <a class="nav-brand" href="/otomedana-test/v2/">Otome Index</a>
+    <nav class="nav-links" aria-label="主な導線"><a href="/otomedana-test/v2/">作品を探す</a><a href="/otomedana-test/v2/trait/">属性から探す</a><a href="/otomedana-test/v2/upcoming/">新作カレンダー</a></nav>
+  </div>
+  <div class="nav-r">
+    <span class="nav-count" data-shelf-count hidden></span>
+    <a class="btn btn-secondary" href="/otomedana-test/v2/my/">MY棚</a>
+  </div>
+</header>
+<nav class="crumbs" aria-label="現在地"><a href="/otomedana-test/v2/">オトメ棚</a><span>/</span><span>MY棚</span></nav>
+<main>
+<div class="pad" style="padding-bottom:0">
+<div class="home-head">
+<div><div class="kicker">My Otome</div><h1 style="font-size:36px;margin:6px 0 0">わたしの乙女ゲーム棚</h1></div>
+<div style="display:flex;align-items:center;gap:12px">
+<span class="text-muted" style="font-size:13px" data-my-updated></span>
+<button type="button" class="btn btn-primary" data-my-add>＋ ゲームを登録</button></div>
+</div>
+<div class="stats" role="group" aria-label="棚の内訳"><button type="button" data-stat="owned" aria-pressed="true">
+<div class="lb">所持作品</div><div class="nb"><b data-n="owned">0</b><span>本</span></div></button><button type="button" data-stat="backlog" aria-pressed="false">
+<div class="lb">未プレイ</div><div class="nb"><b data-n="backlog">0</b><span>本</span></div></button><button type="button" data-stat="playing" aria-pressed="false">
+<div class="lb">プレイ中</div><div class="nb"><b data-n="playing">0</b><span>本</span></div></button><button type="button" data-stat="cleared" aria-pressed="false">
+<div class="lb">クリア済</div><div class="nb"><b data-n="cleared">0</b><span>本</span></div></button><button type="button" data-stat="want" aria-pressed="false">
+<div class="lb">欲しい作品</div><div class="nb"><b data-n="want">0</b><span>本</span></div></button></div>
+</div>
+
+<div class="callout" data-backlog hidden>
+<div><b data-backlog-title></b><div style="font-size:13px;margin-top:4px" data-backlog-note></div></div>
+<button type="button" class="btn btn-primary" data-backlog-go>積みゲーを見る</button>
+</div>
+
+<div class="pad" style="padding-bottom:0">
+<div class="filterbar">
+<label class="sr-only" for="myq">棚の中を検索</label>
+<input class="input" id="myq" type="search" placeholder="棚のなかを検索（作品名）"
+ style="flex:1;min-width:240px" data-my-q>
+<div class="plat-tabs" data-my-plats></div>
+<label class="sr-only" for="mysort">並び順</label>
+<select class="input" id="mysort" data-my-sort style="max-width:200px">
+<option value="added_desc">登録が新しい順</option>
+<option value="date_desc">購入日が新しい順</option>
+<option value="date_asc">購入日が古い順</option>
+<option value="price_desc">購入価格が高い順</option>
+<option value="title">作品名順</option>
+</select>
+</div>
+<div class="sec-head" style="margin-top:0;border-bottom:0"><h2 data-my-title>所持作品</h2>
+<span class="text-muted" style="font-size:13px" data-my-count></span></div>
+</div>
+
+<div class="pad" style="padding-top:0" data-my-list></div>
+
+<div class="two sec-top">
+<div><h2>あなたの好きな乙女ゲーム</h2>
+<p class="text-muted" style="font-size:13px" data-my-trait-lead>棚に登録するとここに集計が出ます。</p>
+<div data-my-traits></div></div>
+<div><h2>好みに近い未所持作品</h2>
+<p class="text-muted" style="font-size:13px">棚の属性傾向から選んでいます。</p>
+<div data-my-rec></div></div>
+</div>
+
+<dialog class="modal" data-my-modal>
+<form method="dialog" data-my-form>
+<div class="modal-hd"><b data-my-modal-title>ゲームを登録</b>
+<button type="button" class="btn btn-ghost" data-my-close>閉じる</button></div>
+<div class="modal-bd">
+<div class="flabel">1. 作品を検索</div>
+<input class="input" type="search" placeholder="作品名を入力" data-my-search autocomplete="off">
+<div data-my-hits style="max-height:180px;overflow:auto"></div>
+<div data-my-picked style="margin-top:8px;font-weight:700"></div>
+
+<div class="flabel">2. 機種・版</div>
+<div class="two-col">
+<select class="input" data-my-plat aria-label="機種"></select>
+<select class="input" data-my-ed aria-label="版"></select>
+</div>
+
+<div class="flabel">3. ステータス</div>
+<div class="seg" data-my-status>
+<button type="button" data-status="want" aria-pressed="false">欲しい</button>
+<button type="button" data-status="reserved" aria-pressed="false">予約済</button>
+<button type="button" data-status="owned" aria-pressed="true">所持</button>
+<button type="button" data-status="playing" aria-pressed="false">プレイ中</button>
+<button type="button" data-status="cleared" aria-pressed="false">クリア</button>
+</div>
+
+<div class="two-col" style="margin-top:18px">
+<div><div class="flabel" style="margin-top:0">購入日</div>
+<input class="input" type="date" data-my-date></div>
+<div><div class="flabel" style="margin-top:0">購入価格</div>
+<input class="input" type="number" min="0" step="1" placeholder="12800" data-my-price></div>
+</div>
+
+<div class="two-col" style="margin-top:18px">
+<div><div class="flabel" style="margin-top:0">読了ルート</div>
+<input class="input" type="number" min="0" step="1" placeholder="3" data-my-read></div>
+<div><div class="flabel" style="margin-top:0">全ルート</div>
+<input class="input" type="number" min="0" step="1" placeholder="6" data-my-total></div>
+</div>
+
+<div class="flabel">購入先・メモ</div>
+<input class="input" type="text" placeholder="アニメイト通販" data-my-shop>
+<textarea class="input" style="margin-top:10px" placeholder="ドラマCD目当てで限定版。"
+ data-my-memo></textarea>
+</div>
+<div class="modal-ft">
+<button type="button" class="btn btn-primary" data-my-save>棚に登録する</button>
+<button type="button" class="btn btn-secondary" data-my-delete hidden>棚から削除</button>
+<button type="button" class="btn btn-ghost" data-my-close>キャンセル</button>
+</div>
+</form>
+</dialog>
+
+<div class="pad sec-top">
+<h4>データの持ち方</h4>
+<p class="text-muted" style="font-size:13px">MY棚の内容はサーバーには送られず、
+このブラウザの中（localStorage）だけに保存されます。別の端末やブラウザからは見えません。
+書き出し・読み込みで移せます。</p>
+<div style="display:flex;gap:10px;flex-wrap:wrap">
+<button type="button" class="btn btn-secondary" data-my-export>棚を書き出す（JSON）</button>
+<button type="button" class="btn btn-secondary" data-my-import>棚を読み込む</button>
+<input type="file" accept="application/json" data-my-file hidden>
+</div>
+<noscript><p class="empty">MY棚は JavaScript が必要です。</p></noscript>
+</div>
+</main>
+<footer class="foot">
+  <p><strong>オトメ棚</strong> — 乙女ゲームを声優・キャラクター属性・機種から探して、買えるお店へ。</p>
+  <p>家庭用ゲーム機で遊べる日本語の乙女ゲームを収録しています。 対象年齢の区分は VNDB の年齢指定をもとにした目安で、CERO の公式レーティングではありません。</p>
+  <p>作品・キャラクター・声優のデータは <a href="https://vndb.org/" rel="noopener">VNDB</a> より取得し、
+  <a href="https://opendatacommons.org/licenses/odbl/1-0/" rel="noopener">Open Database License (ODbL)</a>
+  のもとで利用しています。本サイトの派生データベースも同ライセンスで提供します。
+  <a href="https://github.com/" rel="noopener">生成スクリプト</a>を公開しています。</p>
+  <p>価格・在庫は各ストアの情報です。最新の内容は各ストアでご確認ください。</p>
+  <p><a href="/otomedana-test/v2/../">現行サイト（v1）はこちら</a></p>
+</footer>
+<nav class="tabbar" aria-label="下部ナビ"><a href="/otomedana-test/v2/">ホーム</a><a href="/otomedana-test/v2/#search">探す</a><a href="/otomedana-test/v2/upcoming/">新作</a><a href="/otomedana-test/v2/my/" aria-current="page">MY棚</a></nav>
+</div>
+<script>window.V2_BASE="/otomedana-test/v2";</script>
+<script src="/otomedana-test/v2/assets/app.js" defer></script>
+</body>
+</html>
