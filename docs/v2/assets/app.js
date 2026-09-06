@@ -205,7 +205,7 @@
       a.href = BASE + w.u;
       a.setAttribute('data-vid', w.v);
       a.innerHTML =
-        (w.c ? '<img class="thumb cover" src="' + w.c + '" alt="" loading="lazy">'
+        (w.c ? '<img class="thumb cover" src="' + w.c + '" alt="" loading="lazy" width="92" height="123">'
              : '<div class="thumb ph"><span>画像なし</span></div>') +
         '<div class="body"><div class="t"></div><div class="m"></div>' +
         '<div class="r"><span class="score"></span><span class="own" data-own></span></div></div>';
@@ -493,7 +493,7 @@
       var w = x.w;
       var ts = (tr.works[w.v] || []).filter(function (i) { return weight[i]; }).slice(0, 3);
       return '<div class="rec">' +
-        (w.c ? '<img class="thumb cover" src="' + w.c + '" alt="" loading="lazy">'
+        (w.c ? '<img class="thumb cover" src="' + w.c + '" alt="" loading="lazy" width="92" height="123">'
              : '<div class="thumb ph"><span>画像なし</span></div>') +
         '<div style="flex:1"><div class="hd">' +
         '<a class="t" href="' + BASE + w.u + '">' + esc(w.t) + '</a>' +
@@ -620,7 +620,7 @@
       var buy = it.d ? [it.d, it.sh, it.pr ? yen(it.pr) : ''].filter(Boolean).join('　') + 'で購入'
                      : '購入の記録なし';
       return '<div class="myitem">' +
-        (w.c ? '<img class="thumb cover" src="' + w.c + '" alt="" loading="lazy">'
+        (w.c ? '<img class="thumb cover" src="' + w.c + '" alt="" loading="lazy" width="92" height="123">'
              : '<div class="thumb ph"><span>画像なし</span></div>') +
         '<div class="body"><div class="hd">' +
         '<a class="t" href="' + BASE + (w.u || '#') + '">' + esc(w.t || it.t || r.v) + '</a>' +

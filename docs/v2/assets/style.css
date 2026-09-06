@@ -183,6 +183,11 @@ textarea.input { min-height: 80px; resize: vertical; }
 }
 .ph span { font-family: ui-monospace, monospace; font-size: 11px; color: var(--color-neutral-700); }
 .cover { aspect-ratio: 3/4; object-fit: cover; width: 100%; background: var(--color-neutral-200); }
+/* flex の子は既定で min-width:auto（＝中身の実寸より小さくできない）。
+   画像に width/height 属性が無いと JPEG の実寸がそのまま最小幅になり、
+   flex-basis:92px と書いてあっても 353px まで伸びる。実際に MY棚で起きた。
+   サムネは必ず指定した幅で止めたいので、自動最小サイズを切る。 */
+.thumb { min-width: 0; }
 .grayscale { filter: grayscale(1) contrast(1.08); }
 
 /* ─── トップ ─────────────────────────────────────────────── */
