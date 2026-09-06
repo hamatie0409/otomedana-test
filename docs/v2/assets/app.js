@@ -87,6 +87,21 @@
     return cache[name];
   }
 
+  /* 入力候補。5,785件あるので必要になるまで読まない。
+     照合用のキーはビルド時に作ってあるが、表示名側は1度だけここで正規化する */
+  var SUG = null, sugLoading = null;
+  function loadSuggest() {
+    if (SUG) return Promise.resolve(SUG);
+    if (sugLoading) return sugLoading;
+    sugLoading = fetchJSON('suggest.json').then(function (list) {
+      if (!list) return null;
+      list.forEach(function (s) { s._n = norm(s.n); });
+      SUG = list;
+      return SUG;
+    });
+    return sugLoading;
+  }
+
   /* かな・ローマ字も拾えるよう、カタカナ→ひらがな＋小文字化で正規化する */
   function norm(s) {
     return (s || '').toString().toLowerCase()
@@ -125,9 +140,13 @@
     var grid = $('[data-list-grid]');
     if (!input || !grid) return;
     var empty = $('[data-list-empty]');
-    var items = Array.prototype.slice.call(grid.children).map(function (el) {
-      return { el: el, key: norm(el.textContent) };
-    });
+    /* 節に分かれている索引（五十音）は children が section なので、
+       行そのものを集める。ローマ字での絞り込みも効くよう data-k を混ぜる */
+    var nodes = grid.querySelectorAll('.idx-name, .wcard');
+    var items = Array.prototype.slice.call(nodes.length ? nodes : grid.children)
+      .map(function (el) {
+        return { el: el, key: norm(el.textContent) + ' ' + (el.getAttribute('data-k') || '') };
+      });
     input.addEventListener('input', function () {
       var q = norm(input.value);
       var hit = 0;
@@ -137,6 +156,10 @@
         if (ok) hit++;
       });
       if (empty) empty.hidden = hit > 0;
+      /* 中身が全部隠れた節は見出しごと畳む */
+      $$('.idx-sec', grid).forEach(function (sec) {
+        sec.hidden = !$$('.idx-name', sec).some(function (a) { return !a.hidden; });
+      });
     });
   }
 
@@ -166,6 +189,7 @@
           cv: '声優名（かな・ローマ字も可）',
           char: 'キャラクター名（かな・ローマ字も可）'
         }[scope];
+        showSug();
         run();
       });
     });
@@ -215,9 +239,86 @@
       return a;
     }
 
+    /* --- 入力候補 ---------------------------------------------------------
+       打った文字に当たる作品・声優・キャラ・スタッフを出し、選ぶとその
+       ページへ直接飛ぶ。「探す」を押して一覧を絞るのとは別の導線で、
+       名前が分かっているときはこちらのほうが速い。 */
+    var box = $('[data-suggest]');
+    var sugItems = [], sugPos = -1;
+
+    var WANT = {
+      all: function () { return true; },
+      title: function (t) { return t === '作品'; },
+      cv: function (t) { return t === '声優' || t === 'スタッフ'; },
+      char: function (t) { return t === 'キャラ'; }
+    };
+
+    function hideSug() {
+      if (!box) return;
+      box.hidden = true;
+      box.innerHTML = '';
+      sugItems = []; sugPos = -1;
+      q.setAttribute('aria-expanded', 'false');
+      q.removeAttribute('aria-activedescendant');
+    }
+
+    function showSug() {
+      if (!box) return;
+      var term = norm(q.value);
+      if (!SUG || term.length < 1) { hideSug(); return; }
+      var want = WANT[scope] || WANT.all;
+      /* 前方一致を先に出す。「まえの」で前野智昭が下に沈まないように */
+      var head = [], rest = [];
+      for (var i = 0; i < SUG.length; i++) {
+        var s = SUG[i];
+        if (!want(s.t)) continue;
+        var n = s._n, k = s.k || '';
+        var at = n.indexOf(term), ak = k ? k.indexOf(term) : -1;
+        if (at < 0 && ak < 0) continue;
+        (at === 0 || ak === 0 ? head : rest).push(s);
+        if (head.length >= 12) break;
+      }
+      sugItems = head.concat(rest).slice(0, 12);
+      sugPos = -1;
+      if (!sugItems.length) { hideSug(); return; }
+      box.innerHTML = sugItems.map(function (s, i) {
+        return '<li role="option" id="sug-' + i + '" aria-selected="false">' +
+          '<a href="' + BASE + s.u + '"><span class="k k-' + s.t + '">' + s.t + '</span>' +
+          '<b>' + esc(s.n) + '</b><small>' + esc(s.r || '') + '</small></a></li>';
+      }).join('');
+      $$('li', box).forEach(function (li, i) {
+        li.addEventListener('mouseenter', function () { setPos(i); });
+      });
+      box.hidden = false;
+      q.setAttribute('aria-expanded', 'true');
+    }
+
+    function setPos(i) {
+      sugPos = i;
+      $$('li', box).forEach(function (li, n) {
+        var on = n === i;
+        li.className = on ? 'on' : '';
+        li.setAttribute('aria-selected', String(on));
+      });
+      if (i >= 0) q.setAttribute('aria-activedescendant', 'sug-' + i);
+    }
+
+    q.addEventListener('keydown', function (ev) {
+      if (!sugItems.length) return;
+      if (ev.key === 'ArrowDown') { ev.preventDefault(); setPos(Math.min(sugPos + 1, sugItems.length - 1)); }
+      else if (ev.key === 'ArrowUp') { ev.preventDefault(); setPos(Math.max(sugPos - 1, 0)); }
+      else if (ev.key === 'Enter' && sugPos >= 0) {
+        ev.preventDefault();
+        location.href = BASE + sugItems[sugPos].u;
+      } else if (ev.key === 'Escape') { hideSug(); }
+    });
+    document.addEventListener('click', function (ev) {
+      if (box && !box.contains(ev.target) && ev.target !== q) hideSug();
+    });
+
     function run() {
-      Promise.all([fetchJSON('index.json'), fetchJSON('suggest.json')]).then(function (r) {
-        var idx = r[0], sug = r[1];
+      Promise.all([fetchJSON('index.json'), loadSuggest()]).then(function (r) {
+        var idx = r[0];
         if (!idx) return;
         var term = norm(q.value);
         var plat = val('plat'), year = val('year'), age = val('age'), sort = val('sort') || 'date_desc';
@@ -227,30 +328,27 @@
           if (browse) browse.hidden = false;
           return;
         }
+        /* 声優名・キャラ名・スタッフ名で当たった作品の番号を集める */
         var allow = null;
-        if (term && sug && (scope === 'cv' || scope === 'char' || scope === 'all')) {
+        if (term && SUG && scope !== 'title') {
           allow = {};
-          var add = function (vs) { vs.forEach(function (v) { allow[v] = 1; }); };
-          if (scope !== 'char') {
-            Object.keys(sug.cv).forEach(function (name) {
-              if (norm(name).indexOf(term) >= 0) add(sug.cv[name].w);
-            });
-          }
-          if (scope !== 'cv') {
-            Object.keys(sug.char).forEach(function (name) {
-              if (norm(name).indexOf(term) >= 0) add(sug.char[name]);
-            });
+          var want = WANT[scope] || WANT.all;
+          for (var i = 0; i < SUG.length; i++) {
+            var s = SUG[i];
+            if (s.t === '作品' || !want(s.t)) continue;
+            if (s._n.indexOf(term) < 0 && !(s.k && s.k.indexOf(term) >= 0)) continue;
+            for (var j = 0; j < s.v.length; j++) allow[s.v[j]] = 1;
           }
         }
-        hits = idx.filter(function (w) {
+        hits = idx.filter(function (w, i) {
           if (plat && (w.ps || '').indexOf(plat) < 0) return false;
           if (year && String(w.y) !== year) return false;
           if (age && w.a !== age) return false;
           if (!term) return true;
           var byTitle = norm(w.t).indexOf(term) >= 0 || (w.l || '').indexOf(term) >= 0;
           if (scope === 'title') return byTitle;
-          if (scope === 'cv' || scope === 'char') return allow && allow[w.v];
-          return byTitle || (allow && allow[w.v]);
+          if (scope === 'cv' || scope === 'char') return !!(allow && allow[i]);
+          return byTitle || !!(allow && allow[i]);
         });
         hits.sort(function (a, b) {
           if (sort === 'date_asc') return (a.d || '9999').localeCompare(b.d || '9999');
@@ -267,9 +365,11 @@
 
     var timer;
     q.addEventListener('input', function () {
+      loadSuggest().then(showSug);
       clearTimeout(timer);
-      timer = setTimeout(run, 180);
+      timer = setTimeout(run, 220);
     });
+    q.addEventListener('focus', function () { loadSuggest(); });
     $$('[data-f]').forEach(function (s) { s.addEventListener('change', run); });
     var go = $('[data-search]');
     if (go) go.addEventListener('click', run);
@@ -278,6 +378,7 @@
     if (clear) clear.addEventListener('click', function () {
       q.value = '';
       $$('[data-f]').forEach(function (s) { s.selectedIndex = 0; });
+      hideSug();
       run();
     });
     if (location.hash === '#search') q.focus();

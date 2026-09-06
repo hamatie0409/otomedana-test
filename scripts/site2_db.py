@@ -127,11 +127,33 @@ CREATE TABLE work_offer (
 );
 CREATE INDEX ix_wo_eid ON work_offer(eid, priority);
 
+-- キャラクター1人1行。同じキャラが続編にも出るので、作品をまたいでまとめる。
+-- 掲載637作品の主人公・攻略対象で、延べ4,984件を3,709人に畳んでいる。
+CREATE TABLE character (
+  cid TEXT PRIMARY KEY, url TEXT, slug TEXT, kana_key TEXT,
+  name TEXT, name_latin TEXT,
+  role TEXT, role_label TEXT, sex TEXT,
+  cv TEXT, cv_url TEXT,
+  birthday TEXT, age INTEGER, height INTEGER, weight INTEGER, blood TEXT,
+  image_url TEXT,
+  n_work INTEGER, main_vid TEXT, main_title TEXT, main_url TEXT, main_released TEXT
+);
+CREATE INDEX ix_ch_cv ON character(cv);
+CREATE TABLE character_work (cid TEXT, vid TEXT, role TEXT, role_label TEXT, sort TEXT);
+CREATE INDEX ix_cw2 ON character_work(cid, sort DESC);
+CREATE TABLE character_trait (cid TEXT, cat TEXT, trait TEXT, url TEXT);
+CREATE INDEX ix_ct2 ON character_trait(cid);
+
 -- 索引（声優・メーカー・シリーズ・発売元・スタッフ・タグ・属性・機種）
 CREATE TABLE catalog (
   kind TEXT, key TEXT, url TEXT, label TEXT, reading TEXT,
   n_works INTEGER, cover TEXT, top_work TEXT
 );
+-- reading には「表示名そのもののローマ字」を入れる。
+-- スラッグから読みを取ると五十音の行を間違える。声優ページは別名義を1本に
+-- まとめており、URLはVNDBの代表表記、表示名は担当作の一番多い名義になるため、
+-- 「長谷川 育美 → /cv/akabane-kyouko-s14378/」のようにズレる。
+-- 実データではスラッグ由来だと長谷川さんが「あ行」に並んでいた。
 CREATE INDEX ix_cat ON catalog(kind, n_works DESC);
 CREATE UNIQUE INDEX ix_cat_url ON catalog(url);
 CREATE TABLE catalog_work (kind TEXT, url TEXT, vid TEXT, role TEXT, sort TEXT);
@@ -348,6 +370,49 @@ def main():
     print("  work %d / char %d / trait %d / edition %d / offer %d"
           % (len(W), len(WC), len(WT), len(WE), len(WO)))
 
+    # ---- キャラクター ----
+    # 同じ cid が続編・ファンディスクにも出るので作品をまたいで1人にまとめる。
+    # 代表作は「表紙があるもの > 票数が多いもの」。声優や年齢が作品ごとに違うことは
+    # ほとんど無いが、違ったときは代表作の値を採る。
+    ch_rows, chw_rows, cht_rows = [], [], []
+    per_cid = defaultdict(list)
+    for vid in vids:
+        for c in chars[vid]:
+            if c["role"] in ("主人公", "攻略対象"):
+                per_cid[c["cid"]].append((vid, c))
+    for cid, items in sorted(per_cid.items()):
+        url = page_url("character", cid)
+        if not url:
+            continue
+        items.sort(key=lambda x: (cover_of(games[x[0]]) is not None,
+                                  games[x[0]]["votecount"] or 0), reverse=True)
+        main_vid, c = items[0]
+        g = games[main_vid]
+        slug = url.strip("/").split("/")[-1]
+        ch_rows.append((
+            cid, url, slug, re.sub(r"-c\d+$", "", slug),
+            c["name"], c["name_latin"],
+            c["role"], role_label(c["role"], c["sex"]), c["sex"],
+            c["cv"], cv_url(c["cv"]) if c["cv"] else None,
+            c["birthday"], c["age"], c["height"], c["weight"], c["blood"],
+            c["image_url"] if IMAGE_MODE == "vndb" else None,
+            len(items), main_vid, g["title"], page_url("game", main_vid), g["released"]))
+        for v, cc in items:
+            chw_rows.append((cid, v, cc["role"], role_label(cc["role"], cc["sex"]),
+                             games[v]["released"] or "0000"))
+        seen_t = set()
+        for t in traits[main_vid]:
+            if t["cid"] != cid or (t["category"], t["trait"]) in seen_t:
+                continue
+            seen_t.add((t["category"], t["trait"]))
+            cht_rows.append((cid, t["category"], t["trait"],
+                             page_url("trait", "%s:%s" % (t["category"], t["trait"]))))
+    dst.executemany("INSERT INTO character VALUES (%s)" % ",".join("?" * 22), ch_rows)
+    dst.executemany("INSERT INTO character_work VALUES (?,?,?,?,?)", chw_rows)
+    dst.executemany("INSERT INTO character_trait VALUES (?,?,?,?)", cht_rows)
+    print("  キャラクター %d人（延べ %d件）/ 属性 %d"
+          % (len(ch_rows), len(chw_rows), len(cht_rows)))
+
     # ---- catalog（索引）----
     # 作品との結び付きは「その索引ページに何を並べるか」そのもの
     cat_rows, cw_rows = [], []
@@ -358,6 +423,7 @@ def main():
     is_en = lambda t: bool(re.fullmatch(r"[\x20-\x7e]+", t or ""))
 
     def add_cat(kind, key, label, members, reading=""):
+        reading = reading or ""
         url = page_url(kind, key)
         if not url or url in seen_url:
             return
@@ -398,9 +464,27 @@ def main():
     for key, v in series.items():
         by[("series", key)] = set(v["members"])
 
+    # 表示名 → ローマ字。声優はキャラ側の cv_latin、スタッフは name_latin、
+    # シリーズは代表作の title_latin から取る
+    latin_of = {}
+    for name, latin in src.execute(
+            "SELECT cv, MAX(cv_latin) FROM characters WHERE cv IS NOT NULL AND cv<>'' "
+            "GROUP BY cv"):
+        if latin:
+            latin_of[("cv", name)] = latin
+    for name, latin in src.execute(
+            "SELECT name, MAX(name_latin) FROM staff_credits WHERE name IS NOT NULL "
+            "GROUP BY name"):
+        if latin:
+            latin_of[("staff", name)] = latin
+    for key, v in series.items():
+        if v.get("latin"):
+            latin_of[("series", key)] = v["latin"]
+
     for (kind, key), members in by.items():
         lab = slug_label.get((kind, key)) or key
-        add_cat(kind, key, lab, members)
+        add_cat(kind, key, lab, members,
+                reading=latin_of.get((kind, lab)) or latin_of.get((kind, key)) or "")
 
     dst.executemany("INSERT INTO catalog VALUES (?,?,?,?,?,?,?,?)", cat_rows)
     dst.executemany("INSERT INTO catalog_work VALUES (?,?,?,?,?)", cw_rows)
@@ -414,7 +498,8 @@ def main():
             "today": today,
             "n_work": str(len(W)),
             "n_upcoming": str(sum(1 for r in W if r[12])),
-            "n_char": str(len(WC))}
+            "n_char": str(len(WC)),
+            "n_character": str(len(ch_rows))}
     for k, n in n_by_kind.items():
         meta["n_" + k] = str(n)
     dst.executemany("INSERT INTO meta VALUES (?,?)", sorted(meta.items()))

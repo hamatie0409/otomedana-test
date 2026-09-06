@@ -42,8 +42,12 @@
 <div class="search-title">乙女ゲームを探す</div>
 <div class="scopes" role="group" aria-label="検索の対象"><button type="button" class="scope" data-scope="all" aria-pressed="true"><i></i><span>すべて</span></button><button type="button" class="scope" data-scope="title" aria-pressed="false"><i></i><span>作品名</span></button><button type="button" class="scope" data-scope="cv" aria-pressed="false"><i></i><span>声優名</span></button><button type="button" class="scope" data-scope="char" aria-pressed="false"><i></i><span>キャラクター名</span></button></div>
 <label class="sr-only" for="q">検索語</label>
-<input class="input" id="q" type="search" autocomplete="off"
- placeholder="作品名・声優名・キャラクター名（かな・ローマ字も可）" style="margin-top:14px;min-height:48px">
+<div class="combo">
+<input class="input" id="q" type="search" autocomplete="off" role="combobox"
+ aria-expanded="false" aria-controls="q-sug" aria-autocomplete="list"
+ placeholder="作品名・声優名・キャラクター名（かな・ローマ字も可）" style="min-height:48px">
+<ul class="suggest" id="q-sug" role="listbox" aria-label="入力候補" data-suggest hidden></ul>
+</div>
 <button type="button" class="btn btn-secondary filter-toggle" data-filter-toggle
  aria-expanded="false">絞り込み（機種・年・年齢・並び順）＋</button>
 <div class="filters" data-filters><select class="input" data-f="plat" aria-label="機種"><option value="">機種：すべて</option><option value="Nintendo Switch">Nintendo Switch</option><option value="PSP">PSP</option><option value="Windows">Windows</option><option value="PS Vita">PS Vita</option><option value="PS2">PS2</option><option value="iOS">iOS</option><option value="Android">Android</option><option value="ニンテンドーDS">ニンテンドーDS</option><option value="Mac">Mac</option><option value="PS4">PS4</option><option value="ブラウザ">ブラウザ</option><option value="PS">PS</option><option value="ニンテンドー3DS">ニンテンドー3DS</option><option value="Linux">Linux</option></select>
@@ -66,7 +70,8 @@
 
 <div data-browse>
 <div class="sec-head"><h2>カテゴリから探す</h2></div>
-<div class="grid"><a class="cat-card" href="/otomedana-test/v2/cv/">
+<div class="grid"><a class="cat-card" href="/otomedana-test/v2/character/">
+<b>キャラクターから探す</b><div class="n">3,709人</div><div class="note">主人公・攻略対象を名前の五十音から。声優と属性も分かります。</div></a><a class="cat-card" href="/otomedana-test/v2/cv/">
 <b>声優から探す</b><div class="n">727件</div><div class="note">名前の五十音から、担当作の一覧へ。</div></a><a class="cat-card" href="/otomedana-test/v2/maker/">
 <b>メーカーから探す</b><div class="n">75件</div><div class="note">オトメイト・クインロゼなど、開発元ごとの作品一覧へ。</div></a><a class="cat-card" href="/otomedana-test/v2/series/">
 <b>シリーズから探す</b><div class="n">79件</div><div class="note">どれから遊べばよいかを発売順で確認。</div></a><a class="cat-card" href="/otomedana-test/v2/publisher/">

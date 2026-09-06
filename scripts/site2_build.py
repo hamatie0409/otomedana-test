@@ -25,6 +25,10 @@ from common import DATA, ROOT
 import affiliate_config as AF
 from site_config import (SITE_NAME, SITE_DESC, SITE_URL, REPO_URL, SCOPE_NOTE,
                          PUBLISH, BASE_PATH, AGE_TIERS, year_bucket, year_label, year_sort)
+# 五十音の行分けと並び替えは v1 で作り込んであるものを借りる。
+# 「ch/ts は た行」「拗音は い段＋や行に開く」といった判断を2つ持ちたくない。
+# site_build は import しても main() が走らないので、v1 の出力には影響しない。
+from site_build import KANA_ROWS, kana_row, kana_sort_key, slug_key
 
 DB = os.path.join(DATA, "site2.db")
 OUT = os.path.join(ROOT, "docs", "v2")
@@ -363,7 +367,7 @@ CHIP_CATS = ["役柄", "性格", "境遇"]
 CHIP_CATS_EXTRA = ["外見", "行動", "持ち物"]
 
 
-def game_page(w, chars, ctraits, tags, staff, links, series, eds, offers, meta):
+def game_page(w, chars, ctraits, tags, staff, links, series, eds, offers, meta, ch_url):
     url = w["url"]
     title = w["title"]
     lead = [x for x in [w["title_latin"], w["brand"], w["released_ja"]] if x]
@@ -461,12 +465,14 @@ MY棚はブラウザの中に保存されます。JavaScript を有効にする�
             bits = [x for x in [c["role_label"],
                                 ("%d歳" % c["age"]) if c["age"] else "",
                                 ("%dcm" % c["height"]) if c["height"] else ""] if x]
+            nm = ('<a href="%s">%s</a>' % (e(ch_url[c["cid"]]), e(c["name"]))) \
+                if c["cid"] in ch_url else e(c["name"])
             cards.append("""<div class="char">
 <div class="thumb ph" aria-hidden="true"></div>
 <div><div class="n">%(name)s</div><div class="cv">%(cv)s</div>
 <div class="text-muted" style="font-size:12px">%(bits)s</div>
 <div class="tags" style="margin-top:8px">%(chip)s</div></div></div>"""
-                         % dict(name=e(c["name"]), cv=cv,
+                         % dict(name=nm, cv=cv,
                                 bits=e(" / ".join(bits)), chip=chip))
         parts.append("""<section class="pad sec">
 <div class="sec-head" style="margin-top:0"><h2>キャラクター</h2>
@@ -552,10 +558,15 @@ MY棚に作品を登録すると、あなたがよく選んでいる属性とこ
 
 def home_page(works, meta, upcoming, plat_opts, year_opts):
     n = lambda k: int(meta.get(k, 0))
+    entries = [("character", "キャラクター", "人",
+                "主人公・攻略対象を名前の五十音から。声優と属性も分かります。")] + \
+              [(k, lab, "件", note) for k, lab, note in CATS]
     cats = "".join("""<a class="cat-card" href="/%(k)s/">
-<b>%(lab)sから探す</b><div class="n">%(n)s件</div><div class="note">%(note)s</div></a>"""
-                   % dict(k=k, lab=lab, n=format(n("n_" + k), ","), note=note)
-                   for k, lab, note in CATS)
+<b>%(lab)sから探す</b><div class="n">%(n)s%(unit)s</div><div class="note">%(note)s</div></a>"""
+                   % dict(k=k, lab=lab, unit=unit,
+                          n=format(n("n_" + ("character" if k == "character" else k)), ","),
+                          note=note)
+                   for k, lab, unit, note in entries)
 
     scopes = "".join(
         '<button type="button" class="scope" data-scope="%s" aria-pressed="%s"><i></i><span>%s</span></button>'
@@ -585,8 +596,12 @@ def home_page(works, meta, upcoming, plat_opts, year_opts):
 <div class="search-title">乙女ゲームを探す</div>
 <div class="scopes" role="group" aria-label="検索の対象">%(scopes)s</div>
 <label class="sr-only" for="q">検索語</label>
-<input class="input" id="q" type="search" autocomplete="off"
- placeholder="作品名・声優名・キャラクター名（かな・ローマ字も可）" style="margin-top:14px;min-height:48px">
+<div class="combo">
+<input class="input" id="q" type="search" autocomplete="off" role="combobox"
+ aria-expanded="false" aria-controls="q-sug" aria-autocomplete="list"
+ placeholder="作品名・声優名・キャラクター名（かな・ローマ字も可）" style="min-height:48px">
+<ul class="suggest" id="q-sug" role="listbox" aria-label="入力候補" data-suggest hidden></ul>
+</div>
 <button type="button" class="btn btn-secondary filter-toggle" data-filter-toggle
  aria-expanded="false">絞り込み（機種・年・年齢・並び順）＋</button>
 <div class="filters" data-filters>%(filters)s</div>
@@ -747,6 +762,158 @@ def my_page():
                   "/my/", body, crumbs=[(SITE_NAME, "/"), ("MY棚", None)], current="MY棚")
 
 
+# ---------------------------------------------------------------- キャラクターページ
+
+# プロフィール表に出す属性のカテゴリ。全部出すと1人90個になって表にならない
+PROFILE_CATS = ["役柄", "性格", "境遇", "行動", "持ち物", "外見", "髪", "瞳", "服装"]
+
+
+def character_page(ch, works, traits, same_cv, by_vid):
+    """キャラクター1人のページ。
+
+    画像について:
+      公開モードではキャラクター画像を出せない（VNDBの画像は第三者への利用許諾では
+      ないため）。代わりに代表作の表紙を置き、「どの作品の人か」を先に伝える。
+      表紙はアフィリエイトAPIが返すURLなので出してよい。
+    """
+    name = ch["name"]
+    sub = " / ".join(x for x in [ch["name_latin"],
+                                 ("CV. %s" % ch["cv"]) if ch["cv"] else ""] if x)
+
+    chips = ['<span class="tag tag-accent">%s</span>' % e(ch["role_label"])]
+    if ch["n_work"] > 1:
+        chips.append('<span class="tag tag-neutral">%d作品に登場</span>' % ch["n_work"])
+    if ch["age"]:
+        chips.append('<span class="tag tag-outline">%d歳</span>' % ch["age"])
+    if ch["height"]:
+        chips.append('<span class="tag tag-outline">%dcm</span>' % ch["height"])
+
+    cv_cell = ('<a href="%s">%s</a>' % (e(ch["cv_url"]), e(ch["cv"]))) if ch["cv_url"] \
+        else (e(ch["cv"]) if ch["cv"] else "未収録")
+    facts = [("声優", cv_cell),
+             ("役割", e(ch["role_label"])),
+             ("誕生日", e(ch["birthday"] or "")),
+             ("年齢", "%d歳" % ch["age"] if ch["age"] else ""),
+             ("身長", "%dcm" % ch["height"] if ch["height"] else ""),
+             ("体重", "%dkg" % ch["weight"] if ch["weight"] else ""),
+             ("血液型", e(ch["blood"] or "")),
+             ("VNDB", '<a href="https://vndb.org/%s" rel="noopener">%s</a>'
+              % (e(ch["cid"]), e(ch["cid"])))]
+    facts_html = "".join("<dt>%s</dt><dd>%s</dd>" % (e(k), v) for k, v in facts if v)
+
+    cover = ('<img class="cover" src="%s" alt="%s のパッケージ" width="300" height="400">'
+             % (e(by_vid[ch["main_vid"]]["cover"]), e(ch["main_title"]))) \
+        if ch["main_vid"] in by_vid and by_vid[ch["main_vid"]]["cover"] \
+        else '<div class="ph" style="aspect-ratio:3/4"><span>画像なし</span></div>'
+
+    hero = """<div class="hero hero-2">
+<div class="hero-img">%(cover)s
+<p class="text-muted" style="font-size:12px;margin-top:10px">代表作
+<a href="%(murl)s">%(mtitle)s</a> のパッケージ。キャラクター画像は掲載していません。</p></div>
+<div class="hero-main">
+<div class="kicker">%(role)s</div>
+<h1>%(name)s</h1>
+<div class="hero-sub">%(sub)s</div>
+<div class="tags" style="margin-bottom:20px">%(chips)s</div>
+<dl class="facts">%(facts)s</dl>
+</div>
+</div>""" % dict(cover=cover, murl=e(ch["main_url"] or "/"), mtitle=e(ch["main_title"] or ""),
+                 role=e(ch["role_label"]), name=e(name), sub=e(sub),
+                 chips="".join(chips), facts=facts_html)
+
+    parts = [hero]
+
+    # 属性。カテゴリごとにまとめると「性格はこう、見た目はこう」と読める
+    by_cat = defaultdict(list)
+    for t in traits:
+        by_cat[t["cat"]].append(t)
+    cat_html = ""
+    for cat in PROFILE_CATS:
+        if not by_cat.get(cat):
+            continue
+        chips_ = "".join(
+            ('<a class="tag tag-outline" href="%s">%s</a>' % (e(t["url"]), e(t["trait"])))
+            if t["url"] else ('<span class="tag tag-neutral">%s</span>' % e(t["trait"]))
+            for t in by_cat[cat])
+        cat_html += ('<div class="trait-row"><span class="trait-cat">%s</span>'
+                     '<span class="tags">%s</span></div>' % (e(cat), chips_))
+    if cat_html:
+        parts.append("""<section class="pad sec">
+<div class="sec-head" style="margin-top:0"><h2>属性</h2>
+<span class="text-muted" style="font-size:12px">押すと同じ属性の作品を探せます</span></div>
+<div style="margin-top:14px">%s</div></section>""" % cat_html)
+
+    # 登場作品
+    ws = [by_vid[w["vid"]] for w in works if w["vid"] in by_vid]
+    parts.append("""<section class="pad sec">
+<div class="sec-head" style="margin-top:0"><h2>登場作品</h2>
+<span class="text-muted" style="font-size:13px">%d作品</span></div>
+<div class="grid">%s</div></section>""" % (len(ws), "".join(work_card(w) for w in ws)))
+
+    # 同じ声優が演じたキャラ
+    if same_cv:
+        rows = "".join(
+            '<a class="idx-name" href="%s"><b>%s</b>'
+            '<span class="n">%s</span></a>' % (e(c["url"]), e(c["name"]), e(c["main_title"]))
+            for c in same_cv[:24])
+        parts.append("""<section class="pad sec-top">
+<div class="sec-head" style="margin-top:0"><h2>%(cv)s が演じた他のキャラクター</h2>
+<a href="%(cvurl)s">%(cv)s の担当作品</a></div>
+<div class="idx-cols" style="margin-top:14px">%(rows)s</div></section>"""
+                     % dict(cv=e(ch["cv"]), cvurl=e(ch["cv_url"] or "/cv/"), rows=rows))
+
+    desc = "%s（%s）の声優・属性・登場作品。%s" % (
+        name, ch["main_title"] or "", ("CV. %s。" % ch["cv"]) if ch["cv"] else "")
+    return layout("%s | %s" % (name, SITE_NAME), desc, ch["url"], "".join(parts),
+                  crumbs=[(SITE_NAME, "/"), ("キャラクターから探す", "/character/"),
+                          (ch["main_title"] or "", ch["main_url"]), (name, None)],
+                  current="作品を探す")
+
+
+def character_index_page(rows_by_id, total):
+    """/character/ — 3,709人を1ページに並べると重いので、五十音の行ごとに分ける"""
+    cards = "".join(
+        '<a class="cat-card" href="/character/%s/"><b>%s</b>'
+        '<div class="n">%s人</div></a>' % (rid, e(rname), format(len(rs), ","))
+        for rid, rname, rs in rows_by_id if rs)
+    body = """<div class="pad">
+<div class="home-head"><div><h1>キャラクターから探す</h1>
+<p class="home-lead">掲載作品の主人公と攻略対象を、名前の五十音から辿れます。
+同じ人物が続編にも出ている場合は1ページにまとめています。</p></div>
+<span class="text-muted" style="font-size:13px">%(n)s人</span></div>
+<div class="grid" style="margin-top:18px">%(cards)s</div>
+<p class="text-muted" style="font-size:13px;margin-top:20px">
+名前が分かっているときは、<a href="/#search">トップの検索</a>にキャラクター名を入れると候補が出ます。</p>
+</div>""" % dict(n=format(total, ","), cards=cards)
+    return layout("キャラクターから探す | " + SITE_NAME,
+                  "掲載作品の主人公・攻略対象%d人を五十音から探せます。" % total,
+                  "/character/", body,
+                  crumbs=[(SITE_NAME, "/"), ("キャラクターから探す", None)])
+
+
+def character_row_page(rid, rname, chs):
+    """/character/a/ — その行のキャラを読み順に並べる"""
+    rows = "".join(
+        '<a class="idx-name" href="%s" data-k="%s"><b>%s</b>'
+        '<span class="n">%s</span></a>'
+        % (e(c["url"]), e(c["kana_key"]), e(c["name"]),
+           e(("CV. %s" % c["cv"]) if c["cv"] else c["main_title"] or ""))
+        for c in chs)
+    body = """<div class="pad">
+<div class="home-head"><div><h1>%(r)s のキャラクター</h1></div>
+<span class="text-muted" style="font-size:13px">%(n)s人</span></div>
+<label class="sr-only" for="cq">名前で絞り込む</label>
+<input class="input" id="cq" type="search" placeholder="名前で絞り込む（かな・ローマ字も可）"
+ style="margin-top:18px;max-width:420px" data-list-filter>
+<div class="idx-cols" style="margin-top:18px" data-list-grid>%(rows)s</div>
+<p class="empty" data-list-empty hidden>該当する項目がありません。</p>
+</div>""" % dict(r=e(rname), n=format(len(chs), ","), rows=rows)
+    return layout("%s のキャラクター | %s" % (rname, SITE_NAME),
+                  "名前が%sで始まるキャラクター%d人。" % (rname, len(chs)),
+                  "/character/%s/" % rid, body,
+                  crumbs=[(SITE_NAME, "/"), ("キャラクターから探す", "/character/"), (rname, None)])
+
+
 # ---------------------------------------------------------------- 一覧・索引
 
 def list_page(title, desc, path, works, crumbs, lead="", current="作品を探す"):
@@ -765,21 +932,72 @@ def list_page(title, desc, path, works, crumbs, lead="", current="作品を探�
                   crumbs=crumbs, current=current)
 
 
-def catalog_index_page(kind, label, note, entries):
-    """/cv/ /tag/ のような「索引の索引」。件数の多い順に並べ、名前で絞り込める"""
-    rows = "".join(
-        '<a class="idx-name" href="%s"><b>%s</b><span class="n">%s作品</span></a>'
-        % (e(c["url"]), e(c["label"]), format(c["n_works"], ","))
+# 五十音の行で分けるのは人名・作品名のように「読み」がある索引だけ。
+# タグと属性のスラッグは英語（/tag/otome-game/）なので、頭文字から行を決めると
+# でたらめな行に入る。こちらは件数順のままにする。
+KANA_KINDS = {"cv", "staff", "maker", "publisher", "series"}
+
+
+def kana_key_of(c):
+    """五十音の行と並び順を決める読み。
+
+    表示名そのもののローマ字（catalog.reading）を最優先にする。スラッグから
+    取ると、別名義をまとめている声優ページで行を間違える
+    （長谷川 育美 → /cv/akabane-kyouko-s14378/ → あ行に入ってしまった）。
+    読みが無いメーカー・発売元はスラッグに戻す。
+    """
+    return re.sub(r"[^a-z]", "", (c["reading"] or "").lower()) or slug_key(c["url"])
+
+
+def name_rows(entries, key_of):
+    return "".join(
+        '<a class="idx-name" href="%s" data-k="%s"><b>%s</b>'
+        '<span class="n">%s作品</span></a>'
+        % (e(c["url"]), e(key_of(c)), e(c["label"]), format(c["n_works"], ","))
         for c in entries)
+
+
+def kana_sections(entries, key_of, id_prefix="r"):
+    """五十音の行ごとの節と、その先頭に置く行ナビを返す。
+
+    行内はローマ字読み順（ABC順ではない。ABC順だと「あ え い お う」になる）。
+    """
+    by = defaultdict(list)
+    for c in entries:
+        by[kana_row(key_of(c))].append(c)
+    jump, secs = [], []
+    for rid, rname in KANA_ROWS:
+        rows = sorted(by.get(rid, []),
+                      key=lambda c: (kana_sort_key(key_of(c)), c["label"]))
+        if not rows:
+            continue
+        jump.append('<a href="#%s-%s">%s<span>%d</span></a>' % (id_prefix, rid, e(rname), len(rows)))
+        secs.append('<section class="idx-sec" id="%s-%s"><h2>%s'
+                    '<span class="idx-n">%d</span></h2>'
+                    '<div class="idx-cols">%s</div></section>'
+                    % (id_prefix, rid, e(rname), len(rows), name_rows(rows, key_of)))
+    nav = ('<nav class="kana-nav" aria-label="五十音で移動">%s</nav>' % "".join(jump)) if jump else ""
+    return nav, "".join(secs)
+
+
+def catalog_index_page(kind, label, note, entries):
+    """/cv/ /tag/ のような「索引の索引」。名前で絞り込め、読みのあるものは五十音で辿れる"""
+    key_of = kana_key_of
+    if kind in KANA_KINDS:
+        nav, sections = kana_sections(entries, key_of)
+        listing = nav + '<div data-list-grid>' + sections + '</div>'
+    else:
+        listing = ('<div class="idx-cols" style="margin-top:18px" data-list-grid>%s</div>'
+                   % name_rows(entries, key_of))
     body = """<div class="pad">
 <div class="home-head"><div><h1>%(lab)sから探す</h1><p class="home-lead">%(note)s</p></div>
 <span class="text-muted" style="font-size:13px">%(n)s件</span></div>
 <label class="sr-only" for="cq">名前で絞り込む</label>
-<input class="input" id="cq" type="search" placeholder="名前で絞り込む"
+<input class="input" id="cq" type="search" placeholder="名前で絞り込む（かな・ローマ字も可）"
  style="margin-top:18px;max-width:420px" data-list-filter>
-<div class="idx-cols" style="margin-top:18px" data-list-grid>%(rows)s</div>
+%(listing)s
 <p class="empty" data-list-empty hidden>該当する項目がありません。</p>
-</div>""" % dict(lab=e(label), note=e(note), n=format(len(entries), ","), rows=rows)
+</div>""" % dict(lab=e(label), note=e(note), n=format(len(entries), ","), listing=listing)
     return layout("%sから探す | %s" % (label, SITE_NAME),
                   "%s%s" % (label, note), "/%s/" % kind, body,
                   crumbs=[(SITE_NAME, "/"), ("%sから探す" % label, None)])
@@ -828,6 +1046,20 @@ def main():
     for r in con.execute("SELECT * FROM work_offer ORDER BY eid, priority"):
         offers[r["eid"]].append(r)
 
+    characters = list(con.execute("SELECT * FROM character"))
+    ch_url = {c["cid"]: c["url"] for c in characters}
+    ch_works = defaultdict(list)
+    for r in con.execute("SELECT * FROM character_work ORDER BY cid, sort DESC"):
+        ch_works[r["cid"]].append(r)
+    ch_traits = defaultdict(list)
+    for r in con.execute("SELECT * FROM character_trait"):
+        if r["trait"] in ok_trait:      # 訳のない英語の属性は出さない（他ページと同じ規則）
+            ch_traits[r["cid"]].append(r)
+    by_cv = defaultdict(list)
+    for c in characters:
+        if c["cv"]:
+            by_cv[c["cv"]].append(c)
+
     if os.path.isdir(OUT):
         shutil.rmtree(OUT)
     os.makedirs(OUT)
@@ -845,7 +1077,7 @@ def main():
     for w in works:
         html_ = game_page(w, chars[w["vid"]], ctraits[w["vid"]], tags[w["vid"]],
                           staff[w["vid"]], links[w["vid"]], series[w["vid"]],
-                          eds[w["vid"]], offers, meta)
+                          eds[w["vid"]], offers, meta, ch_url)
         write(w["url"], html_)
         urls.append(w["url"])
     print("  作品ページ %d" % len(works))
@@ -857,6 +1089,26 @@ def main():
     cw = defaultdict(list)
     for r in con.execute("SELECT url, vid FROM catalog_work ORDER BY url, sort DESC"):
         cw[r["url"]].append(r["vid"])
+
+    # ---- キャラクターページ ----
+    for c in characters:
+        same = [x for x in by_cv.get(c["cv"] or "", []) if x["cid"] != c["cid"]]
+        same.sort(key=lambda x: (x["main_released"] or "0000"), reverse=True)
+        write(c["url"], character_page(c, ch_works[c["cid"]], ch_traits[c["cid"]],
+                                       same, by_vid))
+        urls.append(c["url"])
+    rows_by_id = []
+    for rid, rname in KANA_ROWS:
+        rs = sorted([c for c in characters if kana_row(c["kana_key"]) == rid],
+                    key=lambda c: (kana_sort_key(c["kana_key"]), c["name"] or ""))
+        rows_by_id.append((rid, rname, rs))
+        if rs:
+            write("/character/%s/" % rid, character_row_page(rid, rname, rs))
+            urls.append("/character/%s/" % rid)
+    write("/character/", character_index_page(rows_by_id, len(characters)))
+    urls.append("/character/")
+    print("  キャラクターページ %d + 五十音 %d行"
+          % (len(characters), sum(1 for _, _, rs in rows_by_id if rs)))
 
     n_list = 0
     for kind, label, note in CATS:
@@ -971,19 +1223,62 @@ def build_assets(con, works, chars, ctraits, cat, cw):
               ensure_ascii=False, separators=(",", ":"))
     print("  好み一致に使う属性 %d件（%d件から絞り込み）" % (len(names), len(df)))
 
-    # 声優名・キャラクター名 → 作品。同名は作品ごとに1件ずつ
-    cvs, chs = defaultdict(list), defaultdict(list)
+    # 入力候補。1行 = 1つの行き先。
+    #
+    #   t 種別 / n 表示名 / k 照合用のローマ字（正規化済み）/ u 行き先
+    #   r 補足（候補の2行目）/ v この語で絞り込んだときに残る作品の番号（index.json の位置）
+    #
+    # 照合用のキーをここで作っておく。5,786件を1打鍵ごとに正規化し直すと
+    # 入力が引っかかるため、正規化はビルド時に済ませる。
+    pos = {w["vid"]: i for i, w in enumerate(works)}
+    norm = lambda t: re.sub(r"[\s　・:：\-—―ー~〜!！?？'\"’”.,()（）\[\]]", "",
+                            (t or "").lower())
+
+    sug = []
+    for w in works:
+        sug.append({"t": "作品", "n": w["title"], "k": norm(w["title_latin"]),
+                    "u": w["url"], "v": [pos[w["vid"]]],
+                    "r": " / ".join(x for x in [w["released_ja"], w["platform_top"]] if x)})
+
+    cv_works, cv_url = defaultdict(set), {}
+    for c in cat.get("cv", []):
+        cv_url[c["label"]] = c["url"]
     for w in works:
         for c in chars[w["vid"]]:
             if c["cv"]:
-                cvs[c["cv"]].append(w["vid"])
-            if c["name"] and c["role"] in ("主人公", "攻略対象"):
-                chs[c["name"]].append(w["vid"])
-    cv_url = {c["label"]: c["url"] for c in cat.get("cv", [])}
-    json.dump({"cv": {k: {"u": cv_url.get(k), "w": sorted(set(v))} for k, v in cvs.items()},
-               "char": {k: sorted(set(v)) for k, v in chs.items()}},
-              open(os.path.join(out, "suggest.json"), "w", encoding="utf-8"),
+                cv_works[c["cv"]].add(pos[w["vid"]])
+    for name, vs in cv_works.items():
+        sug.append({"t": "声優", "n": name, "k": norm(slug_key(cv_url[name]))
+                    if name in cv_url else "", "u": cv_url.get(name),
+                    "v": sorted(vs), "r": "%d作品" % len(vs)})
+
+    ch_works = defaultdict(set)
+    for w in works:
+        for c in chars[w["vid"]]:
+            if c["role"] in ("主人公", "攻略対象"):
+                ch_works[c["cid"]].add(pos[w["vid"]])
+    for c in con.execute("SELECT * FROM character"):
+        sug.append({"t": "キャラ", "n": c["name"], "k": norm(c["name_latin"]),
+                    "u": c["url"], "v": sorted(ch_works.get(c["cid"], [])),
+                    "r": " / ".join(x for x in [("CV. %s" % c["cv"]) if c["cv"] else "",
+                                                 c["main_title"] or ""] if x)})
+
+    st_works, st_url = defaultdict(set), {}
+    for c in cat.get("staff", []):
+        st_url[c["label"]] = c["url"]
+    for r in con.execute("SELECT vid, name FROM work_staff"):
+        if r["name"] in st_url and r["vid"] in pos:
+            st_works[r["name"]].add(pos[r["vid"]])
+    for name, vs in st_works.items():
+        sug.append({"t": "スタッフ", "n": name, "k": norm(slug_key(st_url[name]))
+                    if name in st_url else "", "u": st_url.get(name),
+                    "v": sorted(vs), "r": "%d作品" % len(vs)})
+
+    sug = [x for x in sug if x["u"]]
+    json.dump(sug, open(os.path.join(out, "suggest.json"), "w", encoding="utf-8"),
               ensure_ascii=False, separators=(",", ":"))
+    print("  入力候補 %d件（作品%d/声優%d/キャラ%d/スタッフ%d）"
+          % (len(sug), len(works), len(cv_works), len(ch_works), len(st_works)))
 
     # MY棚の登録ダイアログが出す「機種・版」の選択肢
     edmap = defaultdict(lambda: defaultdict(list))

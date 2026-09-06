@@ -477,3 +477,76 @@ dialog.modal::backdrop { background: color-mix(in srgb, var(--color-neutral-900)
   .nav, .tabbar, .mypanel, .search-panel { display: none; }
   .page { border: 0; max-width: none; }
 }
+
+
+/* ─── 入力候補 ───────────────────────────────────────────────
+   打った文字に当たる作品・声優・キャラ・スタッフを出し、選ぶと直接そのページへ。
+   Modernist の決まりに合わせて角丸なし・2px罫・左揃え。 */
+.combo { position: relative; margin-top: 14px; }
+.suggest {
+  position: absolute; z-index: 40; left: 0; right: 0; top: calc(100% + 2px);
+  margin: 0; padding: 0; list-style: none;
+  background: var(--color-bg); border: var(--rule); box-shadow: var(--shadow-lg);
+  max-height: 60vh; overflow-y: auto;
+}
+.suggest li + li { border-top: var(--hair); }
+.suggest a {
+  display: flex; align-items: baseline; gap: 10px; padding: 10px 12px;
+  text-decoration: none; color: var(--color-text); min-height: 44px;
+}
+.suggest li.on, .suggest a:hover { background: var(--color-accent-100); }
+.suggest b { font-family: var(--font-heading); font-weight: 700; font-size: 14px; }
+.suggest small { font-size: 12px; color: var(--color-neutral-700); margin-left: auto; text-align: right; }
+.suggest .k {
+  flex: 0 0 auto; font-size: 10px; letter-spacing: .04em; padding: 2px 7px;
+  background: var(--color-neutral-300); color: var(--color-neutral-900);
+}
+.suggest .k-作品 { background: var(--color-accent-700); color: var(--color-bg); }
+.suggest .k-声優 { background: var(--color-accent-300); }
+.suggest .k-キャラ { background: var(--color-accent-200); }
+
+/* ─── 五十音の行ナビ ─────────────────────────────────────── */
+.kana-nav {
+  display: flex; flex-wrap: wrap; margin-top: 18px;
+  border: 1px solid var(--color-divider);
+}
+.kana-nav a {
+  display: flex; align-items: baseline; gap: 5px; padding: 10px 14px; min-height: 44px;
+  border-right: 1px solid var(--color-divider); text-decoration: none;
+  font-family: var(--font-heading); font-weight: 700; font-size: 14px; color: var(--color-text);
+}
+.kana-nav a:last-child { border-right: 0; }
+.kana-nav a:hover { background: var(--color-accent-100); color: var(--color-accent-800); }
+.kana-nav a span { font-family: var(--font-body); font-weight: 400; font-size: 11px; color: var(--color-neutral-700); }
+.idx-sec { margin-top: var(--space-8); scroll-margin-top: 80px; }
+.idx-sec h2 {
+  display: flex; align-items: baseline; gap: 10px; font-size: 22px;
+  padding-bottom: 8px; border-bottom: var(--rule);
+}
+.idx-n { font-family: var(--font-body); font-weight: 400; font-size: 12px; color: var(--color-neutral-700); }
+.idx-sec .idx-cols { margin-top: var(--space-3); }
+
+/* ─── キャラクターページ ─────────────────────────────────── */
+/* 属性はカテゴリ名のすぐ右から左揃えで並べる。.kv を使い回すと
+   space-between で右端に飛んでいくので、専用の行にする */
+.trait-row {
+  display: grid; grid-template-columns: 5.5em minmax(0, 1fr);
+  gap: var(--space-3); align-items: start;
+  padding: var(--space-2) 0; border-bottom: var(--hair);
+}
+.trait-cat { font-size: 13px; font-weight: 600; color: var(--color-neutral-700); }
+.trait-row .tags { justify-content: flex-start; }
+
+.hero-2 { grid-template-columns: 300px minmax(0, 1fr); }
+.hero-2 .hero-main { border-right: 0; }
+
+@media (max-width: 1000px) {
+  .hero-2 { grid-template-columns: 1fr; }
+}
+@media (max-width: 700px) {
+  .trait-row { grid-template-columns: 1fr; gap: 4px; }
+  .suggest { max-height: 50vh; }
+  .suggest a { flex-wrap: wrap; }
+  .suggest small { margin-left: 0; width: 100%; text-align: left; }
+  .kana-nav a { flex: 1 0 auto; }
+}
