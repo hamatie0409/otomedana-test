@@ -235,7 +235,9 @@
         '<div class="r"><span class="score"></span><span class="own" data-own></span></div></div>';
       $('.t', a).textContent = w.t;
       $('.m', a).textContent = [w.dj, w.p].filter(Boolean).join(' ');
-      $('.score', a).textContent = w.rt;
+      var sc = $('.score', a);
+      sc.textContent = w.rt;
+      if (!w.r) sc.className = 'score score-none';   /* 評価が無いことは強調しない */
       return a;
     }
 
@@ -451,6 +453,72 @@
                   ed && $('.ed-name', ed).textContent === it.e);
       s.hidden = !on;
     });
+  }
+
+  /* ---------------------------------------------------------------- セクション切替
+     スマホだけ「買う / 作品 / 好み」に畳む。1ページが11画面分あり、
+     購入導線が2画面下に沈んでいたため。
+     画面が広いときは畳まず全部出す（デザインのデスクトップ版と同じ）。 */
+  function initSectionTabs() {
+    var tabs = $('.sec-tabs');
+    if (!tabs) return;
+    var mq = window.matchMedia('(max-width: 700px)');
+    var cur = 'buy';
+
+    function paint() {
+      var narrow = mq.matches;
+      $$('button', tabs).forEach(function (b) {
+        b.setAttribute('aria-selected', String(narrow && b.getAttribute('data-sec-tab') === cur));
+      });
+      $$('[data-sec]').forEach(function (el) {
+        /* 広い画面では属性を外して素の並びに戻す */
+        if (!narrow) el.removeAttribute('data-sec-active');
+        else el.setAttribute('data-sec-active', el.getAttribute('data-sec') === cur ? '1' : '0');
+      });
+    }
+    function go(name, scroll) {
+      cur = name;
+      paint();
+      if (scroll) tabs.scrollIntoView({ block: 'start' });
+    }
+    $$('button', tabs).forEach(function (b) {
+      b.addEventListener('click', function () { go(b.getAttribute('data-sec-tab'), true); });
+    });
+    /* 下部バーの「購入先を見る」は、畳んでいるときはタブの切り替えを兼ねる */
+    var goBuy = $('[data-go-buy]');
+    if (goBuy) goBuy.addEventListener('click', function (ev) {
+      if (!mq.matches) return;           /* 広い画面は素直に #buy へ飛ばす */
+      ev.preventDefault();
+      go('buy', true);
+    });
+    /* 作品ページ内のリンク（#buy）を踏んだときも畳みを開く */
+    document.addEventListener('click', function (ev) {
+      var a = ev.target.closest('a[href$="#buy"]');
+      if (a && mq.matches) go('buy', true);
+    });
+    (mq.addEventListener ? mq.addEventListener.bind(mq, 'change')
+                         : mq.addListener.bind(mq))(paint);
+    paint();
+  }
+
+  /* スマホでは作品情報の表が長すぎて購入導線を押し下げる。4行だけ出して畳む */
+  function initFacts() {
+    var dl = $('[data-facts]');
+    var btn = $('[data-facts-toggle]');
+    if (!dl || !btn) return;
+    var mq = window.matchMedia('(max-width: 700px)');
+    var open = false;
+    function paint() {
+      if (!mq.matches) { dl.removeAttribute('data-facts-collapsed'); return; }
+      dl.setAttribute('data-facts-collapsed', open ? '0' : '1');
+      btn.setAttribute('aria-expanded', String(open));
+      btn.textContent = open ? '閉じる' : btn.getAttribute('data-label');
+    }
+    btn.setAttribute('data-label', btn.textContent);
+    btn.addEventListener('click', function () { open = !open; paint(); });
+    (mq.addEventListener ? mq.addEventListener.bind(mq, 'change')
+                         : mq.addListener.bind(mq))(paint);
+    paint();
   }
 
   /* ---------------------------------------------------------------- 作品ページのMY棚 */
@@ -918,6 +986,8 @@
     initListFilter();
     initHomeSearch();
     initBuy();
+    initSectionTabs();
+    initFacts();
     initShelfPanel();
     initTaste();
     initMy();

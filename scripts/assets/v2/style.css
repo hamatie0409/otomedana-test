@@ -264,6 +264,9 @@ textarea.input { min-height: 80px; resize: vertical; }
 .wcard .m { font-size: 12px; color: var(--color-neutral-800); margin-top: 6px; }
 .wcard .r { display: flex; align-items: center; gap: var(--space-2); margin-top: 6px; }
 .wcard .score { font-size: 12px; font-weight: 700; color: var(--color-accent-700); }
+/* 「評価なし」を ★7.99 と同じアクセント色で出すと、データが無いことが
+   いちばん目立つ。事実として控えめに置く */
+.wcard .score-none { font-weight: 400; color: var(--color-neutral-700); }
 .wcard .own { font-size: 11px; color: var(--color-neutral-700); }
 .empty { padding: var(--space-6) 0; color: var(--color-neutral-700); font-size: 14px; }
 
@@ -566,4 +569,82 @@ dialog.modal::backdrop { background: color-mix(in srgb, var(--color-neutral-900)
   .suggest a { flex-wrap: wrap; }
   .suggest small { margin-left: 0; width: 100%; text-align: left; }
   .kana-nav a { flex: 1 0 auto; }
+}
+
+
+/* ─── タップ領域（WCAG 2.5.8 の 24x24px）───────────────────
+   実測でパンくず21px・本文リンク19px・ヘッダのナビ23pxが不足していた。
+   文中のリンクは除外規定があるが、パンくずや定義リストの値は独立した
+   行き先なので、行間ではなく当たり判定そのものを広げる。 */
+/* 対象は「それ自体が独立した行き先」のリンクだけ。
+   文中に埋まったリンクに inline-flex を当てると折り返しが壊れる
+   （フッターの「生成スクリプト」が 12x160px の縦1列になった）。
+   WCAG 2.5.8 も、文の中のリンクは対象サイズの例外にしている。 */
+.crumbs a, .nav-links a, .nav-brand, .facts a, .kv a, .lrow a,
+.idx-name, .suggest a, .sec-head a, .card-meta a {
+  display: inline-flex; align-items: center; min-height: 26px;
+}
+.crumbs { gap: var(--space-1) var(--space-2); }
+.crumbs a { padding-inline: 2px; }
+.nav-links a { padding: 0 2px; }
+/* タグは 11px・上下3pxで22px。1pxずつ足して24pxにする */
+.tag { padding-block: 4px; min-height: 24px; }
+
+/* ─── 作品ページのセクション切替（スマホのみ）─────────────
+   1ページが11画面分あり、購入導線が2画面下に沈んでいた。
+   デザインのモバイル版と同じく「買う / 作品 / 好み」に畳む。
+   JSが無ければ data-sec-active が付かず、全部そのまま並ぶ。 */
+.sec-tabs { display: none; }
+.facts-toggle { display: none; }
+
+.buybar { display: none; }
+
+@media (max-width: 700px) {
+  .sec-tabs {
+    display: flex; position: sticky; top: 0; z-index: 25;
+    background: var(--color-bg); border-bottom: var(--rule);
+  }
+  .sec-tabs button {
+    flex: 1; background: transparent; color: var(--color-text); border: 0;
+    border-right: 1px solid var(--color-divider);
+    padding: 13px var(--space-2); min-height: 48px; cursor: pointer;
+    font-family: var(--font-heading); font-weight: 700; font-size: 14px; text-align: left;
+  }
+  .sec-tabs button:last-child { border-right: 0; }
+  .sec-tabs button[aria-selected="true"] { background: var(--color-accent-700); color: var(--color-bg); }
+  [data-sec][data-sec-active="0"] { display: none; }
+
+  /* facts は dt/dd の対なので、4行＝子要素8つ。9つめから畳む */
+  .facts[data-facts-collapsed="1"] > :nth-child(n+9) { display: none; }
+  .facts-toggle {
+    display: inline-flex; align-items: center; min-height: 44px;
+    background: none; border: 0; padding: 0; cursor: pointer;
+    font-family: var(--font-heading); font-weight: 700; font-size: 13px;
+    color: var(--color-accent-700);
+  }
+
+  /* 下部は場所が1つ。作品ページでは全体ナビより「いくらで買えるか」を出す */
+  .buybar {
+    display: flex; position: sticky; bottom: 0; z-index: 30;
+    align-items: center; justify-content: space-between; gap: var(--space-3);
+    background: var(--color-bg); border-top: var(--rule);
+    padding: 10px var(--space-4);
+  }
+  .buybar-lb { display: block; font-size: 11px; font-weight: 600; color: var(--color-neutral-700); }
+  .buybar-price {
+    font-family: var(--font-heading); font-weight: 700; font-size: 22px;
+    line-height: 1.1; color: var(--color-accent-700);
+  }
+  .buybar .btn { flex: 1; justify-content: center; min-height: 48px; }
+}
+
+/* 3カラムの見出しは H3 に上げた（H2→H4 と飛んでいた）。大きさは据え置く */
+.col-h { font-size: 18px; margin: 0 0 var(--space-2); }
+.cols3 .col-h + h3.col-h, .cols3 h3.col-h:not(:first-child) { margin-top: 26px; }
+
+/* 販売店表の 新品 / 中古 の節見出し */
+.table .cond-row th {
+  background: var(--color-neutral-200); color: var(--color-neutral-900);
+  font-size: 11px; letter-spacing: .08em; padding: 6px var(--space-2);
+  border-bottom: 1px solid var(--color-divider);
 }

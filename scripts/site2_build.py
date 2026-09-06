@@ -105,7 +105,8 @@ def yen(n):
 
 # ---------------------------------------------------------------- テンプレート
 
-def layout(title, desc, path, body, crumbs=None, current="", og_image=None, jsonld=None):
+def layout(title, desc, path, body, crumbs=None, current="", og_image=None, jsonld=None,
+           bottom_bar=None):
     """1ページ分のHTML。path はサイト内のルート相対（"/game/xxx/"）"""
     canon = BASE_URL + path
     crumb = ""
@@ -118,7 +119,10 @@ def layout(title, desc, path, body, crumbs=None, current="", og_image=None, json
     nav_links = "".join(
         '<a href="%s"%s>%s</a>' % (e(u), ' aria-current="page"' if t == current else "", e(t))
         for t, u in [("作品を探す", "/"), ("属性から探す", "/trait/"), ("新作カレンダー", "/upcoming/")])
-    tabbar = "".join(
+    # スマホの下部は場所が1つしかない。作品ページでは全体ナビより
+    # 「いくらで買えるか」のほうが要るので、あればそちらに差し替える。
+    # デザインのモバイル版も作品ページだけ下部が購入バーになっていた。
+    tabbar = bottom_bar if bottom_bar else '<nav class="tabbar" aria-label="下部ナビ">%s</nav>' % "".join(
         '<a href="%s"%s>%s</a>' % (e(u), ' aria-current="page"' if t == current else "", e(t))
         for t, u in TABS)
     return """<!doctype html>
@@ -165,7 +169,7 @@ def layout(title, desc, path, body, crumbs=None, current="", og_image=None, json
   <p>価格・在庫は各ストアの情報です。最新の内容は各ストアでご確認ください。</p>
   <p><a href="/../">現行サイト（v1）はこちら</a></p>
 </footer>
-<nav class="tabbar" aria-label="下部ナビ">%(tabbar)s</nav>
+%(tabbar)s
 </div>
 <script>window.V2_BASE=%(prefix)s;</script>
 <script src="/assets/app.js" defer></script>
@@ -224,12 +228,27 @@ def work_card(w):
     meta = " ".join(x for x in [w["released_ja"], w["platform_top"]] if x)
     return ("""<a class="wcard" href="%(url)s" data-vid="%(vid)s">%(img)s<div class="body">
 <div class="t">%(title)s</div><div class="m">%(meta)s</div>
-<div class="r"><span class="score">%(score)s</span><span class="own" data-own></span></div>
+<div class="r"><span class="%(scls)s">%(score)s</span><span class="own" data-own></span></div>
 </div></a>""" % dict(url=e(w["url"]), vid=e(w["vid"]), img=thumb(w),
-                     title=e(w["title"]), meta=e(meta), score=e(w["rating_text"])))
+                     title=e(w["title"]), meta=e(meta), score=e(w["rating_text"]),
+                     scls="score" if w["rating"] else "score score-none"))
 
 
 # ---------------------------------------------------------------- 購入導線
+
+def lowest_price(eds, offers):
+    """このページで実際に出せる最安値。24時間以内に取れた価格だけを見る。
+    合本（他作品とのセット）はこの作品の相場ではないので除く"""
+    ps = []
+    for r in eds:
+        if r["is_combo"]:
+            continue
+        for o in offers.get(r["eid"], []):
+            p = fresh_price(o["price"], o["fetched_at"])
+            if p:
+                ps.append(p)
+    return min(ps) if ps else None
+
 
 def buy_section(w, eds, offers):
     """デザインの「1. 機種 → 2. 版 → 3. 販売店」をそのまま組む。
@@ -317,8 +336,13 @@ def buy_section(w, eds, offers):
     # 3. 販売店
     b.append('<div class="step">3. 販売店 — <span data-ed-name>%s</span></div>'
              % e(ed_names.get(first_eid, "")))
+    # 新品・中古・ダウンロードは別の買いものなので節を分ける。
+    # ひとまとめにして価格順に並べると「楽天 新品 ¥6,700」の下に
+    # 「楽天 中古 ¥7,381」が来て、中古のほうが高いのに並んで見えてしまう。
+    # 最安の印も節ごとに付ける（新品の最安と中古の最安は別々に知りたい）。
+    COND_ORDER = {"新品": 0, "中古": 1, "ダウンロード": 2}
     b.append('<div class="wrap-x"><table class="table" data-shops><thead><tr>'
-             '<th>販売店</th><th>状態</th><th>価格</th><th>在庫</th><th></th>'
+             '<th>販売店</th><th>価格</th><th>在庫</th><th></th>'
              '</tr></thead><tbody>')
     for code, rows in groups:
         for r in rows:
@@ -336,23 +360,30 @@ def buy_section(w, eds, offers):
                 if cur is None or (p and (not fresh_price(cur["price"], cur["fetched_at"])
                                           or p < fresh_price(cur["price"], cur["fetched_at"]))):
                     best[k] = o
-            rows_o = sorted(best.values(), key=lambda o: (
-                0 if fresh_price(o["price"], o["fetched_at"]) else 1, o["priority"]))
-            cheapest = min([fresh_price(o["price"], o["fetched_at"]) for o in rows_o
-                            if fresh_price(o["price"], o["fetched_at"])] or [None])
-            for o in rows_o:
-                p = None if r["is_combo"] else fresh_price(o["price"], o["fetched_at"])
-                verb = ("で見る" if o["condition"] == "ダウンロード" or o["link_type"] == "item"
-                        else "で探す")
-                b.append("""<tr data-eid="%(eid)s" data-best="%(best)s">
-<td>%(shop)s</td><td>%(cond)s</td><td class="price">%(price)s</td><td>%(stock)s</td>
+            by_cond = defaultdict(list)
+            for o in best.values():
+                by_cond[o["condition"] or "その他"].append(o)
+            for cond in sorted(by_cond, key=lambda c: COND_ORDER.get(c, 9)):
+                rows_o = sorted(by_cond[cond], key=lambda o: (
+                    0 if fresh_price(o["price"], o["fetched_at"]) else 1,
+                    fresh_price(o["price"], o["fetched_at"]) or 0, o["priority"]))
+                cheapest = min([fresh_price(o["price"], o["fetched_at"]) for o in rows_o
+                                if fresh_price(o["price"], o["fetched_at"])] or [None])
+                b.append('<tr class="cond-row" data-eid="%s"><th colspan="4" scope="colgroup">'
+                         '%s</th></tr>' % (e(r["eid"]), e(cond)))
+                for o in rows_o:
+                    p = None if r["is_combo"] else fresh_price(o["price"], o["fetched_at"])
+                    verb = ("で見る" if cond == "ダウンロード" or o["link_type"] == "item"
+                            else "で探す")
+                    b.append("""<tr data-eid="%(eid)s" data-best="%(best)s">
+<td>%(shop)s</td><td class="price">%(price)s</td><td>%(stock)s</td>
 <td><a class="btn btn-primary" href="%(url)s" rel="nofollow sponsored noopener"
    target="_blank">%(shop)s%(verb)s</a></td></tr>""" % dict(
-                    eid=e(r["eid"]), best="1" if p and p == cheapest else "0",
-                    shop=e(o["channel"]), cond=e(o["condition"] or ""),
-                    price=yen(p) if p else "—",
-                    stock=e(o["availability"] or ("配信中" if o["condition"] == "ダウンロード" else "各店で確認")),
-                    url=e(o["url"]), verb=verb))
+                        eid=e(r["eid"]), best="1" if p and p == cheapest else "0",
+                        shop=e(o["channel"]),
+                        price=yen(p) if p else "—",
+                        stock=e(o["availability"] or ("配信中" if cond == "ダウンロード" else "各店で確認")),
+                        url=e(o["url"]), verb=verb))
     b.append('</tbody></table></div>')
 
     if fetched:
@@ -414,6 +445,13 @@ def game_page(w, chars, ctraits, tags, staff, links, series, eds, offers, meta, 
              ("VNDB", '<a href="https://vndb.org/%s" rel="noopener">%s</a>' % (e(w["vid"]), e(w["vid"])))]
     facts_html = "".join('<dt>%s</dt><dd>%s</dd>' % (e(k), v if k in ("ブランド", "発売元", "VNDB") else e(v))
                          for k, v in facts if v)
+    # スマホでは facts 8行（機種が11個並ぶ作品もある）だけで 700px を超え、
+    # 購入導線がさらに下へ押し出される。4行だけ出して残りは畳む。
+    # 畳むのはJSが data-facts-collapsed を付けたときだけなので、JSが無ければ全部出る。
+    n_facts = sum(1 for k, v in facts if v)
+    facts_toggle = ('<button type="button" class="facts-toggle" data-facts-toggle'
+                    ' aria-expanded="false">ほか%d項目を見る</button>' % (n_facts - 4)) \
+        if n_facts > 4 else ""
 
     hero = """<div class="hero">
 <div class="hero-img">%(cover)s</div>
@@ -422,7 +460,7 @@ def game_page(w, chars, ctraits, tags, staff, links, series, eds, offers, meta, 
 <h1>%(title)s</h1>
 <div class="hero-sub">%(lead)s</div>
 <div class="tags" style="margin-bottom:20px">%(chips)s</div>
-<dl class="facts">%(facts)s</dl>
+<dl class="facts" data-facts>%(facts)s</dl>%(ftoggle)s
 </div>
 <aside class="mypanel" data-shelf-panel data-vid="%(vid)s" data-title="%(title)s">
 <div class="kicker">あなたのコレクション</div>
@@ -447,9 +485,19 @@ MY棚はブラウザの中に保存されます。JavaScript を有効にする�
 </aside>
 </div>""" % dict(cover=hero_cover(w, "%s のパッケージ" % title),
                  genre=e(w["genre_label"]), title=e(title), lead=e(" / ".join(lead)),
-                 chips="".join(chips), facts=facts_html, vid=e(w["vid"]))
+                 chips="".join(chips), facts=facts_html, ftoggle=facts_toggle,
+                 vid=e(w["vid"]))
 
-    parts = [hero, buy_section(w, eds, offers)]
+    # スマホでは1ページが11画面分あり、購入導線が2画面下に沈む。
+    # デザインのモバイル版と同じく「買う / 作品 / 好み」で畳む。
+    # data-sec は表示の出し分けにだけ使い、JSが無ければ全部そのまま並ぶ。
+    tabs = ('<div class="sec-tabs" role="tablist" aria-label="表示する内容">'
+            '<button type="button" role="tab" data-sec-tab="buy" aria-selected="true">買う</button>'
+            '<button type="button" role="tab" data-sec-tab="work" aria-selected="false">作品</button>'
+            '<button type="button" role="tab" data-sec-tab="taste" aria-selected="false">好み</button>'
+            '</div>')
+    parts = [hero, tabs, '<div data-sec="buy">', buy_section(w, eds, offers), '</div>',
+             '<div data-sec="work">']
 
     # ストーリー。日本語あらすじはDBに1件も入っていないので、
     # あるときだけ日本語、無ければ英語の原文、どちらも無ければ節ごと出さない
@@ -498,6 +546,7 @@ MY棚はブラウザの中に保存されます。JavaScript を有効にする�
              'このほか %d人が登場します。</p>' % len(sub_chars)) if sub_chars else ""))
 
     # 好みとの一致（MY棚のデータを使うのでJSで描く）
+    parts.append('</div><div data-sec="taste">')
     parts.append("""<section class="two" data-taste data-vid="%s">
 <div><h2>あなたの好みとの一致</h2>
 <p class="text-muted" style="font-size:13px;margin-top:0" data-taste-lead>
@@ -549,13 +598,22 @@ MY棚に作品を登録すると、あなたがよく選んでいる属性とこ
         '<div class="lrow"><a href="%s" rel="noopener nofollow" target="_blank">%s</a></div>'
         % (e(u), e(host)) for lab, host, u in link_rows[:8]) \
         or '<p class="empty">公式サイトの情報がありません。</p>'
+    parts.append('</div><div data-sec="work">')
     parts.append("""<div class="cols3">
-<div><h4>スタッフ</h4>%(staff)s</div>
-<div><h4>タグ</h4><div class="tags">%(tags)s</div>%(ser)s</div>
-<div><h4>リンク</h4>%(links)s
+<div><h3 class="col-h">スタッフ</h3>%(staff)s</div>
+<div><h3 class="col-h">タグ</h3><div class="tags">%(tags)s</div>%(ser)s</div>
+<div><h3 class="col-h">リンク</h3>%(links)s
 <div class="lrow"><a href="https://vndb.org/%(vid)s" rel="noopener">VNDB のページ</a></div></div>
 </div>""" % dict(staff=staff_html, tags=tag_html, links=link_html, vid=e(w["vid"]),
-                 ser=('<h4 style="margin:26px 0 4px">シリーズ</h4>%s' % ser_html) if series else ""))
+                 ser=('<h3 class="col-h">シリーズ</h3>%s' % ser_html) if series else ""))
+    parts.append('</div>')
+
+    low = lowest_price(eds, offers)
+    bar = ('<div class="buybar">'
+           '<div><span class="buybar-lb">%s</span>'
+           '<b class="buybar-price">%s</b></div>'
+           '<a class="btn btn-primary" href="#buy" data-go-buy>購入先を見る</a></div>'
+           % ("最安（税込）" if low else "販売店", yen(low) if low else "各店で確認")) if eds else None
 
     desc = "%s（%s）の攻略キャラクター・声優・買えるお店。" % (title, w["platform_top"] or "")
     crumbs = [(SITE_NAME, "/"), ("作品を探す", "/"),
@@ -566,7 +624,8 @@ MY棚に作品を登録すると、あなたがよく選んでいる属性とこ
            "publisher": w["publisher"] or None, "author": w["brand"] or None,
            "inLanguage": "ja"}]
     return layout(("%s | %s" % (title, SITE_NAME)), desc, url, "".join(parts),
-                  crumbs=crumbs, current="作品を探す", og_image=w["cover"], jsonld=ld)
+                  crumbs=crumbs, current="作品を探す", og_image=w["cover"], jsonld=ld,
+                  bottom_bar=bar)
 
 
 # ---------------------------------------------------------------- トップ
@@ -762,7 +821,7 @@ def my_page():
 </dialog>
 
 <div class="pad sec-top">
-<h4>データの持ち方</h4>
+<h2 class="col-h" style="font-size:20px">データの持ち方</h2>
 <p class="text-muted" style="font-size:13px">MY棚の内容はサーバーには送られず、
 このブラウザの中（localStorage）だけに保存されます。別の端末やブラウザからは見えません。
 書き出し・読み込みで移せます。</p>
