@@ -422,6 +422,22 @@
           .filter(Boolean).join(' ');
       }
       markOwnedEditions();
+      paintBuyBar();
+    }
+    /* 下部バーは「いま選ばれている版」を出す。ページ全体の最安にすると
+       別機種の中古（PSP 中古 ¥134）が Switch 通常版 ¥6,700 の隣に並んでしまう */
+    function paintBuyBar() {
+      var nameEl2 = $('[data-bar-name]'), priceEl = $('[data-bar-price]');
+      if (!nameEl2 || !priceEl) return;
+      var cur = $('.ed[data-eid="' + eid + '"]', eds);
+      var tab = $('[data-plat="' + plat + '"]', tabs);
+      nameEl2.textContent = [tab ? tab.textContent : '', cur ? $('.ed-name', cur).textContent : '']
+        .filter(Boolean).join(' ');
+      var prices = $$('tbody tr[data-eid="' + eid + '"] .price', table)
+        .map(function (td) { return Number(td.textContent.replace(/[^0-9]/g, '')); })
+        .filter(function (n) { return n > 0; });
+      priceEl.textContent = prices.length ? '¥' + Math.min.apply(null, prices).toLocaleString('ja-JP') + '〜'
+                                          : '各店で確認';
     }
     function pickPlat(p) {
       plat = p;

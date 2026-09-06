@@ -250,7 +250,7 @@ def lowest_price(eds, offers):
     return min(ps) if ps else None
 
 
-def buy_section(w, eds, offers):
+def buy_section(w, eds, offers, picked=None):
     """デザインの「1. 機種 → 2. 版 → 3. 販売店」をそのまま組む。
 
     JSが無ければ全機種・全版・全店舗がそのまま並んで読める。
@@ -334,6 +334,12 @@ def buy_section(w, eds, offers):
     b.append('</div>')
 
     # 3. 販売店
+    if picked is not None:
+        picked["eid"] = first_eid
+        picked["name"] = ed_names.get(first_eid, "")
+        ps = [fresh_price(o["price"], o["fetched_at"]) for o in offers.get(first_eid, [])]
+        ps = [x for x in ps if x]
+        picked["price"] = min(ps) if ps else None
     b.append('<div class="step">3. 販売店 — <span data-ed-name>%s</span></div>'
              % e(ed_names.get(first_eid, "")))
     # 新品・中古・ダウンロードは別の買いものなので節を分ける。
@@ -496,7 +502,8 @@ MY棚はブラウザの中に保存されます。JavaScript を有効にする�
             '<button type="button" role="tab" data-sec-tab="work" aria-selected="false">作品</button>'
             '<button type="button" role="tab" data-sec-tab="taste" aria-selected="false">好み</button>'
             '</div>')
-    parts = [hero, tabs, '<div data-sec="buy">', buy_section(w, eds, offers), '</div>',
+    picked = {}
+    parts = [hero, tabs, '<div data-sec="buy">', buy_section(w, eds, offers, picked), '</div>',
              '<div data-sec="work">']
 
     # ストーリー。日本語あらすじはDBに1件も入っていないので、
@@ -608,12 +615,15 @@ MY棚に作品を登録すると、あなたがよく選んでいる属性とこ
                  ser=('<h3 class="col-h">シリーズ</h3>%s' % ser_html) if series else ""))
     parts.append('</div>')
 
-    low = lowest_price(eds, offers)
+    # 「最安」とだけ書くと、どの機種のどの状態の値段か分からない。
+    # 選ばれている版の名前と一緒に出し、版を切り替えたらJSが書き換える。
     bar = ('<div class="buybar">'
-           '<div><span class="buybar-lb">%s</span>'
-           '<b class="buybar-price">%s</b></div>'
+           '<div style="min-width:0"><span class="buybar-lb" data-bar-name>%s</span>'
+           '<b class="buybar-price" data-bar-price>%s</b></div>'
            '<a class="btn btn-primary" href="#buy" data-go-buy>購入先を見る</a></div>'
-           % ("最安（税込）" if low else "販売店", yen(low) if low else "各店で確認")) if eds else None
+           % (e(picked.get("name") or "販売店"),
+              (yen(picked["price"]) + "〜") if picked.get("price") else "各店で確認")) \
+        if eds and picked.get("eid") else None
 
     desc = "%s（%s）の攻略キャラクター・声優・買えるお店。" % (title, w["platform_top"] or "")
     crumbs = [(SITE_NAME, "/"), ("作品を探す", "/"),
