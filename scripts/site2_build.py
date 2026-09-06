@@ -202,6 +202,23 @@ def thumb(w, cls="thumb"):
     return '<div class="%s ph"><span>画像なし</span></div>' % cls
 
 
+def hero_cover(w, alt):
+    """作品ページ・キャラクターページのヒーローに置く表紙。
+
+    パッケージの縦横比は実測で 0.562〜1.667 とばらつく（最多は「とても縦長」の
+    203枚）。3:4 に固定して object-fit:cover で埋めると、縦長の箱ほど上下が
+    切り落とされる。ここでは比率を決め打ちせず、DBに入っている実寸を
+    width/height 属性に書いて本来の形のまま出す。属性を書いておけば
+    読み込み前から場所が正しく確保されるので、ガタつきも起きない。
+    """
+    if not w["cover"]:
+        return '<div class="ph" style="aspect-ratio:3/4"><span>画像なし</span></div>'
+    size = ('width="%d" height="%d"' % (w["cover_w"], w["cover_h"])) \
+        if w["cover_w"] and w["cover_h"] else ""
+    return ('<img class="cover cover-hero" src="%s" alt="%s" %s>'
+            % (e(w["cover"]), e(alt), size))
+
+
 def work_card(w):
     """トップと一覧に並ぶ作品カード。所持マークはJSが後から入れる"""
     meta = " ".join(x for x in [w["released_ja"], w["platform_top"]] if x)
@@ -428,9 +445,7 @@ def game_page(w, chars, ctraits, tags, staff, links, series, eds, offers, meta, 
 MY棚はブラウザの中に保存されます。JavaScript を有効にするとお使いいただけます。</p></noscript>
 </div>
 </aside>
-</div>""" % dict(cover=(('<img class="cover" src="%s" alt="%s のパッケージ" width="300" height="400">'
-                        % (e(w["cover"]), e(title))) if w["cover"] else
-                       '<div class="ph" style="aspect-ratio:3/4"><span>画像なし</span></div>'),
+</div>""" % dict(cover=hero_cover(w, "%s のパッケージ" % title),
                  genre=e(w["genre_label"]), title=e(title), lead=e(" / ".join(lead)),
                  chips="".join(chips), facts=facts_html, vid=e(w["vid"]))
 
@@ -801,9 +816,8 @@ def character_page(ch, works, traits, same_cv, by_vid):
               % (e(ch["cid"]), e(ch["cid"])))]
     facts_html = "".join("<dt>%s</dt><dd>%s</dd>" % (e(k), v) for k, v in facts if v)
 
-    cover = ('<img class="cover" src="%s" alt="%s のパッケージ" width="300" height="400">'
-             % (e(by_vid[ch["main_vid"]]["cover"]), e(ch["main_title"]))) \
-        if ch["main_vid"] in by_vid and by_vid[ch["main_vid"]]["cover"] \
+    cover = hero_cover(by_vid[ch["main_vid"]], "%s のパッケージ" % ch["main_title"]) \
+        if ch["main_vid"] in by_vid \
         else '<div class="ph" style="aspect-ratio:3/4"><span>画像なし</span></div>'
 
     hero = """<div class="hero hero-2">
