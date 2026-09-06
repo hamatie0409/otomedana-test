@@ -1,0 +1,15 @@
+# 検証を通ったキャラクター紹介ポスト。x_posts.py verify が書く。
+# 公式アカウントの投稿で、本文にキャラ名が出るものだけが入る。
+cid	vid	character	account	status_url	checked_at	note
+c64020	v21782	ダンテ・ファルツォーネ	@pf_otomate	https://x.com/pf_otomate/status/1319565525601505280	2026-09-07	【ピオフィオーレの晩鐘 -Episodio1926-　攻略キャラクター紹介】ダンテ・ファルツォーネ　CV.石川界人ギルバート・レッドフォード　CV.森久保祥太郎
+c64021	v21782	ギルバート・レッドフォード	@pf_otomate	https://x.com/pf_otomate/status/1319565525601505280	2026-09-07	【ピオフィオーレの晩鐘 -Episodio1926-　攻略キャラクター紹介】ダンテ・ファルツォーネ　CV.石川界人ギルバート・レッドフォード　CV.森久保祥太郎
+c64023	v21782	オルロック	@pf_otomate	https://x.com/pf_otomate/status/936530775264059392	2026-09-07	【攻略キャラクター紹介】オルロック／OrlokCV.豊永利行#ピオフィ pic.twitter.com/gFQEPFiVLs&mdash; 【公式】ピオフィオー
+c64024	v21782	ニコラ・フランチェスカ	@pf_otomate	https://x.com/pf_otomate/status/936530104255102976	2026-09-07	【攻略キャラクター紹介】ニコラ・フランチェスカ／Nicola・FrancescaCV.木村良平#ピオフィ pic.twitter.com/p1FKaNSeVF&
+c81177	v25197	リンボ	@BUSTAFELLOWS	https://x.com/BUSTAFELLOWS/status/1659435043977334786	2026-09-07	🩶#リンボ（V.A. #KENN）🩶サンプルボイス＆キャストコメント公開中🎙️✨https://t.co/UlpcKmcqED#BUSTAFELLOWS_sea
+c94428	v29661	イヴ	@virche_otomate	https://x.com/virche_otomate/status/1405465587615113219	2026-09-07	紹介らしい ｜ ■イヴ（CV #斉藤壮馬）年齢：18歳クルーンと呼ばれる便利屋を営んでいる青年で、自警団の一員。真面目で誠実な人柄。人を
+c94428	v29661	イヴ	@virche_otomate	https://x.com/virche_otomate/status/1413076386122661891	2026-09-07	紹介らしい ｜ ■イヴ（CV #斉藤壮馬）年齢：18歳テーマ【愛】博愛主義者で、悪事さえも場合によっては受け入れるものだという考えを持つ
+c94429	v29661	リュカ・プルースト	@virche_otomate	https://x.com/virche_otomate/status/1413437806026756099	2026-09-07	紹介らしい ｜ ■リュカ・プルースト（CV #平川大輔）年齢：22歳テーマ【信仰】教会や養護施設を回る訪問教師。几帳面で人当たりがよいが
+c94432	v29661	アドルフ	@virche_otomate	https://x.com/virche_otomate/status/1407639707194859522	2026-09-07	紹介らしい ｜ ■アドルフ（CV #八代拓）年齢：21歳主人公と同じ養護施設で育った自警団のリーダー。現在は一人暮らしをしている。ぶっき
+c94432	v29661	アドルフ	@virche_otomate	https://x.com/virche_otomate/status/1415249860597489665	2026-09-07	紹介らしい ｜ ■アドルフ（CV #八代拓）年齢：21歳テーマ【守護】主人公と同じ養護施設で育った自警団のリーダー。現在は街外れで一人暮
+c94433	v29661	アンクゥ	@virche_otomate	https://x.com/virche_otomate/status/1739210875020419175	2026-09-07	要確認 ｜ 【Special -Ⅵ-】『終遠のヴィルシュ』――聖夜に贈る、願いと誓いの輝き。全ての繋がりに意味を込め。―アンクゥ／C
+c94434	v29661	セレス	@virche_otomate	https://x.com/virche_otomate/status/1646785863370813440	2026-09-07	紹介らしい ｜ 【Character】■セレス（CV.なし／名前変更可）年齢：18歳――死に魅入られた運命と決別する少女――「……神様。

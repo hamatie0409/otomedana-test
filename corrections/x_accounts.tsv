@@ -1,0 +1,12 @@
+# 作品ごとの公式Xアカウント。x_posts.py verify はこれを基準に
+# 「拾った投稿が本当に公式のものか」を照合する。ここが埋まっていない作品は
+# ショップやファンの投稿を弾けないので、先にこちらを埋める。
+vid	title	account	source_url	checked_at	note
+v21782	ピオフィオーレの晩鐘	@pf_otomate	https://x.com/pf_otomate	2026-09-07	公式サイトおよびアカウント名「【公式】ピオフィオーレの晩鐘」で確認
+v25914	ピオフィオーレの晩鐘 -Episodio1926-	@pf_otomate	https://x.com/pf_otomate	2026-09-07	続編も同じ公式アカウントが運用
+v25197	BUSTAFELLOWS	@BUSTAFELLOWS	https://x.com/BUSTAFELLOWS	2026-09-07	アカウント名「BUSTAFELLOWS（バスタフェロウズ）公式」
+v29871	BUSTAFELLOWS シーズン2	@BUSTAFELLOWS	https://x.com/BUSTAFELLOWS	2026-09-07	シーズン2も同じ公式アカウントが運用
+v24241	オランピアソワレ	@Olympia_otomate	https://x.com/Olympia_otomate	2026-09-07	アカウント名「オランピアソワレ【公式】」
+v52265	オランピアソワレ Catharsis	@Olympia_otomate	https://x.com/Olympia_otomate	2026-09-07	続編も同じ公式アカウントが運用
+v29661	終遠のヴィルシュ -ErroR:salvation-	@virche_otomate	https://x.com/virche_otomate	2026-09-07	アカウント名「終遠のヴィルシュ【公式】」
+v20599	Code:Realize ～創世の姫君～	@CR_otomate	https://x.com/CR_otomate	2026-09-07	アカウント名「【公式】Code：Realize」

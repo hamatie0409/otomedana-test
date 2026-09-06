@@ -1,0 +1,3 @@
+# 自動では確定できなかった候補。人が見て x_posts.tsv へ移すか捨てる。
+cid	vid	character	account	status_url	checked_at	note
+c64022	v21782	楊	@pf_otomate	https://x.com/pf_otomate/status/1267744071897890816	2026-09-07	要確認: 本文にキャラ名なし ｜ わざと外した候補。この投稿は「袁」の紹介なので落ちるはず
