@@ -86,17 +86,32 @@ jobs:
       - name: パッケージ画像を選ぶ
         run: python3 scripts/shop_images.py
 
-      - name: サイトを生成する
+      - name: サイトを生成する（v1・docs/ 直下）
+        # site_build.py は docs/ を丸ごと消してから作り直す。
+        # docs/v2/ もその巻き添えで消えるので、v2 は必ずこの後に建てること。
         run: |
           python3 scripts/site_data.py
           python3 scripts/site_build.py
 
+      - name: サイトを生成する（v2・docs/v2/）
+        # 新デザイン「オトメ棚」。原本DBは読むだけで、表示用の data/site2.db を
+        # 組み立ててから docs/v2/ を作る。消すのは docs/v2/ の中だけなので
+        # v1 には影響しない。
+        run: |
+          python3 scripts/site2_db.py
+          python3 scripts/site2_build.py
+
       - name: 生成できたか確かめる
         run: |
-          pages=$(find docs -name index.html | wc -l)
-          echo "生成ページ数: $pages"
-          if [ "$pages" -lt 6000 ]; then
-            echo "::error::ページ数が少なすぎます（$pages）。公開せずに止めます"
+          v1=$(find docs -name index.html -not -path 'docs/v2/*' | wc -l)
+          v2=$(find docs/v2 -name index.html | wc -l)
+          echo "生成ページ数: v1 $v1 / v2 $v2 / 合計 $((v1 + v2))"
+          if [ "$v1" -lt 6000 ]; then
+            echo "::error::v1 のページ数が少なすぎます（$v1）。公開せずに止めます"
+            exit 1
+          fi
+          if [ "$v2" -lt 6000 ]; then
+            echo "::error::v2 のページ数が少なすぎます（$v2）。公開せずに止めます"
             exit 1
           fi
           # GitHub Actions の bash は pipefail が有効なので、
