@@ -22,12 +22,14 @@
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var yen = function (n) { return '¥' + Number(n).toLocaleString('ja-JP'); };
 
+  /* label は一覧のバッジ用（棚を眺めたとき「所持」より「未プレイ」のほうが役に立つ）。
+     short は作品ページの状態表示用で、そこに並ぶボタンの文言と揃える。 */
   var STATUS = {
-    want:     { label: '♡ 欲しい',  badge: 'tag-outline', owned: false },
-    reserved: { label: '予約済',    badge: 'tag-outline', owned: false },
-    owned:    { label: '未プレイ',  badge: 'tag-neutral', owned: true },
-    playing:  { label: '▶ プレイ中', badge: 'tag-accent',  owned: true },
-    cleared:  { label: '✓ クリア',  badge: 'tag-neutral', owned: true }
+    want:     { label: '♡ 欲しい',  short: '欲しい',   badge: 'tag-outline', owned: false },
+    reserved: { label: '予約済',    short: '予約済',   badge: 'tag-outline', owned: false },
+    owned:    { label: '未プレイ',  short: '所持',     badge: 'tag-neutral', owned: true },
+    playing:  { label: '▶ プレイ中', short: 'プレイ中', badge: 'tag-accent',  owned: true },
+    cleared:  { label: '✓ クリア',  short: 'クリア',   badge: 'tag-neutral', owned: true }
   };
 
   /* ---------------------------------------------------------------- 保存 */
@@ -379,7 +381,7 @@
           [it.d, it.sh, it.pr ? yen(it.pr) : ''].filter(Boolean).join('・') || '購入の記録なし';
       }
       var read = Number(it.rd || 0), total = Number(it.tt || 0);
-      state.textContent = '現在：' + (STATUS[it.s] ? STATUS[it.s].label.replace(/^[^ ]* /, '') : it.s) +
+      state.textContent = '現在：' + (STATUS[it.s] ? STATUS[it.s].short : it.s) +
         (total ? '・' + read + '/' + total + 'ルート読了' : '');
       bar.style.width = (total ? Math.round(read / total * 100) : (it.s === 'cleared' ? 100 : 0)) + '%';
     }
