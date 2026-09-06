@@ -2,12 +2,21 @@
 # x_posts.py verify が oEmbed で実在・投稿者・本文を確かめ、
 # 通ったものだけ x_posts.tsv に、怪しいものは _review_x.tsv に振り分ける。
 cid	vid	character	status_url	note
+c30368	v11179	吾妻 夏彦	https://x.com/norn9_anime/status/684284013272412160	紹介らしい ｜ 【キャラ紹介】吾妻夏彦（CV小野大輔）「過程に興味はない。語るなら結果で語れ」ある理由で、ノルンの能力者の命を狙う外部の
+c30371	v11179	宿史 暁人	https://x.com/norn9_anime/status/684657820579397632	紹介らしい ｜ 【キャラ紹介】宿吏暁人（CV杉山紀彰）「俺に気安くはなしかけんじゃねえよ」怒りっぽく、常に不機嫌な表情を浮かべている気難
+c30371	v11179	宿史 暁人	https://x.com/norn9_anime/status/698535297303212036	要確認 ｜ 【バレンタイン企画】宿吏暁人（CV杉山紀彰） #norn9 pic.twitter.com/9VTU2cpNOA&mda
+c28307	v16032	アリス	https://x.com/taishoalice/status/1297051806921396225	紹介らしい ｜ 【お知らせ】本日より『大正×対称アリス キャラクターソングシリーズ』が各配信サービス様にて配信開始となりました！シリーズ
+c39732	v18160	榎本 峰雄	https://x.com/CM_otomate/status/1250999450337599488	要確認 ｜ 【HAPPY BIRTHDAY!!】本日４月１７日は、榎本峰雄の誕生日です。過去と向き合い、人を信じる強さを取り戻した彼
+c39734	v18160	白石 景之	https://x.com/CM_otomate/status/1209315778949865475	要確認 ｜ 【HAPPY BIRTHDAY &amp; Merry Christmas!!】本日12/24は、白石景之の誕生日です。
 c64020	v21782	ダンテ・ファルツォーネ	https://x.com/pf_otomate/status/1319565525601505280	
 c64021	v21782	ギルバート・レッドフォード	https://x.com/pf_otomate/status/1319565525601505280	
 c64022	v21782	楊	https://x.com/pf_otomate/status/1267744071897890816	わざと外した候補。この投稿は「袁」の紹介なので落ちるはず
 c64023	v21782	オルロック	https://x.com/pf_otomate/status/936530775264059392	
 c64024	v21782	ニコラ・フランチェスカ	https://x.com/pf_otomate/status/936530104255102976	
+c74514	v24241	玄葉 (クロバ)	https://x.com/Olympia_otomate/status/1924666389035679770	紹介らしい ｜ ☀ 登場人物情報 ☀ ￣￣￣￣￣￣￣￣￣玄葉　クロバCV: #杉田智和中立組織「コトワリ」の副所長▽　公式サイト　▽ht
+c74516	v24241	天草 四郎 時貞 (アマクサ シロウ トキサダ)	https://x.com/Olympia_otomate/status/2006579887604486267	紹介らしい ｜ 🎍𝐇𝐚𝐩𝐩𝐲 𝐍𝐞𝐰 𝐘𝐞𝐚𝐫🎍天草四郎時貞 𝚃𝚘𝚔𝚒𝚜𝚊𝚍𝚊CV: #上村祐翔#オラソワ #Olympiasoiree
 c81177	v25197	リンボ	https://x.com/BUSTAFELLOWS/status/1659435043977334786	
+c89449	v25912	螢彩院・F・琉輝	https://x.com/CP_otomate/status/1243372778482356225	紹介らしい ｜ 【Case.4 外見パラサイト】螢彩院・F・琉輝（CV.榎木淳弥)天才的な色彩感覚を持ち、自身のファッションブランドも展
 c94428	v29661	イヴ	https://x.com/virche_otomate/status/1405465587615113219	紹介らしい ｜ ■イヴ（CV #斉藤壮馬）年齢：18歳クルーンと呼ばれる便利屋を営んでいる青年で、自警団の一員。真面目で誠実な人柄。人を
 c94428	v29661	イヴ	https://x.com/virche_otomate/status/1413076386122661891	紹介らしい ｜ ■イヴ（CV #斉藤壮馬）年齢：18歳テーマ【愛】博愛主義者で、悪事さえも場合によっては受け入れるものだという考えを持つ
 c94429	v29661	リュカ・プルースト	https://x.com/virche_otomate/status/1413437806026756099	紹介らしい ｜ ■リュカ・プルースト（CV #平川大輔）年齢：22歳テーマ【信仰】教会や養護施設を回る訪問教師。几帳面で人当たりがよいが

@@ -102,6 +102,21 @@ def write_tsv(path, head, rows, preamble=""):
             f.write("\t".join((r.get(k) or "").replace("\t", " ") for k in head) + "\n")
 
 
+def load_accounts():
+    """作品 → 公式アカウント（小文字）の集合。
+
+    1作品に複数あることがある。続編と共用、アニメ版の公式、キャラが喋る
+    サブアカウントなど。account 列は空白かカンマ区切りで複数書ける。
+    """
+    out = {}
+    for r in read_tsv(ACCOUNTS):
+        handles = {h.lstrip("@").lower()
+                   for h in re.split(r"[,\s]+", r.get("account", "")) if h.strip()}
+        if handles:
+            out.setdefault(r["vid"], set()).update(handles)
+    return out
+
+
 def parse_status(url):
     """投稿URLを (アカウント, ID) に割る。表記ゆれ・クエリは落とす。"""
     m = STATUS.match((url or "").strip())
@@ -141,17 +156,54 @@ def oembed(status_id, account="i"):
     return d
 
 
-def name_hit(text, name):
-    """本文にキャラ名が出るか。姓名の区切りの空白や中黒は無視して見る。"""
+def name_variants(name):
+    """DBのキャラ名から、投稿本文で使われそうな表記を作る。
+
+    DBの名前は「天草 四郎 時貞 (アマクサ シロウ トキサダ)」のように
+    読み仮名が括弧で付いていることがある。そのままでは本文と一致しないので、
+    括弧の中と外を別々の表記として扱う。
+    """
+    name = (name or "").strip()
+    kana = re.findall(r"[（(]([^）)]+)[）)]", name)
+    base = re.sub(r"[（(][^）)]*[）)]", "", name).strip()
+    out = []
+    for v in [base] + kana:
+        v = re.sub(r"[\s・･]", "", v)
+        if len(v) >= 2:
+            out.append(v)
+    return out
+
+
+# 「名前（CV.○○」「名前 年齢：」のように、紹介文で名前の直後に来る目印
+NEAR_INTRO = r"(?:[\s　]*[（(【\[]?\s*(?:CV|ＣＶ|V\.A\.|Cast|年齢|声))"
+
+
+def name_hit(text, name, title=""):
+    """本文にキャラ名が出るか。full / part / 空 を返す。
+
+    作品名にキャラ名が含まれる場合（『オランピアソワレ』の「オランピア」など）は
+    どの投稿にも名前が出てしまう。この場合だけは、名前の直後に CV や年齢といった
+    紹介文の目印があるときしか採らない。そうしないと全投稿が主人公の紹介になる。
+    """
     flat = re.sub(r"[\s・･]", "", text)
-    n = re.sub(r"[\s・･]", "", name or "")
-    if n and n in flat:
-        return "full"
-    # 「ダンテ・ファルツォーネ」を「ダンテ」だけで呼ぶ投稿は多い
-    parts = [p for p in re.split(r"[\s・･]", name or "") if len(p) >= 2]
-    if parts and any(p in flat for p in parts):
-        return "part"
-    return ""
+    flat_title = re.sub(r"[\s・･]", "", title or "")
+    best = ""
+    for v in name_variants(name):
+        if v not in flat:
+            continue
+        if v in flat_title:
+            # 作品名の一部。紹介の目印が続くときだけ認める
+            if re.search(re.escape(v) + NEAR_INTRO, flat, re.I):
+                return "full"
+            continue
+        return "full" if v == name_variants(name)[0] else "part"
+    # 「ダンテ・ファルツォーネ」を「ダンテ」とだけ呼ぶ投稿は多い
+    for v in name_variants(name):
+        for part in re.split(r"[\s・･]", re.sub(r"[（(][^）)]*[）)]", "", name or "")):
+            part = part.strip()
+            if len(part) >= 2 and part not in flat_title and part in flat:
+                best = "part"
+    return best
 
 
 def cmd_peek(args):
@@ -176,7 +228,7 @@ def cmd_peek(args):
 
 # 紹介ポストらしさの手がかり。あればスコアを上げる
 INTRO_HINT = re.compile(r"キャラクター紹介|攻略キャラ|キャラ紹介|CHARACTER|"
-                        r"CV[\.．:：]|V\.A\.|年齢[：:]|誕生日[：:]|身長[：:]")
+                        r"CV[\.．:：]|V\.A\.|年齢[：:]|誕生日[：:]|身長[：:]", re.I)
 # 紹介ではないと分かる語。あれば落とす（物販・イベント・抽選の告知が大半）
 NOISE = re.compile(r"入荷|通販|買取|予約受付|発売日：|価格：|抽選|フェア|"
                    r"キャンペーン|チケット|イベント出展|ラジオ|第\d+回")
@@ -198,8 +250,9 @@ def cmd_harvest(args):
         "select cid, name from character where main_vid = ?", (args.vid,))]
     if not chars:
         sys.exit("この作品のキャラが見つかりません: %s" % args.vid)
-    official = {r["vid"]: r["account"].lstrip("@") for r in read_tsv(ACCOUNTS) if r.get("account")}
-    want = official.get(args.vid)
+    wtitle = (con.execute("select title from work where vid=?",
+                                  (args.vid,)).fetchone() or [""])[0]
+    want = load_accounts().get(args.vid)
 
     rows, skipped = [], []
     for url in args.urls:
@@ -212,15 +265,16 @@ def cmd_harvest(args):
             skipped.append((url, "削除済み・非公開"))
             continue
         handle, text = d["_handle"], d["_text"]
-        if want and handle.lower() != want.lower():
-            skipped.append((url, "@%s は公式(@%s)ではない" % (handle, want)))
+        if want and handle.lower() not in want:
+            skipped.append((url, "@%s は公式(%s)ではない"
+                            % (handle, "/".join("@" + w for w in sorted(want)))))
             continue
         if NOISE.search(text) and not INTRO_HINT.search(text):
             skipped.append((url, "紹介ではない告知"))
             continue
-        hits = [c for c in chars if name_hit(text, c["name"]) == "full"]
+        hits = [c for c in chars if name_hit(text, c["name"], wtitle) == "full"]
         if not hits:
-            hits = [c for c in chars if name_hit(text, c["name"]) == "part"]
+            hits = [c for c in chars if name_hit(text, c["name"], wtitle) == "part"]
         if not hits:
             skipped.append((url, "本文にこの作品のキャラ名なし"))
             continue
@@ -257,7 +311,8 @@ def cmd_verify(args):
     con.row_factory = sqlite3.Row
     for r in con.execute("select cid, name, main_vid, main_title from character"):
         chars[r["cid"]] = dict(r)
-    official = {r["vid"]: r["account"].lstrip("@") for r in read_tsv(ACCOUNTS) if r.get("account")}
+    official = load_accounts()
+    titles = {r[0]: r[1] for r in con.execute("select vid, title from work")}
 
     today = datetime.date.today().isoformat()
     ok, review, dead, bad = [], [], [], []
@@ -282,10 +337,10 @@ def cmd_verify(args):
         handle = d["_handle"]
         text = d["_text"]
         want = official.get(row.get("vid") or ch["main_vid"] or "")
-        hit = name_hit(text, ch["name"])
+        hit = name_hit(text, ch["name"], titles.get(ch["main_vid"], ""))
         reasons = []
-        if want and handle.lower() != want.lower():
-            reasons.append("@%s は公式(@%s)ではない" % (handle, want))
+        if want and handle.lower() not in want:
+            reasons.append("@%s は公式(%s)ではない" % (handle, "/".join("@" + w for w in sorted(want))))
         if not want:
             reasons.append("公式アカウント未登録")
         if not hit:
