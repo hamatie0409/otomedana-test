@@ -425,6 +425,14 @@ EMBED_CSS = """
         display:flex;align-items:center;justify-content:center}
 .x-slot button{font:inherit;padding:10px 18px;border-radius:999px;cursor:pointer;
         border:1px solid #d8d2ca;background:transparent}
+/* 個別ページ：パッケージ写真の代わりに埋め込みを置く。
+   既定の300px（内側244px）だとXの最小幅220pxすれすれで窮屈なので広げる */
+.hero-x{grid-template-columns:380px minmax(0,1fr)}
+.hero-x .hero-img{padding:22px}
+.hero-x .hero-img .twitter-tweet{margin:0!important;width:100%!important}
+.hero-x .hero-img .x-slot{min-height:260px;flex:1 1 auto}
+.hero-cap{font-size:12px;margin-top:10px}
+@media (max-width:900px){.hero-x{grid-template-columns:1fr}}
 /* 作品ページ：全キャラを1投稿ずつ並べる */
 .xgrid{display:grid;gap:22px;margin-top:16px;
        grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
@@ -497,8 +505,8 @@ def cmd_preview(args):
         return _preview_work(con, best, css, args)
 
     for cid in args.cids:
-        ch = con.execute("select cid, name, slug from character where cid=?",
-                         (cid,)).fetchone()
+        ch = con.execute("""select cid, name, slug, main_title, main_url
+                            from character where cid=?""", (cid,)).fetchone()
         if not ch:
             print("×  そんなキャラはいない: %s" % cid)
             continue
@@ -511,23 +519,49 @@ def cmd_preview(args):
             print("・ ポストなし: %s" % ch["name"])
             continue
         cards = _cards([r], args.lazy)
-        block = ('<section class="pad sec xsec">\n'
-                 '<div class="sec-head"><h2>公式アカウントの紹介</h2>'
-                 '<span class="text-muted" style="font-size:12px">%s の投稿（%s）</span></div>\n'
-                 '<div class="x-embeds">%s</div>\n'
-                 '<p class="text-muted x-note">X の公式埋め込みで表示しています。'
-                 '投稿が削除されると表示も消えます。</p>\n</section>\n'
-                 % (e(r["account"]), e(r["kind"]), "".join(cards)))
         with open(src, encoding="utf-8") as f:
             html = f.read()
-        # ヒーローの直後、属性の前。キャラ画像を出せないページなので、
-        # 公式のイラストが載る枠を上に持ってくる意味がある
-        anchor = '<section class="pad sec">'
-        html = html.replace(anchor, block + anchor, 1) if anchor in html else html + block
+
+        if args.place == "hero":
+            html = _put_in_hero(html, ch, r, cards)
+        else:
+            block = ('<section class="pad sec xsec">\n'
+                     '<div class="sec-head"><h2>公式アカウントの紹介</h2>'
+                     '<span class="text-muted" style="font-size:12px">%s の投稿（%s）'
+                     '</span></div>\n<div class="x-embeds">%s</div>\n'
+                     '<p class="text-muted x-note">X の公式埋め込みで表示しています。'
+                     '投稿が削除されると表示も消えます。</p>\n</section>\n'
+                     % (e(r["account"]), e(r["kind"]), "".join(cards)))
+            anchor = '<section class="pad sec">'
+            html = html.replace(anchor, block + anchor, 1) if anchor in html else html + block
+
         out = os.path.join(args.out, "%s.html" % ch["slug"])
         with open(out, "w", encoding="utf-8") as f:
             f.write(_wrap(html, css, args.lazy))
         print("○  %s（%s）  %s" % (ch["name"], r["kind"], out))
+
+
+def _put_in_hero(html, ch, r, cards):
+    """パッケージ写真の枠を埋め込みに差し替える。
+
+    このページはVNDBのライセンス上キャラクター画像を出せず、代わりに代表作の
+    パッケージを置いていた。公式ポストが手に入るならそちらのほうが「その人の
+    ページ」らしくなるので、枠ごと入れ替える。見出しは付けない。
+
+    代表作へのリンクは元の説明文に入っていたので、短くして残す。ここが
+    キャラ→作品の動線になっている。ポストが無いキャラはパッケージのまま。
+    """
+    head = '<div class="hero-img">'
+    i = html.find(head)
+    if i < 0:
+        return html
+    j = html.find("</div>", i)
+    if j < 0:
+        return html
+    cap = ('<p class="text-muted hero-cap">%s ／ <a href="%s">%s</a></p>'
+           % (e(r["account"]), e(ch["main_url"] or "/"), e(ch["main_title"] or "")))
+    html = html[:i] + head + "".join(cards) + cap + html[j:]
+    return html.replace('<div class="hero hero-2">', '<div class="hero hero-2 hero-x">', 1)
 
 
 def _preview_work(con, best, css, args):
@@ -728,6 +762,8 @@ def main():
     pv.add_argument("cids", nargs="*")
     pv.add_argument("--out", default="preview_x")
     pv.add_argument("--work", help="作品ID。全キャラを1投稿ずつ並べた作品ページを作る")
+    pv.add_argument("--place", choices=["hero", "section"], default="hero",
+                    help="hero=パッケージ写真の枠に置く / section=独立した節にする")
     pv.add_argument("--lazy", action="store_true",
                     help="押すまで読み込まない形にする")
     pv.set_defaults(fn=cmd_preview)
