@@ -169,9 +169,20 @@ def name_variants(name):
     out = []
     for v in [base] + kana:
         v = re.sub(r"[\s・･]", "", v)
-        if len(v) >= 2:
+        if len(v) >= 1:
             out.append(v)
     return out
+
+
+# 1文字の名前（「楊」「袁」など）は、前後が漢字でないときだけ名前とみなす。
+# そうしないと「楊枝」のような別の語に当たる
+KANJI = r"\u4e00-\u9fff\u3005"
+
+
+def occurs(flat, v):
+    if len(v) >= 2:
+        return v in flat
+    return re.search(r"(?<![%s])%s(?![%s])" % (KANJI, re.escape(v), KANJI), flat) is not None
 
 
 # 「名前（CV.○○」「名前 年齢：」のように、紹介文で名前の直後に来る目印
@@ -208,7 +219,7 @@ def name_hit(text, name, title="", latin=""):
     flat_title = re.sub(r"[\s・･]", "", title or "")
     best = ""
     for v in name_variants(name):
-        if v not in flat:
+        if not occurs(flat, v):
             continue
         if v in flat_title:
             # 作品名の一部。紹介の目印が続くときだけ認める
@@ -220,7 +231,7 @@ def name_hit(text, name, title="", latin=""):
     for v in name_variants(name):
         for part in re.split(r"[\s・･]", re.sub(r"[（(][^）)]*[）)]", "", name or "")):
             part = part.strip()
-            if len(part) >= 2 and part not in flat_title and part in flat:
+            if part and part not in flat_title and occurs(flat, part):
                 best = "part"
     return best or latin_hit(text, latin, title)
 
