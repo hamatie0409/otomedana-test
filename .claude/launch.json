@@ -2,11 +2,17 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "x-embed-preview",
+      "name": "otome-site",
       "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "8899", "-d",
-        "/private/tmp/claude-501/-Users-hamadast-CLAUDE-otomedana-test--claude-worktrees-x-embed-code-collection-b4d235/9a73005e-6ad7-4f59-9a20-342145e43cf5/scratchpad/preview"],
-      "port": 8899
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8765",
+        "--directory",
+        "/tmp/otome-serve"
+      ],
+      "port": 8765,
+      "url": "http://localhost:8765"
     }
   ]
 }
