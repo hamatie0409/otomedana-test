@@ -18,7 +18,7 @@ JSなしで読めること:
   MY棚だけはブラウザ内（localStorage）のデータなので、JSなしでは空になる。
 """
 import os, re, sys, json, html, shutil, sqlite3, datetime
-from collections import defaultdict
+from collections import OrderedDict, defaultdict
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from common import DATA, ROOT
@@ -421,6 +421,30 @@ CHIP_CATS = ["役柄", "性格", "境遇"]
 CHIP_CATS_EXTRA = ["外見", "行動", "持ち物"]
 
 
+# 最新の移植版のページ。/switch/ や -switch、ns/ など書き方に幅がある
+SWITCH_URL = re.compile(r"(?:^|[/\-_.])(?:switch|ns)(?:[/\-_.]|$)", re.I)
+# 作品そのものではないページ。代表には選びたくない
+GENERIC_URL = re.compile(r"special-pack|/smp/|web\.archive\.org|/shop|/store", re.I)
+
+
+def link_score(url, has_switch):
+    """同じホストの中で、どのURLを代表にするかの点数。
+
+    Switch版がある作品は Switch のページを最優先する。そこが一番新しく、
+    生きている可能性も高い。次に https、最後に「作品そのもののページか」。
+    """
+    u = url or ""
+    n = 0
+    if has_switch and SWITCH_URL.search(u):
+        n += 100
+    if u.startswith("https://"):
+        n += 10
+    if GENERIC_URL.search(u):
+        n -= 50
+    # 同点なら短いほう（トップページ）を採る
+    return n - len(u) / 1000.0
+
+
 def game_page(w, chars, ctraits, tags, staff, links, series, eds, offers, meta, ch_url):
     url = w["url"]
     title = w["title"]
@@ -593,13 +617,23 @@ MY棚に作品を登録すると、あなたがよく選んでいる属性とこ
            else "<strong>%s</strong>（この作品）" % e(s["member_title"]))
         for s in series)
     # リリースごとに同じ公式サイトが入っているので、ホスト名で1本にまとめる。
-    # 「公式サイト」が35行並んでも区別が付かないため、表示もホスト名にする
-    seen_host, link_rows = set(), []
+    # 「公式サイト」が35行並んでも区別が付かないため、表示もホスト名にする。
+    #
+    # どれを代表にするかは順番任せにしない。移植のたびに新しいページが立ち、
+    # 古いページは情報が古いまま残る（Collar×Malice なら 2016年の
+    # http://…/collar_malice/ ではなく https://…/collar_malice/switch/ を出したい）。
+    has_switch = any("switch" in ((ed["platform"] or "") + (ed["platform_ja"] or "")).lower()
+                     for ed in eds)
+    by_host = OrderedDict()
     for l in links:
-        host = re.sub(r"^www\.", "", (l["url"] or "").split("/")[2]) if "//" in (l["url"] or "") else l["url"]
-        if not host or host in seen_host:
+        u = l["url"] or ""
+        host = re.sub(r"^www\.", "", u.split("/")[2]) if "//" in u else u
+        if not host:
             continue
-        seen_host.add(host)
+        by_host.setdefault(host, []).append(l)
+    link_rows = []
+    for host, group in by_host.items():
+        l = max(group, key=lambda x: link_score(x["url"], has_switch))
         link_rows.append((l["label"], host, l["url"]))
     link_html = "".join(
         '<div class="lrow"><a href="%s" rel="noopener nofollow" target="_blank">%s</a></div>'

@@ -89,6 +89,19 @@ def sheet_templates(wb):
         ws.cell(r + 1, 2, why).font = SMALL
         ws.cell(r + 1, 2).alignment = Alignment(wrap_text=True, vertical="top")
         r += 3
+    ws.cell(r, 1, "公式アカウントが見つからないとき").font = BOLD
+    for i, t in enumerate([
+            "Xのユーザー検索（検索して「ユーザー」タブ）で作品名を入れる。"
+            "「作品」シートの「アカウントを探す」リンクがその状態で開く",
+            "古いオトメイト作品は、シリーズをまとめた「〇〇 総合」という名前の"
+            "アカウントで運用されていることがある",
+            "  例: 【公式】AMNESIA 総合 @AmnOtomate ／ 緋色の欠片 総合【公式】 @hiiro_otomate",
+            "この場合1つのアカウントがシリーズ全作品ぶんを兼ねる。"
+            "x_accounts.tsv には作品ごとに1行ずつ、同じアカウント名で書く",
+            "作品専用が無ければ、ブランドやレーベルの公式でよい"
+            "（百花百狼 → @D3P_otome、OZMAFIA!! → @ponipachet）"]):
+        ws.cell(r + 1 + i, 2, t).font = SMALL
+    r += len([1, 2, 3, 4, 5]) + 2
     ws.cell(r, 1, "拾わないもの").font = BOLD
     for i, t in enumerate([
             "ショップ（K-BOOKSなど）やファンの投稿。公式アカウント以外は取り込み時に弾かれる",
@@ -140,6 +153,16 @@ def sheet_works(wb, con, accounts, got):
                 q = tpl % acct
                 link(ws, ws.cell(r, col),
                      "https://x.com/search?q=%s&f=live" % urllib.parse.quote(q), "検索")
+        else:
+            # アカウントが未特定の作品は、Xのユーザー検索に飛ばす。
+            # 古いオトメイト作品は「〇〇 総合」という名前のシリーズ共通
+            # アカウントで運用されていることがあり、作品名だけでは出ない
+            link(ws, ws.cell(r, 6),
+                 "https://x.com/search?q=%s&f=user" % urllib.parse.quote(w["title"]),
+                 "アカウントを探す")
+            link(ws, ws.cell(r, 7),
+                 "https://x.com/search?q=%s&f=user"
+                 % urllib.parse.quote("%s 総合" % w["title"]), "「総合」で探す")
         if sites.get(w["vid"]):
             link(ws, ws.cell(r, 8), sites[w["vid"]], "公式サイト")
         ws.cell(r, 9, left).font = SMALL
@@ -260,7 +283,9 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--out", default=OUT)
-    ap.add_argument("--since", type=int, default=2012)
+    ap.add_argument("--since", type=int, default=0,
+                    help="この年以降の作品だけにする。既定は全部。"
+                         "発売年で切ると一番人気のAMNESIA(2011)や薄桜鬼(2008)が落ちる")
     ap.add_argument("--read", help="記入済みのブックからURLを抜き出して標準出力に流す")
     args = ap.parse_args()
     if args.read:

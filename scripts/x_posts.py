@@ -787,6 +787,29 @@ def cmd_sheet(args):
                                    "https://x.com/search?q=%s&f=live" % urllib.parse.quote(q)))
 
 
+# 最新の移植版のページ。/switch/ や -switch、ns/ など書き方に幅がある
+SWITCH_URL = re.compile(r"(?:^|[/\-_.])(?:switch|ns)(?:[/\-_.]|$)", re.I)
+GENERIC_URL = re.compile(r"special-pack|/smp/|web\.archive\.org|/shop|/store", re.I)
+
+
+def site_score(url):
+    """どの公式サイトから先に見るか。新しいページを先に見る。
+
+    古い作品ほど、元のサイトにはXへのリンクが無い。AMNESIA（2011年）の
+    公式アカウント @AmnOtomate は2021年開設で、リンクを張っているのは
+    Switch版のページ（otomate.jp/amnesia/switch/）のほうだった。
+    """
+    u = url or ""
+    n = 0
+    if SWITCH_URL.search(u):
+        n += 100
+    if u.startswith("https://"):
+        n += 10
+    if GENERIC_URL.search(u):
+        n -= 50
+    return n
+
+
 SITE_CACHE = os.path.join(DATA, "cache", "site_html")
 
 # X の予約パス。アカウント名ではない
@@ -833,9 +856,11 @@ def cmd_accounts(args):
     con.row_factory = sqlite3.Row
     known = load_accounts()
     rows = con.execute("""
-        select w.vid, w.title, w.year, w.votecount, l.url
+        select w.vid, w.title, w.year, w.votecount,
+               group_concat(l.url, char(10)) urls
         from work w join work_link l on l.vid = w.vid
-        where l.site = 'website' and w.year >= ?
+        where l.site = 'website'
+          and (w.year >= ? or w.year is null)
           and exists (select 1 from character c where c.main_vid = w.vid)
         group by w.vid order by w.votecount desc""", (args.since,)).fetchall()
 
@@ -844,31 +869,41 @@ def cmd_accounts(args):
         if w["vid"] in known and not args.all:
             stats["既知"] += 1
             continue
-        html = fetch_html(w["url"], w["vid"])
-        if html.startswith("<!-- fetch-failed"):
+        # 1作品に公式サイトが複数ぶら下がっていることが多い（本編・移植版・
+        # 続編・海外版）。古いページにはXへのリンクが無いので、見つかるまで順に試す
+        urls = sorted([u for u in (w["urls"] or "").split("\n") if u.startswith("http")],
+                      key=site_score, reverse=True)
+        hits, tried, failed = [], 0, 0
+        for k, url in enumerate(urls[:args.tries]):
+            html = fetch_html(url, "%s-%d" % (w["vid"], k))
+            tried += 1
+            if html.startswith("<!-- fetch-failed"):
+                failed += 1
+                continue
+            for m in HANDLE_IN_URL.finditer(html):
+                h = m.group(1)
+                if h.lower() not in RESERVED and h not in hits:
+                    hits.append(h)
+            if args.delay:
+                time.sleep(args.delay)
+            if hits:
+                break
+        if hits:
+            stats["候補あり"] += 1
+            out.append({"vid": w["vid"], "title": w["title"],
+                        "account": " ".join("@" + h for h in hits[:5]),
+                        "source_url": urls[0] if urls else "",
+                        "note": "候補%d件。正しいものだけ残して x_accounts.tsv へ" % len(hits)})
+        elif failed == tried:
             stats["取得失敗"] += 1
             out.append({"vid": w["vid"], "title": w["title"], "account": "",
-                        "source_url": w["url"], "note": "サイトが取得できない: "
-                        + html[19:110]})
-            continue
-        hits = []
-        for m in HANDLE_IN_URL.finditer(html):
-            h = m.group(1)
-            if h.lower() in RESERVED or h in hits:
-                continue
-            hits.append(h)
-        if not hits:
+                        "source_url": urls[0] if urls else "",
+                        "note": "サイトが取得できない（%d件試した）" % tried})
+        else:
             stats["見つからず"] += 1
             out.append({"vid": w["vid"], "title": w["title"], "account": "",
-                        "source_url": w["url"], "note": "サイトにXへのリンクなし"})
-            continue
-        stats["候補あり"] += 1
-        out.append({"vid": w["vid"], "title": w["title"],
-                    "account": " ".join("@" + h for h in hits[:5]),
-                    "source_url": w["url"],
-                    "note": "候補%d件。正しいものだけ残して x_accounts.tsv へ" % len(hits)})
-        if args.delay:
-            time.sleep(args.delay)
+                        "source_url": urls[0] if urls else "",
+                        "note": "サイトにXへのリンクなし（%d件試した）" % tried})
         if n % 25 == 0:
             print("  ... %d/%d" % (n, min(len(rows), args.limit)), flush=True)
 
@@ -1010,7 +1045,7 @@ def cmd_queue(args):
         select w.vid, w.title, w.year, w.brand, w.votecount,
                group_concat(c.cid) cids
         from work w join character c on c.main_vid = w.vid
-        where w.year >= ?
+        where w.year >= ? or w.year is null
         group by w.vid
         order by w.votecount desc, w.year desc""", (args.since,)).fetchall()
     print("%-7s %-4s %-5s %-5s %s" % ("vid", "年", "残", "全", "作品 / 公式アカウント"))
@@ -1053,15 +1088,17 @@ def main():
     ik.add_argument("--max-chars", type=int, default=3, dest="max_chars")
     ik.set_defaults(fn=cmd_intake)
     sh = sub.add_parser("sheet")
-    sh.add_argument("--since", type=int, default=2012)
+    sh.add_argument("--since", type=int, default=0)
     sh.add_argument("--limit", type=int, default=10)
     sh.add_argument("--word", default="誕生")
     sh.set_defaults(fn=cmd_sheet)
     ac = sub.add_parser("accounts")
-    ac.add_argument("--since", type=int, default=2012)
+    ac.add_argument("--since", type=int, default=0)
     ac.add_argument("--limit", type=int, default=500)
     ac.add_argument("--delay", type=float, default=1.0)
     ac.add_argument("--all", action="store_true", help="登録済みの作品も見直す")
+    ac.add_argument("--tries", type=int, default=3,
+                    help="1作品につき試す公式サイトURLの数")
     ac.add_argument("--promote", action="store_true",
                     help="候補が1つだけの作品を x_accounts.tsv に上げる")
     ac.set_defaults(fn=cmd_accounts)
@@ -1075,7 +1112,7 @@ def main():
                     help="押すまで読み込まない形にする")
     pv.set_defaults(fn=cmd_preview)
     q = sub.add_parser("queue")
-    q.add_argument("--since", type=int, default=2012)
+    q.add_argument("--since", type=int, default=0)
     q.add_argument("--limit", type=int, default=40)
     q.set_defaults(fn=cmd_queue)
     args = ap.parse_args()
