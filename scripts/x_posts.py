@@ -71,6 +71,9 @@ POSTS = os.path.join(CORR, "x_posts.tsv")
 
 OEMBED = "https://publish.x.com/oembed"
 STATUS = re.compile(r"^https?://(?:www\.)?(?:x|twitter)\.com/([A-Za-z0-9_]{1,15})/status/(\d+)")
+# 文中から拾う用。intake は書式を問わないテキストを読むので行頭に限定できない
+SCAN = re.compile(r"https?://(?:www\.)?(?:x|twitter|mobile\.x)\.com/"
+                  r"([A-Za-z0-9_]{1,15})/status/(\d+)")
 TAG = re.compile(r"<[^>]+>")
 DELAY = 1.2
 
@@ -180,8 +183,15 @@ KANJI = r"\u4e00-\u9fff\u3005"
 
 
 def occurs(flat, v):
+    """本文に出てくるか。
+
+    1文字の名前は漢字のときだけ認める。「ティレル・I・リスター」を分解した
+    「I」のような1文字のラテン字は、短縮URL（t.co/ITE6…）にも当たってしまう。
+    """
     if len(v) >= 2:
         return v in flat
+    if not re.match(r"^[%s]$" % KANJI, v):
+        return False
     return re.search(r"(?<![%s])%s(?![%s])" % (KANJI, re.escape(v), KANJI), flat) is not None
 
 
@@ -621,6 +631,162 @@ def _preview_work(con, best, css, args):
 
 
 
+def cmd_intake(args):
+    """URLを並べただけのテキストを読み込む。cid も vid も書かなくてよい。
+
+    集める人にやってほしいのは「投稿を開いてURLをコピーする」だけにしたい。
+    どの作品のどのキャラかは、投稿者と本文からこちらで判定できる。
+
+      1. 見つけたURLをテキストファイルに1行ずつ貼る（何が混ざっていてもよい）
+      2. python3 scripts/x_posts.py intake urls.txt
+      3. python3 scripts/x_posts.py verify
+
+    作品の決め方は2段階。まず x_accounts.tsv で投稿者から作品を引く。
+    未登録のアカウントなら、本文に名前が出てくるキャラを全作品から探して、
+    一番多く当たった作品にする。推測した場合はその旨を出す。
+    """
+    text = ""
+    for path in args.files:
+        with open(path, encoding="utf-8") as f:
+            text += f.read() + "\n"
+    ids, order = {}, []
+    for m in SCAN.finditer(text):
+        sid = m.group(2)
+        if sid not in ids:
+            ids[sid] = m.group(1)
+            order.append(sid)
+    if not ids:
+        sys.exit("投稿URLが1件も見つかりません")
+
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    chars = [dict(r) for r in con.execute(
+        "select cid, name, name_latin, main_vid from character")]
+    titles = {r[0]: r[1] for r in con.execute("select vid, title from work")}
+    by_vid = {}
+    for c in chars:
+        by_vid.setdefault(c["main_vid"], []).append(c)
+    # アカウント → 作品。1アカウントが続編と共用のこともあるので候補は複数持つ
+    acct_vids = {}
+    for vid, handles in load_accounts().items():
+        for h in handles:
+            acct_vids.setdefault(h, []).append(vid)
+
+    rows, unknown, dead = [], [], []
+    for sid in order:
+        d = oembed(sid, ids[sid])
+        if d is None:
+            dead.append(sid)
+            continue
+        handle, txt = d["_handle"], d["_text"]
+        cands = acct_vids.get(handle.lower())
+        if not cands:
+            # 投稿者から作品を引けない場合は推測しない。本文に出てくる名前から
+            # 当てにいくと、短い名前が別作品のキャラに当たって黙って間違える。
+            # アカウントを1行足してもらってから読み直すほうが確実で早い。
+            unknown.append((sid, handle, "@%s が x_accounts.tsv に未登録" % handle))
+            continue
+        guessed = False
+
+        # 候補作品のうち、名前が一番よく当たるものを採る
+        best_vid, best_hits, best_match = None, [], "part"
+        for vid in cands:
+            pool = by_vid.get(vid, [])
+            t = titles.get(vid, "")
+            full = [c for c in pool if name_hit(txt, c["name"], t, c["name_latin"]) == "full"]
+            part = [c for c in pool if name_hit(txt, c["name"], t, c["name_latin"]) == "part"]
+            hits, match = (full, "full") if full else (part,
+                          "unique" if len(part) == 1 else "part")
+            if len(hits) > len(best_hits) or best_vid is None and hits:
+                best_vid, best_hits, best_match = vid, hits, match
+        if not best_hits:
+            unknown.append((sid, handle, "本文にキャラ名が出てこない"))
+            continue
+        if len(best_hits) > args.max_chars:
+            unknown.append((sid, handle, "%d人が並ぶ一覧的な投稿" % len(best_hits)))
+            continue
+        for c in best_hits:
+            rows.append({"cid": c["cid"], "vid": best_vid, "character": c["name"],
+                         "status_url": "https://x.com/%s/status/%s" % (handle, sid),
+                         "match": best_match,
+                         "note": ("紹介らしい" if INTRO_HINT.search(txt) else "要確認")
+                                 + " ｜ " + txt.strip().replace("\n", " ")[:60]})
+
+    head = ["cid", "vid", "character", "status_url", "match", "note"]
+    keep = {(r["cid"], r["status_url"]): r for r in read_tsv(QUEUE)}
+    for r in rows:
+        keep[(r["cid"], r["status_url"])] = r
+    write_tsv(QUEUE, head, sorted(keep.values(), key=lambda r: (r["vid"], r["cid"])),
+              preamble="# 検索で拾った候補。ここは間違いが混ざっていてよい。\n"
+                       "# x_posts.py verify が oEmbed で実在・投稿者・本文を確かめ、\n"
+                       "# 通ったものだけ x_posts.tsv に、怪しいものは _review_x.tsv に振り分ける。\n")
+
+    got = {}
+    for r in rows:
+        got.setdefault(titles.get(r["vid"], r["vid"]), set()).add(r["character"])
+    print("URL %d件 → %d件を割り当て" % (len(ids), len(rows)))
+    for t in sorted(got):
+        print("  %s: %s" % (t, "、".join(sorted(got[t]))))
+    need = sorted({h for _, h, w in unknown if "未登録" in w})
+    for sid, handle, why in unknown:
+        print("  ? https://x.com/%s/status/%s  (%s)" % (handle, sid, why))
+    if need:
+        print("\n未登録のアカウント。corrections/x_accounts.tsv に作品IDを添えて足してください:")
+        for h in need:
+            print("  <作品ID>\t<作品名>\t@%s\thttps://x.com/%s\t%s\t公式アカウント"
+                  % (h, h, datetime.date.today().isoformat()))
+        print("  足したら intake をもう一度流せば拾えます。")
+    for sid in dead:
+        print("  × 削除済み・非公開: %s" % sid)
+    if rows:
+        print("\n次: python3 scripts/x_posts.py verify")
+
+
+def cmd_sheet(args):
+    """収集用の作業表を出す。作品ごとに、公式アカウントと検索URLを並べる。
+
+    上から順に検索URLを開いて、それらしい投稿のURLを控えていくだけでよい。
+    キャラの取りこぼしが分かるように、未収集の人だけを出す。
+    """
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    got = {r["cid"] for r in read_tsv(POSTS)}
+    accounts = load_accounts()
+    rows = con.execute("""
+        select w.vid, w.title, w.year, w.votecount
+        from work w join character c on c.main_vid = w.vid
+        where w.year >= ? group by w.vid
+        order by w.votecount desc, w.year desc""", (args.since,)).fetchall()
+
+    n = 0
+    for w in rows:
+        chars = con.execute("""select cid, name, cv from character
+                               where main_vid=? order by role_label desc, cid""",
+                            (w["vid"],)).fetchall()
+        left = [c for c in chars if c["cid"] not in got]
+        if not left:
+            continue
+        n += 1
+        if n > args.limit:
+            break
+        handles = sorted(accounts.get(w["vid"], []))
+        acct = handles[0] if handles else None
+        print("\n## %s（%s年）  %s  残り%d/%d人"
+              % (w["title"], w["year"], w["vid"], len(left), len(chars)))
+        if not acct:
+            print("   公式アカウント: **未特定** — 分かったら corrections/x_accounts.tsv に追記")
+            print("   探す: https://x.com/search?q=%s"
+                  % urllib.parse.quote("%s 公式" % w["title"]))
+            continue
+        print("   公式アカウント: @%s" % acct)
+        for c in left:
+            base = re.sub(r"[（(][^）)]*[）)]", "", c["name"]).strip()
+            key = max(re.split(r"[\s・･]", base) or [base], key=len)
+            q = "from:%s %s %s" % (acct, key, args.word)
+            print("   %-24s %s" % (c["name"],
+                                   "https://x.com/search?q=%s&f=live" % urllib.parse.quote(q)))
+
+
 def cmd_verify(args):
     chars = {}
     con = sqlite3.connect(DB)
@@ -758,6 +924,15 @@ def main():
     pl.add_argument("--word", default="誕生",
                     help="キャラ名に足す語。公式の定型に合わせる（誕生祭／紹介など）")
     pl.set_defaults(fn=cmd_plan)
+    ik = sub.add_parser("intake")
+    ik.add_argument("files", nargs="+", help="URLを貼ったテキスト。書式は問わない")
+    ik.add_argument("--max-chars", type=int, default=3, dest="max_chars")
+    ik.set_defaults(fn=cmd_intake)
+    sh = sub.add_parser("sheet")
+    sh.add_argument("--since", type=int, default=2012)
+    sh.add_argument("--limit", type=int, default=10)
+    sh.add_argument("--word", default="誕生")
+    sh.set_defaults(fn=cmd_sheet)
     pv = sub.add_parser("preview")
     pv.add_argument("cids", nargs="*")
     pv.add_argument("--out", default="preview_x")
