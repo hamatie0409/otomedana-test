@@ -645,6 +645,54 @@ def _preview_work(con, best, css, args):
 
 
 
+def read_sheet_rows(path):
+    """記入用ブック（xlsx / csv）を行ごとに読む。
+
+    人が「このキャラの行」にURLを書いている以上、その割り当てが正解。
+    本文から推測し直すと、キャラ名が出てこない投稿（主人公のアイコン配布や
+    OPムービーの告知など）を機械が勝手に捨ててしまう。cid 列を信じる。
+
+    戻り値: [(cid, url), ...]。ブックの形でなければ None。
+    """
+    rows = []
+    if path.lower().endswith(".xlsx"):
+        try:
+            from openpyxl import load_workbook
+        except ImportError:
+            return None
+        wb = load_workbook(path, read_only=True, data_only=True)
+        ws = wb["キャラ一覧"] if "キャラ一覧" in wb.sheetnames else wb[wb.sheetnames[0]]
+        it = ws.iter_rows(values_only=True)
+        head = [str(c or "") for c in next(it, [])]
+        body = ([str(c) if c is not None else "" for c in r] for r in it)
+    else:
+        import csv as _csv
+        with open(path, encoding="utf-8", errors="replace") as f:
+            data = list(_csv.reader(f))
+        if not data:
+            return None
+        head, body = data[0], data[1:]
+
+    try:
+        i_cid = head.index("cid")
+    except ValueError:
+        return None
+    i_url = 0
+    for n, h in enumerate(head):
+        if "ポストURL" in h:
+            i_url = n
+            break
+    for r in body:
+        if len(r) <= max(i_cid, i_url):
+            continue
+        cid, cell = (r[i_cid] or "").strip(), (r[i_url] or "").strip()
+        if not cid or not cell:
+            continue
+        for m in SCAN.finditer(cell):
+            rows.append((cid, "https://x.com/%s/status/%s" % (m.group(1), m.group(2))))
+    return rows
+
+
 def cmd_intake(args):
     """URLを並べただけのテキストを読み込む。cid も vid も書かなくてよい。
 
@@ -659,9 +707,19 @@ def cmd_intake(args):
     未登録のアカウントなら、本文に名前が出てくるキャラを全作品から探して、
     一番多く当たった作品にする。推測した場合はその旨を出す。
     """
-    text = ""
+    # 記入用ブックなら、人が付けた cid をそのまま使う
+    fixed = []
+    plain = []
     for path in args.files:
-        with open(path, encoding="utf-8") as f:
+        rows = read_sheet_rows(path)
+        if rows:
+            fixed += rows
+        else:
+            plain.append(path)
+
+    text = ""
+    for path in plain:
+        with open(path, encoding="utf-8", errors="replace") as f:
             text += f.read() + "\n"
     ids, order = {}, []
     for m in SCAN.finditer(text):
@@ -669,7 +727,7 @@ def cmd_intake(args):
         if sid not in ids:
             ids[sid] = m.group(1)
             order.append(sid)
-    if not ids:
+    if not ids and not fixed:
         sys.exit("投稿URLが1件も見つかりません")
 
     con = sqlite3.connect(DB)
@@ -735,9 +793,29 @@ def cmd_intake(args):
                          "note": ("紹介らしい" if INTRO_HINT.search(txt) else "要確認")
                                  + " ｜ " + txt.strip().replace("\n", " ")[:60]})
 
+    # 人が指定したぶん。実在だけ確かめて、そのまま採る
+    hand, hand_dead = [], []
+    chars_by_cid = {c["cid"]: c for c in chars}
+    for cid, url in fixed:
+        acct, sid = parse_status(url)
+        c = chars_by_cid.get(cid)
+        if not c:
+            unknown.append((sid or "?", acct or "?", "cid %s がDBに無い" % cid))
+            continue
+        d = oembed(sid, acct or "i")
+        if d is None:
+            hand_dead.append((cid, c["name"], url))
+            continue
+        txt = d["_text"]
+        hand.append({"cid": cid, "vid": c["main_vid"], "character": c["name"],
+                     "status_url": "https://x.com/%s/status/%s" % (d["_handle"], sid),
+                     "match": "手入力",
+                     "note": ("紹介らしい" if INTRO_HINT.search(txt) else "手で指定")
+                             + " ｜ " + txt.strip().replace("\n", " ")[:60]})
+
     head = ["cid", "vid", "character", "status_url", "match", "note"]
     keep = {(r["cid"], r["status_url"]): r for r in read_tsv(QUEUE)}
-    for r in rows:
+    for r in rows + hand:
         keep[(r["cid"], r["status_url"])] = r
     write_tsv(QUEUE, head, sorted(keep.values(), key=lambda r: (r["vid"], r["cid"])),
               preamble="# 検索で拾った候補。ここは間違いが混ざっていてよい。\n"
@@ -745,9 +823,10 @@ def cmd_intake(args):
                        "# 通ったものだけ x_posts.tsv に、怪しいものは _review_x.tsv に振り分ける。\n")
 
     got = {}
-    for r in rows:
+    for r in rows + hand:
         got.setdefault(titles.get(r["vid"], r["vid"]), set()).add(r["character"])
-    print("URL %d件 → %d件を割り当て" % (len(ids), len(rows)))
+    print("手入力 %d件 / 本文から判定 %d件 → 合計 %d件"
+          % (len(hand), len(rows), len(hand) + len(rows)))
     for t in sorted(got):
         print("  %s: %s" % (t, "、".join(sorted(got[t]))))
     need = sorted({h for _, h, w in unknown if "未登録" in w})
@@ -761,6 +840,8 @@ def cmd_intake(args):
         print("  足したら intake をもう一度流せば拾えます。")
     for sid in dead:
         print("  × 削除済み・非公開: %s" % sid)
+    for cid, nm, url in hand_dead:
+        print("  ×!! 手で指定されたが投稿が消えている: %s %s %s" % (cid, nm, url))
     if rows:
         print("\n次: python3 scripts/x_posts.py verify")
 
@@ -1083,6 +1164,15 @@ def cmd_verify(args):
                "account": "@" + handle, "status_url": "https://x.com/%s/status/%s" % (handle, sid),
                "kind": post_kind(text, ch["name"]), "checked_at": today,
                "note": (row.get("note") or "").strip() or text.strip().replace("\n", " ")[:80]}
+        # 人が「このキャラの行」に書いたものは落とさない。
+        # 本文にキャラ名が出ない投稿（主人公のアイコン配布やOP公開の告知など）は
+        # 機械には判定できないが、人はそれを分かって選んでいる。
+        # 気づいた点は note に添えるだけにして、採否は人の判断に従う。
+        if row.get("match") == "手入力":
+            if reasons:
+                rec["note"] = "手入力（%s） ｜ %s" % (" / ".join(reasons), rec["note"])
+            ok.append(rec)
+            continue
         (ok if not reasons else review).append(
             rec if not reasons else dict(rec, note="要確認: " + " / ".join(reasons) + " ｜ " + rec["note"]))
 
