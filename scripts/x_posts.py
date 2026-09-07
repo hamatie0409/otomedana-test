@@ -827,6 +827,8 @@ def cmd_accounts(args):
     アカウントが見つかることも多い（ブランド公式・レーベル公式・別作品）ので、
     そのまま x_accounts.tsv には入れない。人が見て正しい1つを選ぶ。
     """
+    if args.promote:
+        return _promote_accounts()
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
     known = load_accounts()
@@ -877,6 +879,36 @@ def cmd_accounts(args):
                        "# 正しいものを選んで corrections/x_accounts.tsv に移すこと。\n")
     print("%s に %d件" % (path, len(out)))
     print("  " + " / ".join("%s%d" % (k, v) for k, v in stats.items()))
+
+
+def _promote_accounts():
+    """候補が1つだけの作品を x_accounts.tsv に上げる。
+
+    複数候補（ブランド公式とレーベル公式が並んでいる等）は上げない。
+    どれが作品の公式かは人が見ないと決められない。
+
+    上げたものには「未確認」と書いておく。公式サイトからのリンクなので
+    まず間違いないが、イラストレーターの個人アカウントが混ざる可能性はある。
+    """
+    cand = read_tsv(os.path.join(CORR, "_queue_x_accounts.tsv"))
+    known = load_accounts()
+    today = datetime.date.today().isoformat()
+    add, multi = [], []
+    for r in cand:
+        handles = [h for h in (r.get("account") or "").split() if h]
+        if not handles or r["vid"] in known:
+            continue
+        (add if len(handles) == 1 else multi).append(r)
+
+    with open(ACCOUNTS, "a", encoding="utf-8") as f:
+        for r in add:
+            f.write("%s\t%s\t%s\t%s\t%s\t%s\n"
+                    % (r["vid"], r["title"], r["account"], r["source_url"], today,
+                       "公式サイトからの自動抽出。未確認"))
+    print("x_accounts.tsv に %d件を追加した（候補が1つだけのもの）" % len(add))
+    print("候補が複数で保留 %d件。作業ブックの「作品」シートで選ぶ:" % len(multi))
+    for r in multi[:15]:
+        print("  %-30s %s" % (r["title"][:28], r["account"]))
 
 
 def cmd_verify(args):
@@ -1030,6 +1062,8 @@ def main():
     ac.add_argument("--limit", type=int, default=500)
     ac.add_argument("--delay", type=float, default=1.0)
     ac.add_argument("--all", action="store_true", help="登録済みの作品も見直す")
+    ac.add_argument("--promote", action="store_true",
+                    help="候補が1つだけの作品を x_accounts.tsv に上げる")
     ac.set_defaults(fn=cmd_accounts)
     pv = sub.add_parser("preview")
     pv.add_argument("cids", nargs="*")

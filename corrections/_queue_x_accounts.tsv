@@ -2,5 +2,351 @@
 # 1サイトに複数のアカウントが載っていることが多いので、
 # 正しいものを選んで corrections/x_accounts.tsv に移すこと。
 vid	title	account	source_url	note
+v18160	Collar x Malice	@CM_otomate	http://www.otomate.jp/collar_malice/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v14908	Code:Realize ～創世の姫君～	@CR_otomate	http://www.otomate.jp/code-realize/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v25197	BUSTAFELLOWS	@BUSTAFELLOWS @NEW_SIEG	https://joqrextend.co.jp/extend/bustafellows/	候補2件。正しいものだけ残して x_accounts.tsv へ
 v17287	百花百狼 戦国忍法帖	@D3P_otome	http://www.d3p.co.jp/hyakka/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v21782	ピオフィオーレの晩鐘	@pf_otomate	http://www.otomate.jp/piofiore/	候補1件。正しいものだけ残して x_accounts.tsv へ
 v7833	OZMAFIA!!	@ponipachet	http://ozmafia.com/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v15771	黒蝶のサイケデリカ	@psy_otomate	http://www.otomate.jp/psychedelica/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v16032	大正×対称アリス	@taishoalice	http://www.primula.jpn.com/taishoalice/#	候補1件。正しいものだけ残して x_accounts.tsv へ
+v24241	オランピアソワレ	@Olympia_otomate	http://www.otomate.jp/olympia/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v25912	キューピット・パラサイト	@CP_otomate	http://www.otomate.jp/cp/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v11179	NORN9 ~ノルン+ノネット~		http://www.otomate.jp/norn9/	サイトにXへのリンクなし
+v29661	終遠のヴィルシュ -ErroR:salvation-	@virche_otomate	https://www.otomate.jp/virche/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v18162	7'scarlet	@7scarlet_info	http://www.otomate.jp/7scarlet/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v9846	DIABOLIK LOVERS		http://www.otomate.jp/dialover/	サイトにXへのリンクなし
+v32555	even if TEMPEST 宵闇にかく語りき魔女	@volradi	https://products.voltage.co.jp/tempest/english/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v19397	スチームプリズン	@eeostore @stellaworthshop @steam_prison	http://www.hunex.co.jp/steamprison/	候補3件。正しいものだけ残して x_accounts.tsv へ
+v18643	灰鷹のサイケデリカ	@psy_otomate	http://www.otomate.jp/psychedelica/aa-nisus/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v24240	幻奏喫茶アンシャンテ	@Enchanteotomate	http://www.otomate.jp/enchante/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v26154	ジャックジャンヌ	@JACKJEANNE_JP	https://jackjeanne.com/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v21789	Collar x Malice -Unlimited-	@CM_otomate	http://www.otomate.jp/collar_malice/fd/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v10115	バクダン★ハンダン		http://www.otomate.jp/bakuhan/	サイトにXへのリンクなし
+v14759	あやかしごはん	@ayakashigohan	http://www.honeybee-cd.com/ayakashi.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v18314	Code:Realize ~祝福の未来~	@CR_otomate	http://www.otomate.jp/code-realize/fd/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v22987	ビルシャナ戦姫 ～源平飛花夢想～	@birushana_info	https://www.otomate.jp/birushana/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v19850	VARIABLE BARRICADE	@VB_otomate	http://www.otomate.jp/varibarri/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v8095	ブラック ウルヴス サーガ -ブラッディーナイトメア-		http://rejetweb.jp/bws/	サイトにXへのリンクなし
+v51437	文字化化	@ushirokazutaka @maishiroi @HomicipherMZBK @YatsuGamesS @tigrig1129	https://317.zashiki.com/mozibake/	候補6件。正しいものだけ残して x_accounts.tsv へ
+v38068	9 R.I.P.	@9RIP_otomate	https://www.otomate.jp/9rip/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v17344	BAD APPLE WARS	@BAW_otomate	http://www.otomate.jp/baw/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v15070	Re:BIRTHDAY SONG ～恋を唄う死神～	@birth_song_info	http://www.honeybee-cd.com/re_birth.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v17640	ピリオドキューブ ～鳥籠のアマデウス～	@period_otomate	http://www.otomate.jp/period-cube/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v19037	EPHEMERAL -エフェメラル-		http://hunex-play.com/ephemeral/	サイトにXへのリンクなし
+v8591	AMNESIA LATER		http://www.otomate.jp/amnesia_later/	サイトにXへのリンクなし
+v21787	Charade Maniacs	@CA_otomate	http://www.otomate.jp/charade_maniacs/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v25914	ピオフィオーレの晩鐘 -Episodio1926-	@pf_otomate	https://www.otomate.jp/piofiore/1926/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v33150	天獄ストラグル -strayside-	@tengoku_otomate	https://www.otomate.jp/tengoku/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v11472	剣が君		http://rejetweb.jp/kengakimi/pc/	サイトにXへのリンクなし
+v15231	逆転 吉原		http://www.d3p.co.jp/sumakare/gyakuten/	サイトにXへのリンクなし
+v30920	ラディアンテイル		https://www.otomate.jp/radiant_tale/	サイトにXへのリンクなし
+v12150	DIABOLIK LOVERS MORE,BLOOD		http://www.otomate.jp/dialover_mb/	サイトにXへのリンクなし
+v22986	Lover Pretend	@LP_otomate	https://www.otomate.jp/lp/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v8243	英国探偵ミステリア		http://mysteria.maql.co.jp/	サイトが取得できない: <urlopen error timed out> -->
+v34018	SympathyKiss	@SK_otomate	https://www.otomate.jp/sympathykiss/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v25911	DAIROKU：AYAKASHIMORI	@D6_Info	http://www.otomate.jp/d6/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v10051	越えざるは紅い花		https://web.archive.org/web/20161210115925/http://ignote.net:80/operetta2/benibana/	サイトにXへのリンクなし
+v7557	Brothers Conflict		http://www.otomate.jp/bc/	サイトにXへのリンクなし
+v13321	私のリアルは充実しすぎている		http://tetrascope.skr.jp/wtj/	サイトにXへのリンクなし
+v40519	泡沫のユークロニア	@uchronia_jp	https://licobits-game.com/uchronia/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v29906	君は雪間に希う	@kimiyukiotomate	https://www.otomate.jp/kimiyuki/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v11637	華アワセ	@hana_awase	http://hana-awase.net/M/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v20277	大正×対称アリス HEADS&TAILS	@taishoalice	http://www.primula.jpn.com/taishoalicefd/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v38067	終遠のヴィルシュ -EpiC:lycoris-	@virche_otomate	https://www.otomate.jp/virche/fd/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v16788	貴方の仮面の外し方	@rosevertegames @roseverte_JA	http://eroolia.roseverte.net/	候補2件。正しいものだけ残して x_accounts.tsv へ
+v47010	ミストニアの翅望 -The Lost Delight-	@Kibou_otomate	https://www.otomate.jp/mistonia/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v34022	キューピット・パラサイト -Sweet & Spicy Darling.-	@CP_otomate	https://www.otomate.jp/cp/fd/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v18641	イケメン戦国◆時をかける恋	@cyikemensengoku	http://www.otomate.jp/ikemen_sengoku/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v47546	花笑む彼と & bloom	@hanakare_ml	https://hanakare.com/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v18163	ニル・アドミラリの天秤 帝都幻惑綺譚	@nilad_otomate	http://www.otomate.jp/nil-admirari/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v19283	逆転吉原～扇屋編～		https://apps.rakuten.co.jp/feature/yoshiwara_ohgiya/	サイトが取得できない: <urlopen error [Errno 8] nodename nor servname provided, or not known> -->
+v16651	帝國カレイド―万華の革命―	@OPERAHOUSE_info	http://teikale.operahouse.co.jp/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v29251	乙女ゲームの破滅フラグしかない悪役令嬢に転生してしまった… 〜波乱を呼ぶ海賊〜	@hamehurakaizoku	https://www.otomate.jp/hamehura-kaizoku/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v13994	吉原彼岸花	@MariaCrown_info	http://mariacrown.com/yosiwara/index.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v20117	Un:BIRTHDAY SONG ～愛を唄う死神～	@birth_song_info	http://www.honeybee-cd.com/un_birth.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v12775	ブラック ウルヴス サーガ -ラストホープ-		http://rejetweb.jp/bws/	サイトにXへのリンクなし
+v13101	BAD MEDICINE -INFECTIOUS TEACHERS-		http://rejetweb.jp/bm/	サイトにXへのリンクなし
+v13100	ALICE=ALICE		http://rejetweb.jp/alice/	サイトにXへのリンクなし
+v28803	Paradigm Paradox	@PP_otomate	https://www.otomate.jp/paradigm_paradox/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v20958	学園CLUB～放課後のヒミツ～	@OPERAHOUSE_info	http://gaclub.operahouse.co.jp/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v10273	神々の悪戯 - Ludere deorum	@kami_aso	http://www.kamiaso.com/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v10419	Glass Heart Princess		http://www.otomate.jp/ghp/	サイトにXへのリンクなし
+v15250	ダンディーショット		http://www.d3p.co.jp/sumakare/dandy/	サイトにXへのリンクなし
+v17853	Blackish House	@Blackish_H_hb	http://www.honeybee-cd.com/BlackishHouse/sideA/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v17750	喧嘩番長乙女	@kenkabancho_o	http://www.kenkabancho-otome.com/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v13905	絶対階級学園 ~Eden with roses and phantasm~	@Daisy2official	http://www.daisy-daisy.in/products/kaikyu/index.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v47013	OVER REQUIEMZ	@OvereqZ_otomate	https://www.otomate.jp/over_requiemz/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v12159	明治東亰恋伽	@meikoi_staff	http://www.meikoi-psp.com/origin/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v10289	十三支演義~偃月三国伝~		http://www.otomate.jp/jyuzaengi/	サイトにXへのリンクなし
+v47009	マツリカの炯-kEi- 天命胤異伝	@Mk_otomate	https://www.otomate.jp/mk/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v42433	ラディアンテイル ～ファンファーレ！～	@RT_x_info	https://www.otomate.jp/radiant_tale/fanfare/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v13833	ヴァルプルガの詩		http://3daisy.jp/	サイトにXへのリンクなし
+v17810	戦国姫歌～時果の契り～		http://www.d3p.co.jp/sengokuhimeuta/	サイトにXへのリンクなし
+v14919	レンドフルール	@RDF_x_official	http://www.otomate.jp/reinedesfleurs/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v47771	レッドベルの慟哭	@RedBellsLament	https://products.voltage.co.jp/redbell/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v15495	DYNAMIC CHORD feat.[rēve parfait]	@reveparfait_DC2	http://www.honeybee-cd.com/dynamic/reve/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v14677	スイートルームで悪戯なキス		http://koi-game.voltage.co.jp/works/suite/	サイトが取得できない: HTTP Error 404: Not Found -->
+v12751	忍び、恋うつつ		http://www.otomate.jp/nin_koi/	サイトにXへのリンクなし
+v27932	ゴシックマーダー -運命を変えるアドベンチャー-	@orange_GM01	http://orange-app.jp/game/GothicMurder/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v12424	薄桜鬼SSL ～sweet school life～		http://www.otomate.jp/hakuoki/ssl/	サイトにXへのリンクなし
+v32229	ビルシャナ戦姫 ～一樹の風～	@birushana_info	https://www.otomate.jp/birushana/fd/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v10968	白華の檻 ~緋色の欠片4~	@OtomateWeb	http://www.otomate.jp/shirahana/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v14917	戦場の円舞曲	@waltz_otomate	http://www.otomate.jp/waltz/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v22598	蛇香のライラ ～Allure of MUSK～	@triP_OTOMATE	http://www.otomate.jp/triangle/lyla/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v13849	鳥籠のマリアージュ		http://www.kalmia8.jp/mariage/	サイトにXへのリンクなし
+v25993	幻想マネージュ	@gensomanege	https://gensomanege.com/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v14649	DIABOLIK LOVERS DARK FATE		http://www.otomate.jp/dialover/df/	サイトにXへのリンクなし
+v45894	DesperaDrops	@D3P_otome	https://www.d3p.co.jp/desperadrops/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v16051	恋してしまった星の王子		http://koi-game.voltage.co.jp/fantasy/hoshi/index.html	サイトが取得できない: HTTP Error 404: Not Found -->
+v18793	カフェ・ゼロ～眠れる野獣～	@whitepriestess @mingzi893 @rosevertegames	http://www.roseverte.net/cafe0/beast/en/	候補3件。正しいものだけ残して x_accounts.tsv へ
+v26002	ときめきメモリアル Girl's Side 4th Heart		https://www.konami.com/games/girls_side/4th_Heart/	サイトにXへのリンクなし
+v21895	マジェスティック☆マジョリカル	@maje_majo	http://dazkarat.jp/majemajo/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v19012	悠久のティアブレイド -Lost Chronicle-	@uq_tb_official	http://www.otomate.jp/tierblade/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v18432	Dance with Devils		http://rejetweb.jp/dwd/	サイトにXへのリンクなし
+v15563	オルフレール		http://asring.1000.tv/orfre/index.html	サイトが取得できない: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatc
+v47012	燃えよ！ 乙女道士 ～華遊恋語～	@moeoto_otomate	https://www.otomate.jp/otomedoushi/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v34020	テミラーナ国の強運姫と悲運騎士団	@tsuitsuiotomate	https://www.otomate.jp/tsuitsui/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v19071	ヒミツの獣男子発情中		http://www.d3p.co.jp/himitsunopet/	サイトにXへのリンクなし
+v14501	上司と秘密の２LDK		http://koi-game.voltage.co.jp/works/2ldk/	サイトが取得できない: HTTP Error 404: Not Found -->
+v12096	参千世界遊戯 ~MultiUniverse Myself~	@gdynamics_info	https://web.archive.org/web/20190208164034/http://www.g-dynamics.jp/sanzen/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v19743	Side Kicks!	@eXtend_SK	http://joqrextend.co.jp/extend/sidekicks/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v16506	新撰組アメイジング～火照る躰と恋炎～		http://www.d3p.co.jp/sumakare/shinsengumi/	サイトにXへのリンクなし
+v9885	十鬼の絆 関ヶ原奇譚		http://www.otomate.jp/toki/	サイトにXへのリンクなし
+v47769	ネオンクラッシュ -Echoes of the Lost-	@NeonClash_EL @AmuLit_JP	https://products.voltage.co.jp/neonclash	候補2件。正しいものだけ残して x_accounts.tsv へ
+v16460	SWEET CLOWN ~午前三時のオカシな道化師~	@sweetclown_1009	http://www.takuyo.co.jp/products/sweetclown/index.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v16128	KLAP!! ~Kind Love And Punish~	@klap_otomate	http://www.otomate.jp/klap/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v17343	ゆのはな SpRING!	@ys_otomate	http://www.otomate.jp/yunohana_spring	候補1件。正しいものだけ残して x_accounts.tsv へ
+v11839	眠らぬ街のシンデレラ		http://koi-game.voltage.co.jp/works/cinderella/	サイトが取得できない: HTTP Error 404: Not Found -->
+v11108	Princess Arthur		http://www.otomate.jp/pa/	サイトにXへのリンクなし
+v19716	白と黒のアリス	@roroari_info	http://www.otomate.jp/bw_alice/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v17809	口外禁止!! (密)オフィスラブ		http://www.d3p.co.jp/sumakare/officelove/	サイトにXへのリンクなし
+v13090	学園K -Wonderful School Days-		http://www.otomate.jp/gakuen-k/	サイトにXへのリンクなし
+v12714	十三支演義～偃月三国伝～２		http://www.otomate.jp/jyuzaengi2/	サイトにXへのリンクなし
+v12571	Glass Heart Princess: Platinum		http://www.otomate.jp/ghp/fd/	サイトにXへのリンクなし
+v19076	執事のプリンスさま		http://www.d3p.co.jp/situji/	サイトにXへのリンクなし
+v15511	今宵、妖しい口づけを		http://koi-game.voltage.co.jp/fantasy/koyoi/index.html	サイトが取得できない: HTTP Error 404: Not Found -->
+v12472	SNOW BOUND LAND		http://www.otomate.jp/sbl/	サイトにXへのリンクなし
+v21783	Cendrillon palikA	@palikA_otomate	http://www.otomate.jp/cendrillon_phalika/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v16647	にゃんらぶ～私の恋の見つけ方～	@OPERAHOUSE_info	http://nyanlove.operahouse.co.jp/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v11342	うたの☆プリンスさまっ♪All Star		http://www.utapri.com/game/allstar/	サイトにXへのリンクなし
+v16770	もし、この世界に神様がいるとするならば。		http://rejetweb.jp/moshikami/	サイトにXへのリンクなし
+v21075	嘘つきな王様の騙し方	@whitepriestess @inatsuri @U0413AI @rosevertegames	http://eroolia.roseverte.net/king/en/	候補4件。正しいものだけ残して x_accounts.tsv へ
+v25963	あやかし恋廻り	@ayakoi_official	https://products.voltage.co.jp/ayakoi/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v20070	DYNAMIC CHORD feat.Liar-S	@Liar_S_DC2	http://www.honeybee-cd.com/dynamic/liar/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v11469	月影の鎖 -錯乱パラノイア-	@getsuei_kanko	http://www.takuyo.co.jp/products/getsuei/index.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v59457	アイドルと〇〇しちゃダメですか？		http://www.mikimaki.site/lp/aidame/	サイトにXへのリンクなし
+v18291	円環のメモーリア		http://asring.1000.tv/enmemo/	サイトが取得できない: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatc
+v51912	UN:LOGICAL	@unlogical_jp	https://licobits-game.com/unlogical/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v15253	熱血異能部活譚 Trigger Kiss	@Trigger_Kiss	http://www.otomate.jp/tk/#/top	候補1件。正しいものだけ残して x_accounts.tsv へ
+v10272	アルカナ・ファミリア -幽霊船の魔術師-		http://www.comfort-soft.jp/products/af_vascello/#top	サイトにXへのリンクなし
+v20717	囚われのパルマ		http://www.capcom.co.jp/palm	サイトが取得できない: HTTP Error 404: Not Found -->
+v16060	遙かなる時空の中で6	@Haruka6Official	http://www.gamecity.ne.jp/haruka6/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v14787	Binary Star		http://www.otomate.jp/binarystar/	サイトにXへのリンクなし
+v20072	DYNAMIC CHORD feat.apple-polisher	@apple_p_DC2	http://www.honeybee-cd.com/dynamic/app/disc.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v7553	Starry☆Sky ~After Winter~		http://www.honeybee-cd.com/fan-winter/	サイトにXへのリンクなし
+v41556	関守神	@SekimoriGami	https://game.mba-international.jp/sekimorigami/index.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v25913	時計仕掛けのアポカリプス	@Apocaly_otomate	https://www.otomate.jp/apocalypse/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v20071	DYNAMIC CHORD feat.KYOHSO	@KYOHSO_DC2	http://www.honeybee-cd.com/dynamic/kyoh/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v19075	芸能界はアブナイ関係アリですか？		http://www.d3p.co.jp/geinou/	サイトにXへのリンクなし
+v18777	イケメン幕末◆運命の恋		http://www.cybird.co.jp/service/ikemen-bakumatsu/	サイトが取得できない: HTTP Error 404: Not Found -->
+v49600	Honey Vibes	@HoneyV_otome	https://www.otomate.jp/honey_vibes/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v18945	DIABOLIK LOVERS LOST EDEN		http://www.otomate.jp/dialover/le/	サイトにXへのリンクなし
+v49599	スチームプリズン -Beyond the Steam-	@steam_prison @happypriroll @animatecafe_grt @animateinfo	https://www.hunex.co.jp/steamprison/beyond/	候補4件。正しいものだけ残して x_accounts.tsv へ
+v47011	トラブル・マギア ～訳アリ少女は未来を勝ち取るために異国の魔法学校へ留学します～	@T_Magia_otomate	https://www.otomate.jp/trouble-magia/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v22597	Tlicolity Eyes	@triP_OTOMATE	http://www.otomate.jp/triangle/tlicolity/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v18159	鏡界の白雪	@kk_shirayuki	http://www.otomate.jp/kyoukai/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v11879	０時の鐘とシンデレラ～Halloween Wedding～		https://web.archive.org/web/20160115021321/http://quinrose.com/game/cin_0/top.html	サイトにXへのリンクなし
+v11504	しらつゆの怪		http://www.otomate.jp/shiratuyu/	サイトにXへのリンクなし
+v21036	あの夜からキミに恋してた		http://koi-game.voltage.co.jp/works/yorukm/index.html	サイトが取得できない: HTTP Error 404: Not Found -->
+v16648	Vinculum Hearts ～アイリス魔法学園～	@OPERAHOUSE_info	http://isw-app.operahouse.co.jp/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v12125	アルカナ・ファミリア 2		http://www.comfort-soft.jp/products/arcana2/index.html	サイトにXへのリンクなし
+v18400	大人の初恋、はじめます		http://koi-game.voltage.co.jp/works/htkoi/index.html	サイトが取得できない: HTTP Error 404: Not Found -->
+v12436	Jewelic Nightmare		http://www.otomate.jp/jn/	サイトにXへのリンクなし
+v11639	下天の華		http://www.gamecity.ne.jp/geten/original/	サイトにXへのリンクなし
+v21922	殺し屋とストロベリー		http://www.korosuto.com/	サイトにXへのリンクなし
+v11641	はつカレっ☆恋愛デビュー宣言!	@hatsukare_psp	http://www.cs.furyu.jp/hatsukare/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v19851	蝶々事件ラブソディック	@CCJLS_otomate	http://www.otomate.jp/chouchoujiken/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v18164	薔薇に隠されしヴェリテ	@Verite_otomate	http://www.otomate.jp/verite/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v14813	RE:VICE[D]		http://www.otomate.jp/revice_d/	サイトにXへのリンクなし
+v9071	官能昔話 ポータブル		http://www.otomate.jp/kannou/	サイトにXへのリンクなし
+v39593	深淵のユカラ	@locagames_en	https://www.loca.games/yukar-from-the-abyss/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v28833	アンジェリーク ルミナライズ	@angelique_kt	https://www.gamecity.ne.jp/anmina/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v22311	神凪ノ杜	@matatabi_soft	http://matatabi.tv/kannagi/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v10475	青春はじめました！	@honeybee_asgard	http://www.honeybee-cd.com/seisyun.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v50653	魔女と亡霊のヴォロンテ		https://www.loca.games/volontes/	サイトにXへのリンクなし
+v19853	真紅の焔 真田忍法帳	@kurenai_otomate	http://www.otomate.jp/kurenai/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v18295	罪喰い ~千の呪い、千の祈り~		http://www.ignote.net/operetta/tumikui/	サイトにXへのリンクなし
+v26558	遙かなる時空の中で7	@haruka_series	https://www.gamecity.ne.jp/haruka7/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v12141	十鬼の絆 花結綴り		http://www.otomate.jp/toki/fd/	サイトにXへのリンクなし
+v49601	冬園サクリフィス	@fuyuzono_otome	https://www.otomate.jp/fuyuzono/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v23025	マスカレード・キス～危険な駆け引き～	@volkoi_official	http://www.voltage.co.jp/2018/05/08/6487/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v22762	魔界王子と魅惑のナイトメア	@makai_nightmare	http://koi-game.voltage.co.jp/title/makai/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v20993	プリンセスクローゼット	@p_closet	http://web.archive.org/web/20150718015241/http://www.moregames.co.jp/p-closet/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v14869	プリンス・オブ・ストライド		http://posweb.jp/pos/game/index.html	サイトにXへのリンクなし
+v52275	BYAKKO ～四神部隊炎恋記～	@BYAKKO_otomate	https://www.otomate.jp/byakko/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v47740	悪役令嬢は隣国の王太子に溺愛される	@OPERAHOUSE_info	https://akuyaku.operahouse.co.jp/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v22401	ダイヤモンドガール～恋の本気レッスン～		http://www.moregames.co.jp/majilesson/	サイトが取得できない: <urlopen error [Errno 8] nodename nor servname provided, or not known> -->
+v20326	空蝉の廻	@matatabi_soft	http://matatabi.tv/utsusemi/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v16652	妖かし恋戯曲	@OPERAHOUSE_info	http://ayakoi.operahouse.co.jp/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v52276	9 R.I.P. sequel	@9RIP_otomate	https://www.otomate.jp/9rips/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v25910	明治活劇 ハイカラ流星組 －成敗しませう、世直し稼業－	@haikara_otomate	http://www.otomate.jp/haikara/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v23021	心を開く歌い方	@whitepriestess @Yumeno_Yuki @Itsumo_Nagahisa @U0413AI @rosevertegames	https://eroolia.roseverte.net/song/en/	候補5件。正しいものだけ残して x_accounts.tsv へ
+v18833	猛獣たちとお姫様	@moju_hime	http://www.otomate.jp/beast_princess/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v18161	数乱digit	@suran_digit	http://www.otomate.jp/suran/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v47770	sins of KALEIDO 塔巡りし因果の魔女	@sinsofKALEIDO @AmuLit_JP	https://products.voltage.co.jp/kaleido/	候補2件。正しいものだけ残して x_accounts.tsv へ
+v19849	KLAP!! ~Kind Love And Punish~ Fun Party	@klap_otomate	http://www.otomate.jp/klap/fun-party/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v8043	12時の鐘とシンデレラ～Halloween Wedding～		https://web.archive.org/web/20160306171412/http://quinrose.com/game/cin/top.html	サイトにXへのリンクなし
+v28235	アンジェーリーク ルトゥール	@AngeR_official	http://www.gamecity.ne.jp/ange_retour/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v16049	Possession Magenta	@pm_pwp	http://www.comfort-soft.jp/products/pm/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v53877	泡沫のユークロニア -trail-	@uchronia_jp	https://licobits-game.com/uchronia/fd/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v24644	囚われのパルマ Refrain		http://www.capcom.co.jp/palm/plmr/	サイトが取得できない: HTTP Error 404: Not Found -->
+v20970	Spiral Memoria～私と出逢う夏～	@OPERAHOUSE_info	http://spmemo.operahouse.co.jp/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v19077	ストーキングラブ　恋の始まりは略奪で		http://www.d3p.co.jp/stalkinglove/	サイトにXへのリンクなし
+v16031	最後の恋、僕にください		http://koi-game.voltage.co.jp/en/novel/loveagain/index.html	サイトが取得できない: HTTP Error 404: Not Found -->
+v12865	下天の華 夢灯り		http://www.gamecity.ne.jp/geten/yumeakari/	サイトにXへのリンクなし
+v12126	白華の檻 ~緋色の欠片4~ 四季の詩		http://www.otomate.jp/shirahana/fd/	サイトにXへのリンクなし
+v20634	嘘月シャングリラ	@usotsuki_info	http://rejetweb.jp/usotsuki/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v15023	神々の悪戯 InFinite	@kami_aso	http://www.kamiaso.com/game/infinite/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v11454	恋花デイズ		http://www.otomate.jp/koibana/	サイトにXへのリンクなし
+v22122	軍靴をはいた猫	@gunneko_info	http://www.primula.jpn.com/gunneko/index.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v14652	MARGINAL#4 IDOL OF SUPERNOVA		http://www.otomate.jp/mg4/	サイトにXへのリンクなし
+v12155	-8		http://www.otomate.jp/-8/	サイトにXへのリンクなし
+v10950	スクール・ウォーズ		https://web.archive.org/web/20160202144240/http://quinrose.com/game/sw/top.html	サイトにXへのリンクなし
+v10162	いっしょにごはん。		http://www.otomate.jp/gohan/	サイトにXへのリンクなし
+v48830	DistortedCode ―生者の残り香―	@distoco	http://www.takuyo.co.jp/products/distortedcode/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v25916	薄桜鬼 真改 月影ノ抄	@HakuokiShinkai	http://www.otomate.jp/hakuoki/shinkai/tsukikage/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v19887	特別捜査★密着24時		http://koi-game.voltage.co.jp/works/tokso/index.html	サイトが取得できない: HTTP Error 404: Not Found -->
+v18369	恋人は公安刑事		http://koi-game.voltage.co.jp/en/novel/force/index.html	サイトが取得できない: HTTP Error 404: Not Found -->
+v11984	裏語 薄桜鬼		http://www.otomate.jp/hakuoki/urakata	サイトにXへのリンクなし
+v10951	ダイヤの国のアリス ～Wonderful Wonder World～		https://web.archive.org/web/20151228205556/http://quinrose.com/game/alice_d/top.html	サイトにXへのリンクなし
+v25915	スペードの国のアリス	@spadealice_info	https://www.otomate.jp/spade_alice/white/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v24312	喧嘩番長 乙女 2nd Rumble!!	@kenkabancho_o	http://www.kenkabancho-otome.com/2/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v12928	月影の鎖 ―狂爛モラトリアム―	@getsuei_kanko	http://www.takuyo.co.jp/products/getsueifd/index.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v12282	Romeo VS Juliet		https://web.archive.org/web/20160202141211/http://quinrose.com/game/r_vs_j/top.html	サイトにXへのリンクなし
+v54934	CRAZY CHA!N -エルピスの鎖-	@CC_otomate	https://www.otomate.jp/crazy_chain/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v24231	スタットコール　救命恋愛24時	@koi_game @volkoi_official	https://www.voltage.co.jp/2018/09/06/7646/	候補2件。正しいものだけ残して x_accounts.tsv へ
+v21788	片恋いコントラスト ―way of parting―	@triP_OTOMATE	http://www.otomate.jp/triangle/contrast/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v19298	ゆのはな SpRING! Cherishing Time	@ys_otomate	http://www.otomate.jp/yunohana_spring/ct/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v15772	I DOLL U	@IDOLLU_official	http://www.otomate.jp/i_doll_u/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v12940	クロノスタシア		http://www.otomate.jp/chronostacia/	サイトにXへのリンクなし
+v21784	天涯ニ舞ウ、粋ナ花	@tengai_otomate	http://www.otomate.jp/tengai/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v17641	サイキックエモーション ムー	@PE6_otomate	http://www.otomate.jp/psychic-emotion6/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v14345	ときめきレストラン☆☆☆	@KONAMI573ch	http://www.konami.jp/tokires/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v13072	金色のコルダ３ AnotherSky	@corda_official	http://www.gamecity.ne.jp/corda3/anothersky/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v13039	黒雪姫～スノウ・ブラック～		https://web.archive.org/web/20160128140022/http://quinrose.com/game/kuroyuki/top.html	サイトにXへのリンクなし
+v11636	STORM LOVER 2nd	@st_louis_high	http://www.d3p.co.jp/stormlover_2nd/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v10623	カスタムドライブ		http://www.d3p.co.jp/customdrive/	サイトにXへのリンクなし
+v18212	フォルティッシモ		http://www.otomate.jp/ff/	サイトにXへのリンクなし
+v15248	絶対迷宮 秘密のおやゆび姫	@karin_ent	https://oyayubi.labyrinth-of.net/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v28405	闇色の魔珠	@d_majyu	http://www.daisy-daisy.in/products/majyu/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v25917	薄桜鬼 真改 銀星ノ抄	@HakuokiShinkai	https://www.otomate.jp/hakuoki/shinkai/ginsei/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v21785	私立ベルばら学園 ～ベルサイユのばらRe*imagination～	@berubaragakuen	http://www.otomate.jp/berubara-gakuen/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v14911	マーメイド・ゴシック		https://web.archive.org/web/20160119221946/http://quinrose.com/game/mermaid/top.html	サイトにXへのリンクなし
+v12807	放課後colorful＊step	@colorfulstep_hb	http://www.honeybee-cd.com/colorful_step.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v11677	花咲くまにまに		http://5pb.jp/games/hanamani/	サイトが取得できない: HTTP Error 404: Not Found -->
+v10631	Confidential Money ～300日で3000万ドル稼ぐ方法～		http://www.otomate.jp/cm/	サイトにXへのリンクなし
+v8408	逢魔時 〜怪談ロマンス〜		https://web.archive.org/web/20150928053207/http://quinrose.com/game/ouma/top.html	サイトにXへのリンクなし
+v52266	勿ノ怪契リ	@mononok_otomate	https://www.otomate.jp/mononoke/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v3820	赤い砂堕ちる月		http://land-karte.net/	サイトにXへのリンクなし
+v32713	Money Parasite〜嘘つきな女〜	@money_parasite @takuyo_koihana	http://www.takuyo.co.jp/products/money/index.html	候補2件。正しいものだけ残して x_accounts.tsv へ
+v19288	花朧 ～戦国伝乱奇～	@hana_otomate	http://www.otomate.jp/hanaoboro/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v11309	恋愛番長2 MidnightLesson!!!		http://www.otomate.jp/renai_bancho2/	サイトにXへのリンクなし
+v10418	L.G.S ~新説 封神演義~		http://www.otomate.jp/lgs/	サイトにXへのリンクなし
+v10091	エルクローネのアトリエ ~Dear for Otomate~		http://www.otomate.jp/elkrone/	サイトにXへのリンクなし
+v9197	アブナイ恋の捜査室		https://web.archive.org/web/20160208033604/http://quinrose.com/game/sousashitsu_psp/top.html	サイトにXへのリンクなし
+v18030	金色のコルダ４	@corda4_official @corda_official	http://www.gamecity.ne.jp/corda4/	候補2件。正しいものだけ残して x_accounts.tsv へ
+v13850	エンケルトビレット		http://www.otomate.jp/enkeltbillet/	サイトにXへのリンクなし
+v42595	陰キャラブコメ	@inlove_eigedo	https://inlove-game.com/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v19190	遙かなる時空の中で6 幻燈ロンド	@Haruka6Official	http://www.gamecity.ne.jp/haruka6/gentourondo/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v17286	BELIEVER!	@D3P_otome	http://www.d3p.co.jp/believer/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v16608	RearPheles –Red of Another–	@matatabi_soft	http://matatabi.tv/rearpheles/roa/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v14811	魔女王		https://web.archive.org/web/20160306193427/http://quinrose.com/game/majo/top.html	サイトにXへのリンクなし
+v10255	百鬼夜行～怪談ロマンス～		https://web.archive.org/web/20160209132606/http://quinrose.com/game/hyakki/top.html	サイトにXへのリンクなし
+v38124	My9Swallows TOPSTARS LEAGUE	@My9_otomate	https://www.otomate.jp/my9swallows/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v20747	MARGINAL#4 ROAD TO GALAXY		http://www.otomate.jp/mg4/rtg/	サイトにXへのリンクなし
+v16468	Vamwolf Cross†	@D3P_otome	http://www.d3p.co.jp/vamwolf_cross/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v14340	ハートの国のアリス ～Wonderful Twin World～		https://web.archive.org/web/20160128091144/http://quinrose.com/game/alice_twin/top.html	サイトにXへのリンクなし
+v11109	源狼		http://www.otomate.jp/genroh/	サイトにXへのリンクなし
+v10105	２４時の鐘とシンデレラ ～Halloween Wedding～		https://web.archive.org/web/20160209142357/http://quinrose.com/game/cin_24/top.html	サイトにXへのリンクなし
+v52771	ハンサムロンダリング -the mystic lover-	@samudari_ml @rurichan_hl	https://samudari.com/	候補2件。正しいものだけ残して x_accounts.tsv へ
+v21112	猛獣たちとお姫様 ~in blossom~	@moju_hime	http://www.otomate.jp/beast_princess/fd/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v11502	Solomon’s Ring		http://www.asgard-japan.com/planpeace/sr/flame/index.html	サイトが取得できない: HTTP Error 404: Not Found -->
+v11500	死神稼業～怪談ロマンス～		https://web.archive.org/web/20160304192825/http://quinrose.com/game/sinigami/top.html	サイトにXへのリンクなし
+v10045	神さまと恋ゴコロ	@takuyo_gokoro	http://www.takuyo.co.jp/products/kamikoi/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v9178	恋は校則に縛られない！		http://d-game.dengeki.com/koishiba/	サイトにXへのリンクなし
+v26905	あと1％で運命の恋	@koi_game @volkoi_official	https://www.voltage.co.jp/2019/07/04/10710/	候補2件。正しいものだけ残して x_accounts.tsv へ
+v15773	百華夜光		http://www.otomate.jp/hyakka/	サイトにXへのリンクなし
+v13627	ブラック・コード		https://web.archive.org/web/20151222054443/http://quinrose.com/game/black/top.html	サイトにXへのリンクなし
+v13238	里見八犬伝		https://web.archive.org/web/20160115005833/http://quinrose.com/game/satomi/top.html	サイトにXへのリンクなし
+v10098	華鬼～夢のつづき～		http://www.otomate.jp/hanaoni_fd/	サイトにXへのリンクなし
+v20249	ハイリゲンシュタットの歌	@eXtend_info	http://joqrextend.co.jp/extend/Heiligenstadt/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v16654	白虎隊　志士異聞記		http://byakko-tai.com/	サイトが取得できない: <urlopen error [Errno 8] nodename nor servname provided, or not known> -->
+v16509	源氏恋絵巻		https://web.archive.org/web/20160128113732/http://quinrose.com/game/genji/top.html	サイトにXへのリンクなし
+v15110	裏語 薄桜鬼 ~暁の調べ~		http://www.otomate.jp/hakuoki/urakata/akatsuki/	サイトにXへのリンクなし
+v15104	カレイドイヴ		http://estciel.com/kaleidoeve/	サイトにXへのリンクなし
+v13911	Romeo & Juliet		https://web.archive.org/web/20160128104343/http://quinrose.com/game/r_j_2/top.html	サイトにXへのリンクなし
+v13879	宵夜森ノ姫		http://eterire.com/yoiyomori/	サイトにXへのリンクなし
+v12570	プリPia～プリンスPia♥キャロット～	@pripia_official	https://web.archive.org/web/20150226223102/http://www.cocoever.com/pripia/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v10104	グリム・ザ・バウンティハンター		https://web.archive.org/web/20151006200335/http://quinrose.com/game/grimm/top.html	サイトにXへのリンクなし
+v9901	遙かなる時空の中で5 風花記		http://www.gamecity.ne.jp/haruka5/kazahanaki/	サイトにXへのリンクなし
+v8091	雅恋～MIYAKO～あわゆきのうたげ		http://www.otomate.jp/miyako_fd/	サイトにXへのリンクなし
+v26906	ひめひび Another Princess Days – White or Black –	@takuyo_himeawb	http://www.takuyo.co.jp/products/himehibi_wb/index.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v19140	逢魔が刻 ~かくりよの縁~	@eXtend_info	https://joqrextend.co.jp/extend/oumagatoki/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v15816	黒雪姫～スノウ・マジック～		https://web.archive.org/web/20160126224201/http://quinrose.com/game/kuroyuki_2/top.html	サイトにXへのリンクなし
+v14534	爽海バッカニアーズ!	@p_reve	http://www.fenter.jp/p-reve/buccaneers/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v11985	ビタミンR	@vitamin_d3p	http://www.d3p.co.jp/vitamin_r/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v11640	楽園男子 ～誰も知らない もう一つの楽園～		http://www.project.takuyo.co.jp/products/rakuendanshi/index.html	サイトにXへのリンクなし
+v11239	黄昏時～怪談ロマンス～		https://web.archive.org/web/20160209105207/http://quinrose.com/game/tasogare/top.html	サイトが取得できない: The read operation timed out -->
+v60966	君に惑い、君に溺れる。	@KK_otomate	https://www.otomate.jp/kiminimadoi/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v31423	少女首領の推理領域 -黄金島の密約-	@orange_GM01	http://orange-app.jp/game/BossGirl/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v30801	うっかり婚～目覚めたら、ワケあり上司の妻でした～	@koi_game @volkoi_official	https://products.voltage.co.jp/apps/appinfo-100koiplus/	候補2件。正しいものだけ残して x_accounts.tsv へ
+v24291	金色のコルダ オクターヴ		https://www.gamecity.ne.jp/corda-octave/	サイトにXへのリンクなし
+v18838	マジきゅんっ！ルネッサンス	@magic_kyun	http://www.magic-kyun-game.jp/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v16607	5人の恋プリンス ~ヒミツの契約結婚~	@koipri_v	https://web.archive.org/web/20190823053322/http://www.asgard-japan.com/koipuri/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v15577	ROOT∞REXX	@rootrexx	http://www.otomate.jp/root_rexx/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v15118	Goes!	@p_reve	http://www.fenter.jp/p-reve/goes/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v52279	マツリカの炯-kEi- 天命華燭伝	@Mk_otomate	https://www.otomate.jp/mk/fd/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v32819	リトルバード,トゥルーアイズ		https://regista.co.jp/products/littlebird/	サイトにXへのリンクなし
+v25125	艶が～る		https://www.loveotomegames.xyz/en/apps/tgirl/index.html	サイトが取得できない: <urlopen error [Errno 8] nodename nor servname provided, or not known> -->
+v17285	帝国海軍恋慕情 ～明治横須賀行進曲～	@D3P_otome	http://www.d3p.co.jp/kaigun/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v16653	夢見鳥ノスタルジア		http://yumenos.jp/	サイトが取得できない: <urlopen error [Errno 8] nodename nor servname provided, or not known> -->
+v16411	TOKYOヤマノテBOYS SWEET JELLY BEANS DISC		http://tybweb.net/top	サイトにXへのリンクなし
+v16295	SA7		http://www.fenter.jp/p-reve/sa7/	サイトにXへのリンクなし
+v11960	O*G*A 鬼ごっこロワイアル ハンターは孤島で恋をする		http://www.otomate.jp/oga/	サイトにXへのリンクなし
+v8092	恋戦隊LOVE＆PEACE THE Ｐ.Ｓ.Ｐ.		http://koisentai-psp.com/	サイトが取得できない: <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: Hostname mismatc
+v21024	ネオ アンジェリーク 天使の涙	@NEOA_otomate	http://www.otomate.jp/neoangelique/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v16416	里見八犬伝 村雨丸之記		https://web.archive.org/web/20160115025042/http://quinrose.com/game/satomi_3/top.html	サイトにXへのリンクなし
+v11904	百物語～怪談ロマンス～		https://web.archive.org/web/20160304200328/http://quinrose.com/game/100mono/top.html	サイトにXへのリンクなし
+v11132	アラビアンズ・ダウト ～The engagement on desert～		https://web.archive.org/web/20160209115216/http://www.quinrose.com/game/arabian_doubt/top.html	サイトにXへのリンクなし
+v18695	Cafe Cuillere ～カフェ キュイエール～		http://cafe-cui.com/	サイトにXへのリンクなし
+v16369	新テニスの王子様 ~Go to the top~		http://www.cs.furyu.jp/tenipuri/	サイトにXへのリンクなし
+v12858	死神所業～怪談ロマンス～		https://web.archive.org/web/20151006200342/http://quinrose.com/game/syogyou/top.html	サイトにXへのリンクなし
+v12605	大正鬼譚		https://web.archive.org/web/20160304193655/http://quinrose.com/game/taisyou/top.html	サイトにXへのリンクなし
+v26704	恋の花咲く百花園	@takuyo_koihana	http://www.takuyo.co.jp/products/koihana/index.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v17608	LOVE:QUIZ ~恋する乙女のファイナルアンサー~	@lovequiz_v	https://web.archive.org/web/20191030125115/http://www.asgard-japan.com/lovequiz/index.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v16467	アブナイ恋の捜査室 ~Eternal Happiness~	@KOHEI110ban	https://web.archive.org/web/20181219223837/http://auragame.jp/deka/eh/index.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v12019	スクール・ウォーズ～卒業戦線～		https://web.archive.org/web/20160207204244/http://quinrose.com/game/sw_s/top.html	サイトにXへのリンクなし
+v22022	VitaminX Destination	@vitamin_d3p	https://www.d3p.co.jp/vitaminx_d/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v21712	１２歳。～恋するDiary～	@happinet_game	http://age12diary.happinet-games.com/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v37852	モノマギア・カンタービレ	@mono_magia	https://game.mba-international.jp/monomagiacantabile/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v37108	未然探偵 The Protea Cases	@orange_GM01	http://orange-app.jp/game/mizen/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v24445	BEAST Darling! ～けもみみ男子と秘密の寮～		http://beastdarling.caerux.com/pc/	サイトが取得できない: <urlopen error timed out> -->
+v22808	バディコレクション		https://ec.nintendo.com/JP/ja/titles/70010000009768	サイトにXへのリンクなし
+v19141	クランク・イン	@p_reve	http://www.fenter.jp/p-reve/crank-in/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v18082	創作アリスと王子さま!	@happinet_game	http://alice.happinet-games.com/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v15111	大正鬼譚 ~言ノ葉櫻~		https://web.archive.org/web/20151223111800/http://quinrose.com/game/taisyou_2/top.html	サイトにXへのリンクなし
+v12934	VitaminX DetectiveB6	@vitamin_d3p	http://www.d3p.co.jp/vitamin_x_detective_b6/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v40406	ドラッグ王子とマトリ姫	@matori_hime	https://colyinc.com/matori/index.html	候補1件。正しいものだけ残して x_accounts.tsv へ
+v26153	ディアマジ ー魔法少年学科ー		https://dearmagi.caerux.com/	サイトが取得できない: <urlopen error timed out> -->
+v16473	12歳。 ~ほんとのキモチ~	@happinet_game	http://age12.happinet-games.com/index.php	候補1件。正しいものだけ残して x_accounts.tsv へ
+v63547	壁ドン彼氏 ～真夏のチャラ男～	@kabedon_info @sitemap	https://x.com/kabedon_info	候補2件。正しいものだけ残して x_accounts.tsv へ
+v62417	Re:cord NOAH 忘却のフラクタル	@RecordNOAH @AmuLit_JP	https://products.voltage.co.jp/recordnoah/	候補2件。正しいものだけ残して x_accounts.tsv へ
+v59313	Sullyland Nursery Rhyme	@SN_otomate	https://www.otomate.jp/sullyland/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v59029	百目ノ花贄	@hyakunie	https://hyakunie.com/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v58562	Le Mirage Mystique	@Le_Mirage_jp	https://licobits-game.com/mirage/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v58460	スパダリ★パニック		https://mizublue.com/english/?p=98	サイトが取得できない: HTTP Error 404: Not Found -->
+v57444	シノビザムライ	@mizublue_games	https://mizublue.com/shinobi_samurai/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v56913	愛の花だより	@mizublue_games	https://mizublue.com/ainohana/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v56767	薄桜鬼異聞　ベレジンスキーの魔女	@WitchB_otomate	https://www.otomate.jp/witch_bere/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v56686	MIX DUNK -KING OF BASKETBALL-	@MIX_otomate	https://www.otomate.jp/mix_dunk/	候補1件。正しいものだけ残して x_accounts.tsv へ
