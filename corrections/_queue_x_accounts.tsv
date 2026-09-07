@@ -1,0 +1,6 @@
+# 公式サイトから拾ったXアカウントの候補。
+# 1サイトに複数のアカウントが載っていることが多いので、
+# 正しいものを選んで corrections/x_accounts.tsv に移すこと。
+vid	title	account	source_url	note
+v17287	百花百狼 戦国忍法帖	@D3P_otome	http://www.d3p.co.jp/hyakka/	候補1件。正しいものだけ残して x_accounts.tsv へ
+v7833	OZMAFIA!!	@ponipachet	http://ozmafia.com/	候補1件。正しいものだけ残して x_accounts.tsv へ

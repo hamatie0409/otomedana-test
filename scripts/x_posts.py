@@ -787,6 +787,98 @@ def cmd_sheet(args):
                                    "https://x.com/search?q=%s&f=live" % urllib.parse.quote(q)))
 
 
+SITE_CACHE = os.path.join(DATA, "cache", "site_html")
+
+# X の予約パス。アカウント名ではない
+RESERVED = {"intent", "share", "home", "search", "hashtag", "i", "about", "privacy",
+            "tos", "login", "signup", "explore", "notifications", "messages", "settings",
+            "compose", "widgets", "download", "en", "ja", "help", "status", "statuses"}
+HANDLE_IN_URL = re.compile(
+    r"(?:https?:)?//(?:www\.|mobile\.)?(?:x|twitter)\.com/(?:#!/)?([A-Za-z0-9_]{1,15})")
+
+
+def fetch_html(url, vid):
+    """公式サイトを1回だけ取ってきてキャッシュする。古い作品は大半が死んでいる。"""
+    os.makedirs(SITE_CACHE, exist_ok=True)
+    cache = os.path.join(SITE_CACHE, "%s.html" % vid)
+    if os.path.exists(cache):
+        with open(cache, encoding="utf-8", errors="replace") as f:
+            return f.read()
+    req = urllib.request.Request(url, headers={
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                      "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"})
+    try:
+        with urllib.request.urlopen(req, timeout=20) as r:
+            body = r.read(600000).decode("utf-8", errors="replace")
+    except Exception as ex:
+        body = "<!-- fetch-failed: %s -->" % ex
+    with open(cache, "w", encoding="utf-8") as f:
+        f.write(body)
+    return body
+
+
+def cmd_accounts(args):
+    """作品の公式サイトを見て、X アカウントの候補を拾う。
+
+    公式アカウントは1作品につき1回調べればよいが、350作品を手で開くのは重い。
+    公式サイトにはたいていXへのリンクが張ってあるので、そこから拾う。
+
+    拾えたものは corrections/_queue_x_accounts.tsv に出す。1サイトから複数の
+    アカウントが見つかることも多い（ブランド公式・レーベル公式・別作品）ので、
+    そのまま x_accounts.tsv には入れない。人が見て正しい1つを選ぶ。
+    """
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    known = load_accounts()
+    rows = con.execute("""
+        select w.vid, w.title, w.year, w.votecount, l.url
+        from work w join work_link l on l.vid = w.vid
+        where l.site = 'website' and w.year >= ?
+          and exists (select 1 from character c where c.main_vid = w.vid)
+        group by w.vid order by w.votecount desc""", (args.since,)).fetchall()
+
+    out, stats = [], {"既知": 0, "取得失敗": 0, "見つからず": 0, "候補あり": 0}
+    for n, w in enumerate(rows[:args.limit], 1):
+        if w["vid"] in known and not args.all:
+            stats["既知"] += 1
+            continue
+        html = fetch_html(w["url"], w["vid"])
+        if html.startswith("<!-- fetch-failed"):
+            stats["取得失敗"] += 1
+            out.append({"vid": w["vid"], "title": w["title"], "account": "",
+                        "source_url": w["url"], "note": "サイトが取得できない: "
+                        + html[19:110]})
+            continue
+        hits = []
+        for m in HANDLE_IN_URL.finditer(html):
+            h = m.group(1)
+            if h.lower() in RESERVED or h in hits:
+                continue
+            hits.append(h)
+        if not hits:
+            stats["見つからず"] += 1
+            out.append({"vid": w["vid"], "title": w["title"], "account": "",
+                        "source_url": w["url"], "note": "サイトにXへのリンクなし"})
+            continue
+        stats["候補あり"] += 1
+        out.append({"vid": w["vid"], "title": w["title"],
+                    "account": " ".join("@" + h for h in hits[:5]),
+                    "source_url": w["url"],
+                    "note": "候補%d件。正しいものだけ残して x_accounts.tsv へ" % len(hits)})
+        if args.delay:
+            time.sleep(args.delay)
+        if n % 25 == 0:
+            print("  ... %d/%d" % (n, min(len(rows), args.limit)), flush=True)
+
+    path = os.path.join(CORR, "_queue_x_accounts.tsv")
+    write_tsv(path, ["vid", "title", "account", "source_url", "note"], out,
+              preamble="# 公式サイトから拾ったXアカウントの候補。\n"
+                       "# 1サイトに複数のアカウントが載っていることが多いので、\n"
+                       "# 正しいものを選んで corrections/x_accounts.tsv に移すこと。\n")
+    print("%s に %d件" % (path, len(out)))
+    print("  " + " / ".join("%s%d" % (k, v) for k, v in stats.items()))
+
+
 def cmd_verify(args):
     chars = {}
     con = sqlite3.connect(DB)
@@ -933,6 +1025,12 @@ def main():
     sh.add_argument("--limit", type=int, default=10)
     sh.add_argument("--word", default="誕生")
     sh.set_defaults(fn=cmd_sheet)
+    ac = sub.add_parser("accounts")
+    ac.add_argument("--since", type=int, default=2012)
+    ac.add_argument("--limit", type=int, default=500)
+    ac.add_argument("--delay", type=float, default=1.0)
+    ac.add_argument("--all", action="store_true", help="登録済みの作品も見直す")
+    ac.set_defaults(fn=cmd_accounts)
     pv = sub.add_parser("preview")
     pv.add_argument("cids", nargs="*")
     pv.add_argument("--out", default="preview_x")
