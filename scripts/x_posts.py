@@ -343,6 +343,10 @@ def cmd_harvest(args):
         print("未収集 %d人: %s" % (len(left), " / ".join(left)))
 
 
+def e(t):
+    return (t or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
 def cmd_plan(args):
     """作品IDを渡すと、未収集キャラぶんのX検索URLを出す。
 
@@ -372,6 +376,108 @@ def cmd_plan(args):
         q = "from:%s %s %s" % (handles[0], key, args.word)
         print("%s\t%s\thttps://x.com/search?q=%s&f=live"
               % (r["cid"], r["name"], urllib.parse.quote(q)))
+
+
+SITE = os.path.join(ROOT, "docs", "v2")
+
+EMBED_CSS = """
+.xsec{margin-top:6px}
+.xsec .sec-head{margin-top:0}
+.x-embeds{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px;align-items:flex-start}
+.x-embeds .twitter-tweet{margin:0!important;flex:0 1 460px}
+/* 読み込み前の場所を確保しておく。あとから差し込むと本文が飛ぶ */
+.x-slot{flex:0 1 460px;min-height:320px;border:1px solid var(--line,#e5e2dd);
+        border-radius:12px;display:flex;align-items:center;justify-content:center}
+.x-slot button{font:inherit;padding:10px 18px;border-radius:999px;cursor:pointer;
+        border:1px solid var(--line,#e5e2dd);background:transparent}
+.x-note{font-size:12px;margin-top:10px}
+"""
+
+
+def cmd_preview(args):
+    """確定したポストをキャラページに埋め込んだ見本を作る。
+
+    docs/ の実ページをそのまま使い、CSSを埋め込んで1枚で開ける形にする。
+    ここで見たいのは「どう見えるか」なので、サイト本体はまだ触らない。
+    """
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    posts = {}
+    for r in read_tsv(POSTS):
+        posts.setdefault(r["cid"], []).append(r)
+    css = ""
+    css_path = os.path.join(SITE, "assets", "style.css")
+    if os.path.exists(css_path):
+        with open(css_path, encoding="utf-8") as f:
+            css = f.read()
+
+    os.makedirs(args.out, exist_ok=True)
+    made = []
+    for cid in args.cids:
+        ch = con.execute("select cid, name, slug from character where cid=?", (cid,)).fetchone()
+        if not ch:
+            print("×  そんなキャラはいない: %s" % cid)
+            continue
+        src = os.path.join(SITE, "character", ch["slug"], "index.html")
+        if not os.path.exists(src):
+            print("×  ページが未生成: %s" % src)
+            continue
+        with open(src, encoding="utf-8") as f:
+            html = f.read()
+
+        cards = []
+        for r in posts.get(cid, [])[:args.max_posts]:
+            _, sid = parse_status(r["status_url"])
+            d = oembed(sid, r["account"].lstrip("@"))
+            if d:
+                cards.append(d["html"])
+        if not cards:
+            print("・ ポストなし: %s" % ch["name"])
+            continue
+
+        if args.lazy:
+            # 押すまで読み込まない。widgets.js は1ポストあたり数百KBを引き、
+            # 高さも800px級になる。全ページで自動読み込みすると重いうえ、
+            # X 側に全閲覧者の足跡が渡る
+            slots = "".join(
+                '<div class="x-slot" data-html="%s"><button type="button">'
+                '公式ポストを表示</button></div>' % e(h).replace('"', "&quot;")
+                for h in cards)
+            cards = [slots]
+
+        block = ('<section class="pad sec xsec">\n'
+                 '<div class="sec-head"><h2>公式アカウントの紹介</h2>'
+                 '<span class="text-muted" style="font-size:12px">%s の投稿</span></div>\n'
+                 '<div class="x-embeds">%s</div>\n'
+                 '<p class="text-muted x-note">X の公式埋め込みで表示しています。'
+                 '投稿が削除されると表示も消えます。</p>\n</section>\n'
+                 % (e(posts[cid][0]["account"]), "".join(cards)))
+
+        # ヒーローの直後、属性の前に置く。キャラ画像を出せないページなので、
+        # 公式のイラストが載る枠を上に持ってくる意味がある
+        anchor = '<section class="pad sec">'
+        html = html.replace(anchor, block + anchor, 1) if anchor in html else html + block
+        html = html.replace('</head>',
+                            '<style>%s\n%s</style></head>' % (css, EMBED_CSS), 1)
+        if args.lazy:
+            tail = ("<script>document.querySelectorAll('.x-slot button')"
+                    ".forEach(function(b){b.addEventListener('click',function(){"
+                    "var s=b.parentNode;s.innerHTML=s.dataset.html;"
+                    "if(window.twttr){twttr.widgets.load(s);return;}"
+                    "var j=document.createElement('script');"
+                    "j.src='https://platform.twitter.com/widgets.js';j.charset='utf-8';"
+                    "document.body.appendChild(j);});});</script>")
+        else:
+            tail = ('<script async src="https://platform.twitter.com/widgets.js" '
+                    'charset="utf-8"></script>')
+        html = html.replace('</body>', tail + '</body>', 1)
+        out = os.path.join(args.out, "%s.html" % ch["slug"])
+        with open(out, "w", encoding="utf-8") as f:
+            f.write(html)
+        made.append((ch["name"], len(cards), out))
+
+    for name, n, out in made:
+        print("○  %s  ポスト%d件  %s" % (name, n, out))
 
 
 def cmd_verify(args):
@@ -511,6 +617,13 @@ def main():
     pl.add_argument("--word", default="誕生",
                     help="キャラ名に足す語。公式の定型に合わせる（誕生祭／紹介など）")
     pl.set_defaults(fn=cmd_plan)
+    pv = sub.add_parser("preview")
+    pv.add_argument("cids", nargs="+")
+    pv.add_argument("--out", default="preview_x")
+    pv.add_argument("--max-posts", type=int, default=2, dest="max_posts")
+    pv.add_argument("--lazy", action="store_true",
+                    help="押すまで読み込まない形にする")
+    pv.set_defaults(fn=cmd_preview)
     q = sub.add_parser("queue")
     q.add_argument("--since", type=int, default=2012)
     q.add_argument("--limit", type=int, default=40)
