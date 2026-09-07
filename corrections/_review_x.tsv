@@ -1,9 +1,9 @@
 # 自動では確定できなかった候補。人が見て x_posts.tsv へ移すか捨てる。
-cid	vid	character	account	status_url	checked_at	note
-c30371	v11179	宿史 暁人	@norn9_anime	https://x.com/norn9_anime/status/684657820579397632	2026-09-07	要確認: 名前が部分一致 ｜ 紹介らしい ｜ 【キャラ紹介】宿吏暁人（CV杉山紀彰）「俺に気安くはなしかけんじゃねえよ」怒りっぽく、常に不機嫌な表情を浮かべている気難
-c30371	v11179	宿史 暁人	@norn9_anime	https://x.com/norn9_anime/status/698535297303212036	2026-09-07	要確認: 名前が部分一致 ｜ 要確認 ｜ 【バレンタイン企画】宿吏暁人（CV杉山紀彰） #norn9 pic.twitter.com/9VTU2cpNOA&mda
-c50719	v18162	櫛奈雫 トア	@7scarlet_info	https://x.com/7scarlet_info/status/1793159876178276852	2026-09-07	要確認: 名前が部分一致 ｜ 要確認 ｜ 【スペシャル】Nintendo Switchソフト『7&#39;scarlet for Nintendo Switch』
-c50728	v18162	建比良 ソウスケ	@7scarlet_info	https://x.com/7scarlet_info/status/1793159876178276852	2026-09-07	要確認: 名前が部分一致 ｜ 要確認 ｜ 【スペシャル】Nintendo Switchソフト『7&#39;scarlet for Nintendo Switch』
-c50733	v18162	叢雲 ユヅキ	@7scarlet_info	https://x.com/7scarlet_info/status/1793159876178276852	2026-09-07	要確認: 名前が部分一致 ｜ 要確認 ｜ 【スペシャル】Nintendo Switchソフト『7&#39;scarlet for Nintendo Switch』
-c64022	v21782	楊	@pf_otomate	https://x.com/pf_otomate/status/1267744071897890816	2026-09-07	要確認: 本文にキャラ名なし ｜ わざと外した候補。この投稿は「袁」の紹介なので落ちるはず
-c94429	v29661	リュカ・プルースト	@virche_otomate	https://x.com/virche_otomate/status/2023306352496648407	2026-09-07	要確認: 名前が部分一致 ｜ 要確認 ｜ 【Special】『終遠のヴィルシュ』― 2/16 ―Joyeux anniversaire - Lucas -切望する
+cid	vid	character	account	status_url	kind	checked_at	note
+c30371	v11179	宿史 暁人	@norn9_anime	https://x.com/norn9_anime/status/684657820579397632	プロフィール	2026-09-07	要確認: 名前が部分一致 ｜ 紹介らしい ｜ 【キャラ紹介】宿吏暁人（CV杉山紀彰）「俺に気安くはなしかけんじゃねえよ」怒りっぽく、常に不機嫌な表情を浮かべている気難
+c30371	v11179	宿史 暁人	@norn9_anime	https://x.com/norn9_anime/status/698535297303212036	その他	2026-09-07	要確認: 名前が部分一致 ｜ 要確認 ｜ 【バレンタイン企画】宿吏暁人（CV杉山紀彰） #norn9 pic.twitter.com/9VTU2cpNOA&mda
+c50719	v18162	櫛奈雫 トア	@7scarlet_info	https://x.com/7scarlet_info/status/1793159876178276852	その他	2026-09-07	要確認: 名前が部分一致 ｜ 要確認 ｜ 【スペシャル】Nintendo Switchソフト『7&#39;scarlet for Nintendo Switch』
+c50728	v18162	建比良 ソウスケ	@7scarlet_info	https://x.com/7scarlet_info/status/1793159876178276852	その他	2026-09-07	要確認: 名前が部分一致 ｜ 要確認 ｜ 【スペシャル】Nintendo Switchソフト『7&#39;scarlet for Nintendo Switch』
+c50733	v18162	叢雲 ユヅキ	@7scarlet_info	https://x.com/7scarlet_info/status/1793159876178276852	その他	2026-09-07	要確認: 名前が部分一致 ｜ 要確認 ｜ 【スペシャル】Nintendo Switchソフト『7&#39;scarlet for Nintendo Switch』
+c64022	v21782	楊	@pf_otomate	https://x.com/pf_otomate/status/1267744071897890816	プロフィール	2026-09-07	要確認: 本文にキャラ名なし ｜ わざと外した候補。この投稿は「袁」の紹介なので落ちるはず
+c94429	v29661	リュカ・プルースト	@virche_otomate	https://x.com/virche_otomate/status/2023306352496648407	誕生日	2026-09-07	要確認: 名前が部分一致 ｜ 要確認 ｜ 【Special】『終遠のヴィルシュ』― 2/16 ―Joyeux anniversaire - Lucas -切望する
