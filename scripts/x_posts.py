@@ -946,6 +946,72 @@ def _promote_accounts():
         print("  %-30s %s" % (r["title"][:28], r["account"]))
 
 
+JP_DATE = re.compile(r"(\d{4})年(\d{1,2})月(\d{1,2})日")
+
+
+def cmd_series(args):
+    """1件のURLを渡すと、その投稿と同じ日の投稿をまとめて見る検索URLを出す。
+
+    キャラ紹介は同じ日に数分間隔で連投される。Collar×Malice の6人は
+    2026年8月18日に連投され、IDもほぼ連番だった。1件見つけたらそこで
+    止めず、その日ごと見にいけば残りも一度に取れる。
+
+    キャラ単位で検索を繰り返すと、この連投を見落として誕生日ポストのほうを
+    拾ってしまう（実際にそうなった）。
+    """
+    for url in args.urls:
+        acct, sid = parse_status(url)
+        if not sid:
+            print("×  URLとして読めない: %s" % url)
+            continue
+        d = oembed(sid, acct or "i")
+        if d is None:
+            print("×  削除済み・非公開: %s" % url)
+            continue
+        m = JP_DATE.search(d["_text"])
+        if not m:
+            print("×  日付が読めない: %s" % url)
+            continue
+        y, mo, da = (int(x) for x in m.groups())
+        day = datetime.date(y, mo, da)
+        # 連投が数日にまたがることもある。ヴィルシュの紹介は6月と7月の
+        # 2波に分かれていた。--days で窓を広げる
+        a = day - datetime.timedelta(days=args.days - 1)
+        b = day + datetime.timedelta(days=args.days)
+        q = "from:%s since:%s until:%s" % (d["_handle"], a.isoformat(), b.isoformat())
+        print("%s が %s〜%s に投稿したもの:" % (d["_handle"], a.isoformat(), b.isoformat()))
+        print("  https://x.com/search?q=%s&f=live" % urllib.parse.quote(q))
+
+
+def cmd_gaps(args):
+    """紹介ポストの連投を取りこぼしていそうな作品を出す。
+
+    同じ作品で、ある人はプロフィール型が取れているのに別の人は誕生日型、
+    という状態は「連投を途中までしか拾っていない」ことが多い。
+    """
+    con = sqlite3.connect(DB)
+    best = best_posts()
+    titles = {r[0]: r[1] for r in con.execute("select vid, title from work")}
+    by_vid = {}
+    for r in best.values():
+        by_vid.setdefault(r["vid"], []).append(r)
+    hits = []
+    for vid, rows in by_vid.items():
+        kinds = {r["kind"] for r in rows}
+        if "プロフィール" in kinds and kinds - {"プロフィール"}:
+            prof = [r for r in rows if r["kind"] == "プロフィール"][0]
+            other = [r for r in rows if r["kind"] != "プロフィール"]
+            hits.append((titles.get(vid, vid), vid, prof, other))
+    if not hits:
+        print("混在している作品はない")
+        return
+    print("プロフィール型と他の型が混ざっている作品。連投を取りこぼしている可能性がある:")
+    for title, vid, prof, other in sorted(hits, key=lambda x: -len(x[3])):
+        print("\n## %s（%s）プロフィール型でない人 %d名: %s"
+              % (title, vid, len(other), "、".join(r["character"] for r in other)))
+        print("   同じ日を見る: python3 scripts/x_posts.py series %s" % prof["status_url"])
+
+
 def cmd_verify(args):
     chars = {}
     con = sqlite3.connect(DB)
@@ -1092,6 +1158,13 @@ def main():
     sh.add_argument("--limit", type=int, default=10)
     sh.add_argument("--word", default="誕生")
     sh.set_defaults(fn=cmd_sheet)
+    se = sub.add_parser("series")
+    se.add_argument("urls", nargs="+")
+    se.add_argument("--days", type=int, default=1,
+                    help="前後何日ぶんを見るか。連投が数日に分かれる作品がある")
+    se.set_defaults(fn=cmd_series)
+    gp = sub.add_parser("gaps")
+    gp.set_defaults(fn=cmd_gaps)
     ac = sub.add_parser("accounts")
     ac.add_argument("--since", type=int, default=0)
     ac.add_argument("--limit", type=int, default=500)
