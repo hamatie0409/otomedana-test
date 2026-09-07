@@ -178,7 +178,26 @@ def name_variants(name):
 NEAR_INTRO = r"(?:[\s　]*[（(【\[]?\s*(?:CV|ＣＶ|V\.A\.|Cast|年齢|声))"
 
 
-def name_hit(text, name, title=""):
+def latin_hit(text, latin, title=""):
+    """ラテン表記での一致。誕生日ポストは「Joyeux anniversaire - Mathis -」のように
+    日本語名を一切出さないことがある。DBの name_latin はほぼ全キャラに入っている
+    ので、これを second chance として使う。
+
+    姓だけ・名だけの表記も拾うが、3文字未満の語は一般語と衝突するので使わない。
+    """
+    latin = (latin or "").strip()
+    if not latin:
+        return ""
+    title_l = (title or "").lower()
+    for v in [latin] + latin.split():
+        if len(v) < 3 or v.lower() in title_l:
+            continue
+        if re.search(r"(?<![A-Za-z])" + re.escape(v) + r"(?![A-Za-z])", text, re.I):
+            return "full" if v == latin else "part"
+    return ""
+
+
+def name_hit(text, name, title="", latin=""):
     """本文にキャラ名が出るか。full / part / 空 を返す。
 
     作品名にキャラ名が含まれる場合（『オランピアソワレ』の「オランピア」など）は
@@ -203,7 +222,7 @@ def name_hit(text, name, title=""):
             part = part.strip()
             if len(part) >= 2 and part not in flat_title and part in flat:
                 best = "part"
-    return best
+    return best or latin_hit(text, latin, title)
 
 
 def cmd_peek(args):
@@ -247,7 +266,7 @@ def cmd_harvest(args):
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
     chars = [dict(r) for r in con.execute(
-        "select cid, name from character where main_vid = ?", (args.vid,))]
+        "select cid, name, name_latin from character where main_vid = ?", (args.vid,))]
     if not chars:
         sys.exit("この作品のキャラが見つかりません: %s" % args.vid)
     wtitle = (con.execute("select title from work where vid=?",
@@ -272,9 +291,14 @@ def cmd_harvest(args):
         if NOISE.search(text) and not INTRO_HINT.search(text):
             skipped.append((url, "紹介ではない告知"))
             continue
-        hits = [c for c in chars if name_hit(text, c["name"], wtitle) == "full"]
+        hits = [c for c in chars if name_hit(text, c["name"], wtitle, c["name_latin"]) == "full"]
+        match = "full"
         if not hits:
-            hits = [c for c in chars if name_hit(text, c["name"], wtitle) == "part"]
+            hits = [c for c in chars if name_hit(text, c["name"], wtitle, c["name_latin"]) == "part"]
+            # 部分一致でも、その作品でただ1人に決まるなら曖昧さはない。
+            # 誕生日ポストは「Joyeux anniversaire - Mathis -」のように
+            # 姓を省くことが多く、これを落とすと取りこぼしが大きい
+            match = "unique" if len(hits) == 1 else "part"
         if not hits:
             skipped.append((url, "本文にこの作品のキャラ名なし"))
             continue
@@ -285,13 +309,16 @@ def cmd_harvest(args):
         for c in hits:
             rows.append({"cid": c["cid"], "vid": args.vid, "character": c["name"],
                          "status_url": "https://x.com/%s/status/%s" % (handle, sid),
+                         "match": match,
                          "note": ("紹介らしい" if INTRO_HINT.search(text) else "要確認")
                                  + " ｜ " + text.strip().replace("\n", " ")[:60]})
 
-    head = ["cid", "vid", "character", "status_url", "note"]
+    head = ["cid", "vid", "character", "status_url", "match", "note"]
     keep = {(r["cid"], r["status_url"]): r for r in read_tsv(QUEUE)}
     for r in rows:
-        keep.setdefault((r["cid"], r["status_url"]), r)
+        # 取り直したときは新しい判定で上書きする。キューは作業用の置き場で、
+        # 確定分は x_posts.tsv 側にある
+        keep[(r["cid"], r["status_url"])] = r
     write_tsv(QUEUE, head, sorted(keep.values(), key=lambda r: (r["vid"], r["cid"])),
               preamble="# 検索で拾った候補。ここは間違いが混ざっていてよい。\n"
                        "# x_posts.py verify が oEmbed で実在・投稿者・本文を確かめ、\n"
@@ -305,11 +332,42 @@ def cmd_harvest(args):
         print("未収集 %d人: %s" % (len(left), " / ".join(left)))
 
 
+def cmd_plan(args):
+    """作品IDを渡すと、未収集キャラぶんのX検索URLを出す。
+
+    Googleは X の投稿を部分的にしか索引していない。X自身の検索なら
+    `from:アカウント名 キャラ名` でほぼ確実に出るので、そちらを叩く。
+    ブラウザでログインしている必要がある（自分のアカウントで見るだけ。
+    大量に速く回すと制限がかかるので、作品単位で区切って進めること）。
+
+    出てきたURLを harvest に渡せば、割り当てと検証はそのまま流れる。
+    """
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    got = {r["cid"] for r in read_tsv(POSTS)}
+    handles = sorted(load_accounts().get(args.vid, []))
+    if not handles:
+        sys.exit("公式アカウントが未登録です。先に corrections/x_accounts.tsv に足してください: %s"
+                 % args.vid)
+    rows = con.execute("select cid, name, name_latin from character where main_vid = ?",
+                       (args.vid,)).fetchall()
+    for r in rows:
+        if r["cid"] in got:
+            continue
+        # 姓名のうち、投稿で呼ばれやすい方を1語だけ使う。フルネームだと
+        # 表記ゆれで外れることが多い
+        base = re.sub(r"[（(][^）)]*[）)]", "", r["name"]).strip()
+        key = max(re.split(r"[\s・･]", base) or [base], key=len)
+        q = "from:%s %s %s" % (handles[0], key, args.word)
+        print("%s\t%s\thttps://x.com/search?q=%s&f=live"
+              % (r["cid"], r["name"], urllib.parse.quote(q)))
+
+
 def cmd_verify(args):
     chars = {}
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
-    for r in con.execute("select cid, name, main_vid, main_title from character"):
+    for r in con.execute("select cid, name, name_latin, main_vid, main_title from character"):
         chars[r["cid"]] = dict(r)
     official = load_accounts()
     titles = {r[0]: r[1] for r in con.execute("select vid, title from work")}
@@ -337,7 +395,8 @@ def cmd_verify(args):
         handle = d["_handle"]
         text = d["_text"]
         want = official.get(row.get("vid") or ch["main_vid"] or "")
-        hit = name_hit(text, ch["name"], titles.get(ch["main_vid"], ""))
+        hit = name_hit(text, ch["name"], titles.get(ch["main_vid"], ""),
+                       ch["name_latin"])
         reasons = []
         if want and handle.lower() not in want:
             reasons.append("@%s は公式(%s)ではない" % (handle, "/".join("@" + w for w in sorted(want))))
@@ -345,7 +404,7 @@ def cmd_verify(args):
             reasons.append("公式アカウント未登録")
         if not hit:
             reasons.append("本文にキャラ名なし")
-        elif hit == "part":
+        elif hit == "part" and row.get("match") != "unique":
             reasons.append("名前が部分一致")
 
         rec = {"cid": cid, "vid": row.get("vid") or ch["main_vid"], "character": ch["name"],
@@ -436,6 +495,11 @@ def main():
     hv.add_argument("--max-chars", type=int, default=3,
                     dest="max_chars", help="1投稿に何人まで載っていたら紹介とみなすか")
     hv.set_defaults(fn=cmd_harvest)
+    pl = sub.add_parser("plan")
+    pl.add_argument("vid")
+    pl.add_argument("--word", default="誕生",
+                    help="キャラ名に足す語。公式の定型に合わせる（誕生祭／紹介など）")
+    pl.set_defaults(fn=cmd_plan)
     q = sub.add_parser("queue")
     q.add_argument("--since", type=int, default=2012)
     q.add_argument("--limit", type=int, default=40)
