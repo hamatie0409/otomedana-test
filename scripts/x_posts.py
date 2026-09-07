@@ -1116,6 +1116,42 @@ def cmd_gaps(args):
         print("   同じ日を見る: python3 scripts/x_posts.py series %s" % prof["status_url"])
 
 
+EMBEDS = os.path.join(CORR, "x_embeds.json")
+
+
+def cmd_embeds(args):
+    """確定ぶんの埋め込みHTMLを corrections/x_embeds.json に書き出す。
+
+    埋め込みHTMLは収集時に oEmbed から取って data/cache/ に置いてあるが、
+    data/ は .gitignore されていて GitHub Actions の runner には存在しない。
+    ワークフローは runner 上で docs/v2 を作り直すので、キャッシュだけに
+    頼るとビルドで埋め込みが全部消える。git 管理下に持つ。
+
+    ビルド中にXを叩く手もあるが、生成のたびに数百リクエストが飛ぶうえ、
+    Xが落ちているとサイトが作れなくなる。取ったものを持ち回るほうがよい。
+    """
+    out = {}
+    for cid, r in sorted(best_posts().items()):
+        _, sid = parse_status(r["status_url"])
+        if not sid:
+            continue
+        path = os.path.join(CACHE, "%s.json" % sid)
+        if not os.path.exists(path):
+            print("・ キャッシュなし: %s %s" % (cid, r["character"]))
+            continue
+        with open(path, encoding="utf-8") as f:
+            d = json.load(f)
+        if d.get("_dead") or not d.get("html"):
+            continue
+        out[cid] = {"html": d["html"], "account": r["account"],
+                    "kind": r.get("kind", ""), "url": r["status_url"],
+                    "character": r["character"]}
+    with open(EMBEDS, "w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, indent=1, sort_keys=True)
+    print("%s に %d人ぶん（%.0fKB）" % (EMBEDS, len(out),
+                                       os.path.getsize(EMBEDS) / 1024.0))
+
+
 def cmd_verify(args):
     chars = {}
     con = sqlite3.connect(DB)
@@ -1278,6 +1314,8 @@ def main():
     se.set_defaults(fn=cmd_series)
     gp = sub.add_parser("gaps")
     gp.set_defaults(fn=cmd_gaps)
+    em = sub.add_parser("embeds")
+    em.set_defaults(fn=cmd_embeds)
     ac = sub.add_parser("accounts")
     ac.add_argument("--since", type=int, default=0)
     ac.add_argument("--limit", type=int, default=500)

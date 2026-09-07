@@ -888,62 +888,28 @@ PROFILE_CATS = ["役柄", "性格", "境遇", "行動", "持ち物", "外見", "
 
 # キャラクター紹介の公式Xポスト。corrections/x_posts.tsv に確定分がある。
 # data/ は再生成で消えるので、収集結果は git 管理下に置いてここで読む。
-X_POSTS = os.path.join(ROOT, "corrections", "x_posts.tsv")
-X_CACHE = os.path.join(DATA, "cache", "x_oembed")
-X_KIND_ORDER = ["プロフィール", "誕生日", "その他"]
+X_EMBEDS = os.path.join(ROOT, "corrections", "x_embeds.json")
 
 
 def load_x_posts():
-    """cid → 埋め込みHTML。1人1件だけ選ぶ。
+    """cid → 埋め込みHTML。corrections/x_embeds.json を読むだけ。
 
-    選び方は x_posts.py と同じで、プロフィール型（年齢・CV・人物の説明が
-    入った紹介）を最優先、次に誕生日、同点なら本文が長いほう。
+    このファイルは x_posts.py embeds が書く。埋め込みHTMLは収集時に
+    oEmbed から取ったものだが、data/ は .gitignore されていて Actions の
+    runner には無い。ワークフローは runner 上で docs/v2 を作り直すので、
+    キャッシュだけに頼るとビルドで埋め込みが全部消える。git 管理下に持つ。
 
-    埋め込みHTMLは収集時に oEmbed から取ってキャッシュしてある。ビルド中に
-    Xを叩くと、生成のたびに数百リクエストが飛ぶうえ、Xが落ちていると
-    サイトが作れなくなる。キャッシュに無いものは黙って出さない。
+    ビルド中にXを叩く手もあるが、生成のたびに数百リクエストが飛ぶうえ、
+    Xが落ちているとサイトが作れなくなる。
     """
-    if not os.path.exists(X_POSTS):
+    if not os.path.exists(X_EMBEDS):
         return {}
-    rows, head = [], None
-    with open(X_POSTS, encoding="utf-8") as f:
-        for line in f:
-            line = line.rstrip("\n")
-            if not line.strip() or line.lstrip().startswith("#"):
-                continue
-            cells = line.split("\t")
-            if head is None:
-                head = cells
-                continue
-            rows.append(dict(zip(head, cells + [""] * (len(head) - len(cells)))))
-
-    by_cid = {}
-    for r in rows:
-        by_cid.setdefault(r["cid"], []).append(r)
-    out = {}
-    for cid, group in by_cid.items():
-        def rank(r):
-            k = r.get("kind") or "その他"
-            return (X_KIND_ORDER.index(k) if k in X_KIND_ORDER else 9,
-                    -len(r.get("note") or ""))
-        for r in sorted(group, key=rank):
-            m = re.search(r"/status/(\d+)", r.get("status_url") or "")
-            if not m:
-                continue
-            path = os.path.join(X_CACHE, "%s.json" % m.group(1))
-            if not os.path.exists(path):
-                continue
-            try:
-                with open(path, encoding="utf-8") as f:
-                    d = json.load(f)
-            except (OSError, ValueError):
-                continue
-            if d.get("_dead") or not d.get("html"):
-                continue
-            out[cid] = {"html": d["html"], "account": r.get("account", ""),
-                        "kind": r.get("kind", ""), "url": r["status_url"]}
-            break
-    return out
+    try:
+        with open(X_EMBEDS, encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError):
+        return {}
+    return {cid: v for cid, v in data.items() if v.get("html")}
 
 
 def character_page(ch, works, traits, same_cv, by_vid, xpost=None):
