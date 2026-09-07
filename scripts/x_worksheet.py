@@ -50,23 +50,25 @@ SMALL = Font(size=10)
 
 # 検索の型。%s にアカウント名が入る
 TEMPLATES = [
-    ("プロフィール型をまとめて探す",
+    ("① まずこれ。プロフィール型をまとめて探す",
      "from:%s (キャラクター紹介 OR キャラ紹介 OR 攻略キャラクター紹介 OR 登場人物)",
      "一番ほしい型。年齢やCV、人物の説明が入っている。"
-     "公式が発売前に連投していることが多く、1回で複数キャラぶん取れる"),
-    ("誕生日ポストをまとめて探す",
+     "公式は発売前にキャラ紹介を連投することが多く、1回で複数キャラぶん取れる。"
+     "誕生日から先に探すと、連投があっても気づかないまま誕生日ポストで埋まってしまう"),
+    ("② 1件見つけたら、その日ごと見る",
+     "from:%s since:2026-08-18 until:2026-08-19",
+     "連投は同じ日に数分間隔で投稿される。Collar×Malice の6人は2026年8月18日に"
+     "まとめて投稿されていた。1件見つけたら日付を控えて、この型でその日を全部見る。"
+     "日付は投稿の下に出ている。数日に分かれる作品もあるので、出なければ窓を広げる"),
+    ("③ 誕生日ポストを探す",
      "from:%s (誕生日 OR 誕生祭 OR anniversaire OR compleanno)",
-     "描き下ろしイラスト付きで見栄えがよい。毎年投稿されるので数が多い。"
+     "①②で出てこなかった人に使う。描き下ろしイラスト付きで見栄えはよいが、"
+     "その日の挨拶だけで人物の説明が無いことが多い。"
      "英語やフランス語で書く公式もあるので OR で並べる"),
-    ("キャラ名で探す（取りこぼしを拾う)",
+    ("④ キャラ名で探す（最後の手段）",
      "from:%s キャラ名",
-     "上2つで出てこなかった人に使う。キャラ名は姓か名のどちらか一語だけにする。"
-     "フルネームだと表記ゆれで外れる"),
-    ("そのキャラの投稿を古い順に見る",
-     "from:%s キャラ名 until:2030-01-01",
-     "紹介は発売前に投稿されていることが多い。古い順に見ると見つかりやすい"),
+     "キャラ名は姓か名のどちらか一語だけにする。フルネームだと表記ゆれで外れる"),
 ]
-
 
 def link(ws, cell, url, label):
     cell.value = label
@@ -89,6 +91,14 @@ def sheet_templates(wb):
         ws.cell(r + 1, 2, why).font = SMALL
         ws.cell(r + 1, 2).alignment = Alignment(wrap_text=True, vertical="top")
         r += 3
+    ws.cell(r, 1, "拾う順番").font = BOLD
+    for i, t in enumerate([
+            "①→②→③→④の順で。①②で作品まるごと片づくことが多い。",
+            "④のキャラ単位の検索から入ると、連投を見落として時間ばかりかかる。",
+            "1人に複数見つかったら全部貼ってよい。載せる1件はこちらで選ぶ"
+            "（プロフィール型 → 誕生日 → その他の順）"]):
+        ws.cell(r + 1 + i, 2, t).font = SMALL
+    r += 5
     ws.cell(r, 1, "公式アカウントが見つからないとき").font = BOLD
     for i, t in enumerate([
             "Xのユーザー検索（検索して「ユーザー」タブ）で作品名を入れる。"
@@ -116,12 +126,22 @@ def sheet_templates(wb):
 
 def sheet_works(wb, con, accounts, got):
     ws = wb.create_sheet("作品")
-    head = ["作品", "年", "vid", "公式アカウント", "候補（公式サイトから自動抽出）",
+    head = ["作品", "年", "vid", "公式アカウント", "備考",
+            "候補（公式サイトから自動抽出）",
             "プロフィール型を検索", "誕生日を検索", "公式サイト", "残り", "全"]
     for i, h in enumerate(head, 1):
         c = ws.cell(1, i, h)
         c.font = BOLD
         c.fill = HEAD_FILL
+    # 同じアカウントが多くの作品に付いていたら、作品専用ではなく
+    # ブランドやレーベルの汎用アカウント。紹介ポストが薄いことが多いので印を付ける
+    used = {}
+    for vid, hs in accounts.items():
+        for h in hs:
+            used[h] = used.get(h, 0) + 1
+    note_of = {h: ("汎用（%d作品で共用）" % n) if n > 3 else
+               ("シリーズ共通（%d作品）" % n) if n > 1 else ""
+               for h, n in used.items()}
     cand = {r["vid"]: r for r in X.read_tsv(
         os.path.join(ROOT, "corrections", "_queue_x_accounts.tsv"))}
     sites = {}
@@ -147,9 +167,10 @@ def sheet_works(wb, con, accounts, got):
         c.font = SMALL
         if not acct:
             c.fill = INPUT_FILL
-        ws.cell(r, 5, (cand.get(w["vid"]) or {}).get("account", "")).font = SMALL
+        ws.cell(r, 5, note_of.get(acct, "")).font = SMALL
+        ws.cell(r, 6, (cand.get(w["vid"]) or {}).get("account", "")).font = SMALL
         if acct:
-            for col, tpl in ((6, TEMPLATES[0][1]), (7, TEMPLATES[1][1])):
+            for col, tpl in ((7, TEMPLATES[0][1]), (9, TEMPLATES[2][1])):
                 q = tpl % acct
                 link(ws, ws.cell(r, col),
                      "https://x.com/search?q=%s&f=live" % urllib.parse.quote(q), "検索")
@@ -157,24 +178,24 @@ def sheet_works(wb, con, accounts, got):
             # アカウントが未特定の作品は、Xのユーザー検索に飛ばす。
             # 古いオトメイト作品は「〇〇 総合」という名前のシリーズ共通
             # アカウントで運用されていることがあり、作品名だけでは出ない
-            link(ws, ws.cell(r, 6),
+            link(ws, ws.cell(r, 7),
                  "https://x.com/search?q=%s&f=user" % urllib.parse.quote(w["title"]),
                  "アカウントを探す")
-            link(ws, ws.cell(r, 7),
+            link(ws, ws.cell(r, 8),
                  "https://x.com/search?q=%s&f=user"
                  % urllib.parse.quote("%s 総合" % w["title"]), "「総合」で探す")
         if sites.get(w["vid"]):
-            link(ws, ws.cell(r, 8), sites[w["vid"]], "公式サイト")
-        ws.cell(r, 9, left).font = SMALL
-        ws.cell(r, 10, len(cids)).font = SMALL
+            link(ws, ws.cell(r, 9), sites[w["vid"]], "公式サイト")
+        ws.cell(r, 10, left).font = SMALL
+        ws.cell(r, 11, len(cids)).font = SMALL
         if left == 0:
-            for i in range(1, 11):
+            for i in range(1, 12):
                 ws.cell(r, i).fill = DONE_FILL
         r += 1
-    for col, wd in zip("ABCDEFGHIJ", (40, 6, 8, 20, 34, 16, 14, 12, 6, 6)):
+    for col, wd in zip("ABCDEFGHIJK", (38, 6, 8, 20, 22, 30, 16, 14, 12, 6, 6)):
         ws.column_dimensions[col].width = wd
     ws.freeze_panes = "A2"
-    ws.auto_filter.ref = "A1:J%d" % (r - 1)
+    ws.auto_filter.ref = "A1:K%d" % (r - 1)
     return ws
 
 
