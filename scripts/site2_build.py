@@ -106,7 +106,7 @@ def yen(n):
 # ---------------------------------------------------------------- テンプレート
 
 def layout(title, desc, path, body, crumbs=None, current="", og_image=None, jsonld=None,
-           bottom_bar=None):
+           bottom_bar=None, extra_js=""):
     """1ページ分のHTML。path はサイト内のルート相対（"/game/xxx/"）"""
     canon = BASE_URL + path
     crumb = ""
@@ -172,13 +172,13 @@ def layout(title, desc, path, body, crumbs=None, current="", og_image=None, json
 %(tabbar)s
 </div>
 <script>window.V2_BASE=%(prefix)s;</script>
-<script src="/assets/app.js" defer></script>
+<script src="/assets/app.js" defer></script>%(extrajs)s
 </body>
 </html>""" % dict(
         title=e(title), desc=e(desc), canon=e(canon), site=e(SITE_NAME),
         sitedesc=e(SITE_DESC), scope=e(SCOPE_NOTE), repo=e(REPO_URL),
         body=body, crumb=crumb, ld=ld, navlinks=nav_links, tabbar=tabbar,
-        prefix=json.dumps(PREFIX),
+        prefix=json.dumps(PREFIX), extrajs=extra_js,
         robots="" if PUBLISH else '<meta name="robots" content="noindex,nofollow">\n',
         ogimg=('<meta property="og:image" content="%s">\n' % e(og_image)) if og_image else "",
         notice=("当サイトはアフィリエイト広告を利用しています" if PUBLISH else
@@ -886,7 +886,67 @@ def my_page():
 PROFILE_CATS = ["役柄", "性格", "境遇", "行動", "持ち物", "外見", "髪", "瞳", "服装"]
 
 
-def character_page(ch, works, traits, same_cv, by_vid):
+# キャラクター紹介の公式Xポスト。corrections/x_posts.tsv に確定分がある。
+# data/ は再生成で消えるので、収集結果は git 管理下に置いてここで読む。
+X_POSTS = os.path.join(ROOT, "corrections", "x_posts.tsv")
+X_CACHE = os.path.join(DATA, "cache", "x_oembed")
+X_KIND_ORDER = ["プロフィール", "誕生日", "その他"]
+
+
+def load_x_posts():
+    """cid → 埋め込みHTML。1人1件だけ選ぶ。
+
+    選び方は x_posts.py と同じで、プロフィール型（年齢・CV・人物の説明が
+    入った紹介）を最優先、次に誕生日、同点なら本文が長いほう。
+
+    埋め込みHTMLは収集時に oEmbed から取ってキャッシュしてある。ビルド中に
+    Xを叩くと、生成のたびに数百リクエストが飛ぶうえ、Xが落ちていると
+    サイトが作れなくなる。キャッシュに無いものは黙って出さない。
+    """
+    if not os.path.exists(X_POSTS):
+        return {}
+    rows, head = [], None
+    with open(X_POSTS, encoding="utf-8") as f:
+        for line in f:
+            line = line.rstrip("\n")
+            if not line.strip() or line.lstrip().startswith("#"):
+                continue
+            cells = line.split("\t")
+            if head is None:
+                head = cells
+                continue
+            rows.append(dict(zip(head, cells + [""] * (len(head) - len(cells)))))
+
+    by_cid = {}
+    for r in rows:
+        by_cid.setdefault(r["cid"], []).append(r)
+    out = {}
+    for cid, group in by_cid.items():
+        def rank(r):
+            k = r.get("kind") or "その他"
+            return (X_KIND_ORDER.index(k) if k in X_KIND_ORDER else 9,
+                    -len(r.get("note") or ""))
+        for r in sorted(group, key=rank):
+            m = re.search(r"/status/(\d+)", r.get("status_url") or "")
+            if not m:
+                continue
+            path = os.path.join(X_CACHE, "%s.json" % m.group(1))
+            if not os.path.exists(path):
+                continue
+            try:
+                with open(path, encoding="utf-8") as f:
+                    d = json.load(f)
+            except (OSError, ValueError):
+                continue
+            if d.get("_dead") or not d.get("html"):
+                continue
+            out[cid] = {"html": d["html"], "account": r.get("account", ""),
+                        "kind": r.get("kind", ""), "url": r["status_url"]}
+            break
+    return out
+
+
+def character_page(ch, works, traits, same_cv, by_vid, xpost=None):
     """キャラクター1人のページ。
 
     画像について:
@@ -919,14 +979,28 @@ def character_page(ch, works, traits, same_cv, by_vid):
               % (e(ch["cid"]), e(ch["cid"])))]
     facts_html = "".join("<dt>%s</dt><dd>%s</dd>" % (e(k), v) for k, v in facts if v)
 
-    cover = hero_cover(by_vid[ch["main_vid"]], "%s のパッケージ" % ch["main_title"]) \
-        if ch["main_vid"] in by_vid \
-        else '<div class="ph" style="aspect-ratio:3/4"><span>画像なし</span></div>'
+    # 公式ポストがあるなら、パッケージ写真の枠ごと差し替える。
+    # このページはVNDBのライセンス上キャラクター画像を出せず、代わりに代表作の
+    # パッケージと「画像は掲載していません」という断りを置いていた場所。
+    # 権利者自身が公開したイラスト付きの投稿が入るなら、そちらのほうがよい。
+    # 見出しは付けない。枠の中身が変わるだけに見せる。
+    hero_cls = "hero hero-2"
+    if xpost:
+        hero_cls += " hero-x"
+        cover = ('%s<p class="text-muted hero-cap">%s ／ <a href="%s">%s</a></p>'
+                 % (xpost["html"], e(xpost["account"]),
+                    e(ch["main_url"] or "/"), e(ch["main_title"] or "")))
+    elif ch["main_vid"] in by_vid:
+        cover = hero_cover(by_vid[ch["main_vid"]], "%s のパッケージ" % ch["main_title"])
+    else:
+        cover = '<div class="ph" style="aspect-ratio:3/4"><span>画像なし</span></div>'
 
-    hero = """<div class="hero hero-2">
-<div class="hero-img">%(cover)s
+    cap = "" if xpost else ("""
 <p class="text-muted" style="font-size:12px;margin-top:10px">代表作
-<a href="%(murl)s">%(mtitle)s</a> のパッケージ。キャラクター画像は掲載していません。</p></div>
+<a href="%s">%s</a> のパッケージ。キャラクター画像は掲載していません。</p>"""
+        % (e(ch["main_url"] or "/"), e(ch["main_title"] or "")))
+    hero = """<div class="%(hcls)s">
+<div class="hero-img">%(cover)s%(cap)s</div>
 <div class="hero-main">
 <div class="kicker">%(role)s</div>
 <h1>%(name)s</h1>
@@ -934,7 +1008,7 @@ def character_page(ch, works, traits, same_cv, by_vid):
 <div class="tags" style="margin-bottom:20px">%(chips)s</div>
 <dl class="facts">%(facts)s</dl>
 </div>
-</div>""" % dict(cover=cover, murl=e(ch["main_url"] or "/"), mtitle=e(ch["main_title"] or ""),
+</div>""" % dict(cover=cover, cap=cap, hcls=hero_cls,
                  role=e(ch["role_label"]), name=e(name), sub=e(sub),
                  chips="".join(chips), facts=facts_html)
 
@@ -981,10 +1055,14 @@ def character_page(ch, works, traits, same_cv, by_vid):
 
     desc = "%s（%s）の声優・属性・登場作品。%s" % (
         name, ch["main_title"] or "", ("CV. %s。" % ch["cv"]) if ch["cv"] else "")
+    # 埋め込みがあるページだけ widgets.js を積む。全ページに置くと、
+    # ポストが無いキャラのページからも X にリクエストが飛ぶ
+    xjs = ('\n<script async src="https://platform.twitter.com/widgets.js" '
+           'charset="utf-8"></script>') if xpost else ""
     return layout("%s | %s" % (name, SITE_NAME), desc, ch["url"], "".join(parts),
                   crumbs=[(SITE_NAME, "/"), ("キャラクターから探す", "/character/"),
                           (ch["main_title"] or "", ch["main_url"]), (name, None)],
-                  current="作品を探す")
+                  current="作品を探す", extra_js=xjs)
 
 
 def character_index_page(rows_by_id, total):
@@ -1208,11 +1286,14 @@ def main():
         cw[r["url"]].append(r["vid"])
 
     # ---- キャラクターページ ----
+    xposts = load_x_posts()
+    if xposts:
+        print("  公式Xポストの埋め込み: %d人" % len(xposts))
     for c in characters:
         same = [x for x in by_cv.get(c["cv"] or "", []) if x["cid"] != c["cid"]]
         same.sort(key=lambda x: (x["main_released"] or "0000"), reverse=True)
         write(c["url"], character_page(c, ch_works[c["cid"]], ch_traits[c["cid"]],
-                                       same, by_vid))
+                                       same, by_vid, xposts.get(c["cid"])))
         urls.append(c["url"])
     rows_by_id = []
     for rid, rname in KANA_ROWS:

@@ -286,8 +286,12 @@ def cmd_harvest(args):
     """
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
-    chars = [dict(r) for r in con.execute(
-        "select cid, name, name_latin from character where main_vid = ?", (args.vid,))]
+    chars = [dict(r) for r in con.execute("""
+        select cid, name, name_latin from character where main_vid = ?
+        union
+        select c.cid, c.name, c.name_latin from character c
+          join character_work cw on cw.cid = c.cid where cw.vid = ?""",
+        (args.vid, args.vid))]
     if not chars:
         sys.exit("この作品のキャラが見つかりません: %s" % args.vid)
     wtitle = (con.execute("select title from work where vid=?",
@@ -401,9 +405,19 @@ KIND_BIRTHDAY = re.compile(
 KIND_ORDER = ["プロフィール", "誕生日", "その他"]
 
 
-def post_kind(text):
+def post_kind(text, name=""):
+    """ポストの種類を決める。name を渡すとより正確になる。
+
+    「【緋影】「僕以外はあり得ないだろう」（CV：石川界人）」のように、
+    見出しラベルではなくキャラ名そのものを【】でくくる紹介形式がある。
+    定型の語（キャラクター紹介など）が無いので、名前を知らないと判定できない。
+    誕生日ポストは名前を単独で【】に入れないので、これで取り違えない。
+    """
     if KIND_PROFILE.search(text):
         return "プロフィール"
+    for v in name_variants(name):
+        if ("【%s】" % v) in text and re.search(r"CV|ＣＶ|声優|V\.A\.", text, re.I):
+            return "プロフィール"
     if KIND_BIRTHDAY.search(text):
         return "誕生日"
     return "その他"
@@ -663,9 +677,18 @@ def cmd_intake(args):
     chars = [dict(r) for r in con.execute(
         "select cid, name, name_latin, main_vid from character")]
     titles = {r[0]: r[1] for r in con.execute("select vid, title from work")}
-    by_vid = {}
+    # 代表作（main_vid）だけで引くと、続編やシリーズ共通アカウントの投稿を
+    # 取りこぼす。DBには代表作以外にも登場するキャラが756人いる。
+    # character_work（登場作品）も足して引く
+    by_vid, seen_pair = {}, set()
+    by_cid = {c["cid"]: c for c in chars}
     for c in chars:
         by_vid.setdefault(c["main_vid"], []).append(c)
+        seen_pair.add((c["main_vid"], c["cid"]))
+    for vid, cid in con.execute("select vid, cid from character_work"):
+        if (vid, cid) not in seen_pair and cid in by_cid:
+            by_vid.setdefault(vid, []).append(by_cid[cid])
+            seen_pair.add((vid, cid))
     # アカウント → 作品。1アカウントが続編と共用のこともあるので候補は複数持つ
     acct_vids = {}
     for vid, handles in load_accounts().items():
@@ -1058,7 +1081,7 @@ def cmd_verify(args):
 
         rec = {"cid": cid, "vid": row.get("vid") or ch["main_vid"], "character": ch["name"],
                "account": "@" + handle, "status_url": "https://x.com/%s/status/%s" % (handle, sid),
-               "kind": post_kind(text), "checked_at": today,
+               "kind": post_kind(text, ch["name"]), "checked_at": today,
                "note": (row.get("note") or "").strip() or text.strip().replace("\n", " ")[:80]}
         (ok if not reasons else review).append(
             rec if not reasons else dict(rec, note="要確認: " + " / ".join(reasons) + " ｜ " + rec["note"]))

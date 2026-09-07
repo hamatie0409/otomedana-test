@@ -648,3 +648,14 @@ dialog.modal::backdrop { background: color-mix(in srgb, var(--color-neutral-900)
   font-size: 11px; letter-spacing: .08em; padding: 6px var(--space-2);
   border-bottom: 1px solid var(--color-divider);
 }
+
+/* ── キャラクターページの公式Xポスト ───────────────────────────
+   キャラクター画像を出せないページなので、代表作のパッケージを置いていた枠を
+   公式ポストに差し替える。既定の 300px（内側 244px）は X の埋め込みの最小幅
+   220px すれすれで窮屈なので、この形のときだけ 380px に広げる。 */
+.hero-x { grid-template-columns: 380px minmax(0, 1fr); }
+.hero-x .hero-img { padding: 22px; }
+/* X の埋め込みは読み込み時のコンテナ幅に合わせる。枠いっぱいに使わせる */
+.hero-x .hero-img .twitter-tweet { margin: 0 !important; width: 100% !important; }
+.hero-cap { font-size: 12px; margin-top: 10px; }
+@media (max-width: 900px) { .hero-x { grid-template-columns: 1fr; } }
