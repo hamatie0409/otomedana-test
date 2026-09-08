@@ -24,9 +24,12 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 90        # 楽天の取得だけで約30分かかる
+    timeout-minutes: 150       # 楽天とYahooの取得でそれぞれ約30分かかる
     env:
       RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
+      YAHOO_CLIENT_ID: ${{ secrets.YAHOO_CLIENT_ID }}
+      YAHOO_VC_SID: ${{ secrets.YAHOO_VC_SID }}
+      YAHOO_VC_PID: ${{ secrets.YAHOO_VC_PID }}
       GH_TOKEN: ${{ github.token }}
 
     steps:
@@ -82,6 +85,17 @@ jobs:
         run: |
           python3 scripts/rakuten_prices.py --only-scope
           python3 scripts/rakuten_prices.py --by-title
+
+      - name: Yahoo!ショッピングから価格を取る（約30分・1秒1リクエスト）
+        # 楽天だけだと中古の相場が薄い。買取王子・メディアワールド・ネットオフ・
+        # 駿河屋Yahoo!店などが拾えるので、中古の下限がかなり下がる。
+        # CLIENT_ID が未設定なら黙って飛ばす（鍵が無くてもビルドは通す）
+        run: |
+          if [ -n "$YAHOO_CLIENT_ID" ]; then
+            python3 scripts/yahoo_prices.py
+          else
+            echo "::warning::YAHOO_CLIENT_ID が未設定のため、Yahooの価格取得を飛ばしました"
+          fi
 
       - name: パッケージ画像を選ぶ
         run: python3 scripts/shop_images.py

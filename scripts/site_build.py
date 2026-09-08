@@ -94,6 +94,11 @@ def layout(title, desc, canonical, body, jsonld=None, breadcrumb=None, og_image=
   <!-- 楽天ウェブサービスのクレジット表示。規約により必須で、
        提供されたHTMLをそのまま使うことが求められている。改変しないこと -->
   <a href="https://developers.rakuten.com/" target="_blank">Supported by Rakuten Developers</a></p>
+  <!-- Yahoo!デベロッパーネットワークのクレジット表示。ガイドラインにより必須で、
+       提供されたHTMLをそのまま使うことが求められている。改変しないこと -->
+  <!-- Begin Yahoo! JAPAN Web Services Attribution Snippet -->
+  <span style="margin:15px 15px 15px 15px"><a href="https://developer.yahoo.co.jp/sitemap/">Webサービス by Yahoo! JAPAN</a></span>
+  <!-- End Yahoo! JAPAN Web Services Attribution Snippet -->
 </footer>
 <script>window.BASE_PATH=%(basepath)s;</script>\n<script src="/assets/app.js" defer></script>
 </body>
