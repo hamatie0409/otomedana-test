@@ -120,6 +120,28 @@ def load_accounts():
     return out
 
 
+# アニメ版・舞台版の公式アカウント。公式ではあるが、このサイトが扱うのは
+# ゲームなので、同じキャラの紹介ならゲーム公式のほうを採りたい。
+# NORN9 は13人全員がアニメ公式 @norn9_anime からの取得になっていた。
+DERIVED_ACCOUNT = re.compile(r"anime|_tv$|^tv_|tvanime|butai|stage", re.I)
+
+
+def primary_accounts():
+    """作品 → ゲーム公式アカウント（account 列の先頭。小文字）。
+
+    account 列は空白区切りで複数書ける。**先頭をゲーム公式とする**
+    のが約束で、アニメ版などはその後ろに並べる。load_accounts が
+    集合を返して順序を捨てるので、順序が要るときはこちらを使う。
+    """
+    out = {}
+    for r in read_tsv(ACCOUNTS):
+        handles = [h.lstrip("@").lower()
+                   for h in re.split(r"[,\s]+", r.get("account", "")) if h.strip()]
+        if handles:
+            out.setdefault(r["vid"], handles[0])
+    return out
+
+
 def parse_status(url):
     """投稿URLを (アカウント, ID) に割る。表記ゆれ・クエリは落とす。"""
     m = STATUS.match((url or "").strip())
@@ -467,10 +489,18 @@ def best_posts():
     by_cid = {}
     for r in read_tsv(POSTS):
         by_cid.setdefault(r["cid"], []).append(r)
-    return {cid: sorted(rows,
-                        key=lambda r: (KIND_ORDER.index(r.get("kind") or "その他"),
-                                       -len(r.get("note") or "")))[0]
-            for cid, rows in by_cid.items()}
+    primary = primary_accounts()
+
+    def rank(r):
+        # ゲーム公式を最優先にする。アニメ版の公式も「公式」ではあるが、
+        # このサイトが載せているのはゲームなので、同じキャラの紹介が
+        # 両方にあるならゲーム公式のほうを採る。
+        acct = (r.get("account") or "").lstrip("@").lower()
+        derived = 0 if acct == primary.get(r["vid"], acct) else 1
+        return (derived, KIND_ORDER.index(r.get("kind") or "その他"),
+                -len(r.get("note") or ""))
+
+    return {cid: sorted(rows, key=rank)[0] for cid, rows in by_cid.items()}
 
 
 EMBED_CSS = """
@@ -1370,6 +1400,13 @@ def cmd_hunt(args):
         handle = acct.split()[0].lstrip("@")
         print("## %s（%s年）%s  残り%d/%d人  %s"
               % (r["title"], r["year"], vid, len(left), len(chars), acct))
+        if DERIVED_ACCOUNT.search(handle):
+            # 先頭はゲーム公式の場所。アニメ版しか登録されていないなら、
+            # 先にゲーム公式を探したほうがよい。古い作品はゲーム公式が
+            # 存在しないこともあり、その場合はアニメ版でよい
+            print("   ⚠ 先頭がアニメ/舞台版らしい。ゲーム公式を探す: "
+                  "https://x.com/search?q=%s"
+                  % urllib.parse.quote("%s 公式" % r["title"]))
         q = "from:%s (%s)" % (handle, " OR ".join(SEED_WORDS))
         print("   ① 足がかり: https://x.com/search?q=%s&f=live" % urllib.parse.quote(q))
         print("   ② 見つけたら: python3 scripts/x_posts.py series <そのURL>")
