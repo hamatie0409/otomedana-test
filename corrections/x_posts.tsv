@@ -1,11 +1,15 @@
 # 検証を通ったキャラクター紹介ポスト。x_posts.py verify が書く。
 # 公式アカウントの投稿で、本文にキャラ名が出るものだけが入る。
 cid	vid	character	account	status_url	kind	checked_at	note
+c37620	v10273	アポロン・アガナ・ベレア	@kami_aso	https://x.com/kami_aso/status/1485990870264557574	その他	2026-09-09	紹介らしい ｜ 【GAME】Nintendo Switch用ソフト『神々の悪戯 Unite Edition』発売まであと1日。ギリシャ神
+c37621	v10273	ハデス・アイドネウス	@kami_aso	https://x.com/kami_aso/status/1485628478049431556	フルネーム	2026-09-09	紹介らしい ｜ 【GAME】Nintendo Switch用ソフト『神々の悪戯 Unite Edition』発売まであと2日。ギリシャ神
 c37622	v10273	バルドル・フリングホルニ	@kami_aso	https://x.com/kami_aso/status/476675090260582400	その他	2026-09-09	要確認 ｜ 【GALLERY】神々紹介 バルドル #kamiaso http://t.co/apqwGAldiZ pic.twitt
 c37622	v10273	バルドル・フリングホルニ	@kami_aso	https://x.com/kami_aso/status/475216479525171201	その他	2026-09-09	要確認 ｜ 【GALLERY】神々紹介⑤ バルドルhttp://t.co/BAZJQEbrba #kamiaso pic.twitt
 c37623	v10273	ロキ・レーヴァテイン	@kami_aso	https://x.com/kami_aso/status/479184907302760448	その他	2026-09-09	要確認 ｜ 【GALLERY】神々紹介 ロキ#kamiaso http://t.co/apqwGAldiZ pic.twitter.
 c37623	v10273	ロキ・レーヴァテイン	@kami_aso	https://x.com/kami_aso/status/477375098798604288	その他	2026-09-09	要確認 ｜ 【GALLERY】神々紹介⑥ ロキ  #kamiaso http://t.co/6r9IJy2O3d pic.twitt
 c37623	v10273	ロキ・レーヴァテイン	@kami_aso	https://x.com/kami_aso/status/475973172475355136	その他	2026-09-09	要確認 ｜ 【GALLERY】神々紹介⑥ ロキ／神化 #kamiaso http://t.co/Q4nVwfXx3y pic.twi
+c37624	v10273	戸塚 月人	@kami_aso	https://x.com/kami_aso/status/1485266089533714440	フルネーム	2026-09-09	紹介らしい ｜ 【GAME】Nintendo Switch用ソフト『神々の悪戯 Unite Edition』発売まであと3日。日本神話の
+c37625	v10273	戸塚 尊	@kami_aso	https://x.com/kami_aso/status/1484903704340078594	フルネーム	2026-09-09	紹介らしい ｜ 【GAME】Nintendo Switch用ソフト『神々の悪戯 Unite Edition』発売まであと4日。日本神話の
 c37627	v10273	トト・カドゥケウス	@kami_aso	https://x.com/kami_aso/status/482865785656705024	その他	2026-09-09	要確認 ｜ 【GALLERY】神々紹介⑧ トト http://t.co/xhq0apyK5C  #kamiaso pic.twitt
 c37627	v10273	トト・カドゥケウス	@kami_aso	https://x.com/kami_aso/status/481000114450755586	その他	2026-09-09	要確認 ｜ 【GALLERY】神々紹介⑧ トト／神化 #kamiaso http://t.co/9yHeq1PaLH pic.twi
 c37629	v10273	アヌビス・マアト	@kami_aso	https://x.com/kami_aso/status/481724287506599937	その他	2026-09-09	要確認 ｜ 【GALLERY】神々紹介 アヌビス  #kamiaso http://t.co/apqwGAldiZ pic.twit
@@ -75,6 +79,7 @@ c20324	v14908	インピー・バービケーン	@CR_otomate	https://x.com/CR_oto
 c20325	v14908	サン・ジェルマン	@CR_otomate	https://x.com/CR_otomate/status/1024958991158239232	誕生日	2026-09-09	過去セッション収集ぶんを復元
 c20325	v14908	サン・ジェルマン	@CR_otomate	https://x.com/CR_otomate/status/1024958521031290882	誕生日	2026-09-09	過去セッション収集ぶんを復元
 c20325	v14908	サン・ジェルマン	@CR_otomate	https://x.com/CR_otomate/status/468695878807465984	フルネーム	2026-09-09	手で指定 ｜ 【Code：Realize ～創世の姫君～】サン・ジェルマン役　平川大輔（ http://t.co/MYiunrVisD
+c37635	v15023	トール・メギンギョルズ	@kami_aso	https://x.com/kami_aso/status/1482366992879390724	その他	2026-09-09	紹介らしい ｜ 【GAME】Nintendo Switch用ソフト『神々の悪戯 Unite Edition』発売まであと11日。北欧神話
 c39722	v15771	緋影	@psy_otomate	https://x.com/psy_otomate/status/532353234552107008	プロフィール	2026-09-09	紹介らしい ｜ 【緋影】「僕以外はあり得ないだろう」（CV：石川界人） 『黒蝶のサイケデリカ』公式サイト http://t.co/Z7a
 c39724	v15771	山都	@psy_otomate	https://x.com/psy_otomate/status/532353311198822400	プロフィール	2026-09-09	紹介らしい ｜ 【山都】「……俺を選ぶなんて、変わった奴だけだろ……」（CV：細谷佳正） 『黒蝶のサイケデリカ』公式サイト http:/
 c39725	v15771	鴉翅	@psy_otomate	https://x.com/psy_otomate/status/532353372913803264	プロフィール	2026-09-09	紹介らしい ｜ 【鴉翅】「もっちろん、オレを選んでくれるよね？」（CV：柿原徹也）『黒蝶のサイケデリカ』公式サイト http://t.c
@@ -397,6 +402,9 @@ c104711	v34018	多井中 法	@SK_otomate	https://x.com/SK_otomate/status/1725349
 c104711	v34018	多井中 法	@SK_otomate	https://x.com/SK_otomate/status/1858043141691162967	フルネーム	2026-09-09	紹介らしい ｜ 💜2nd Anniversary💜記念にＳＮＳアイコンをプレゼント！ぜひご使用ください✨多井中 法（CV.#KENN）碓
 c104712	v34018	碓井 修也	@SK_otomate	https://x.com/SK_otomate/status/1725349539329019956	フルネーム	2026-09-09	紹介らしい ｜ 💜1st Anniversary💜- Special Message -碓井 修也（CV.#内田夕夜）#シンキス #Sy
 c104712	v34018	碓井 修也	@SK_otomate	https://x.com/SK_otomate/status/1858043141691162967	フルネーム	2026-09-09	紹介らしい ｜ 💜2nd Anniversary💜記念にＳＮＳアイコンをプレゼント！ぜひご使用ください✨多井中 法（CV.#KENN）碓
+c114202	v34018	比嘉月彦	@SK_otomate	https://x.com/SK_otomate/status/1725350042469298266	その他	2026-09-09	紹介らしい ｜ 💜1st Anniversary💜- Special Message -比嘉 月彦（CV.#鳥海浩輔）#シンキス #Sy
+c114202	v34018	比嘉月彦	@SK_otomate	https://x.com/SK_otomate/status/1858043393282085040	その他	2026-09-09	紹介らしい ｜ 💜2nd Anniversary💜記念にＳＮＳアイコンをプレゼント！ぜひご使用ください✨ＹＯＦＹ（CV.#斉藤壮馬）比嘉
+c114202	v34018	比嘉月彦	@SK_otomate	https://x.com/SK_otomate/status/1990355589759984111	その他	2026-09-09	紹介らしい ｜ 💜3rd Anniversary💜3周年を記念して彼らからひと言いただきました✨最後の彼はもちろん……優しいこの人！比嘉
 c90035	v34022	ピーター・フラージュ	@CP_otomate	https://x.com/CP_otomate/status/1253568090295525376	フルネーム	2026-09-09	紹介らしい ｜ 【SubCharacter5】ピーター・フラージュ（CV.岡本信彦)婚活シェアハウスTV番組『PARASITE HOUS
 c123164	v38068	天堂 紅華	@9RIP_otomate	https://x.com/9RIP_otomate/status/1898575248322424900	フルネーム	2026-09-09	要確認 ｜ ￣￣￣￣￣￣￣￣￣￣ 『9 R.I.P. sequel』◆「神編」情報 其ノ壱完成立ち絵イラスト公開＿＿＿＿＿＿＿＿＿＿
 c123164	v38068	天堂 紅華	@9RIP_otomate	https://x.com/9RIP_otomate/status/1674225427827814401	その他	2026-09-09	要確認 ｜ 発売カウントダウン◆本日発売学校の怪談編／紅華（ＣＶ：#増田俊樹）カウントダウンボイスは以下でお楽しみいただけます。🔽公
