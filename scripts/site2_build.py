@@ -167,6 +167,10 @@ def layout(title, desc, path, body, crumbs=None, current="", og_image=None, json
   のもとで利用しています。本サイトの派生データベースも同ライセンスで提供します。
   <a href="%(repo)s" rel="noopener">生成スクリプト</a>を公開しています。</p>
   <p>価格・在庫は各ストアの情報です。最新の内容は各ストアでご確認ください。</p>
+  <p class="credit">
+  <!-- 楽天ウェブサービスのクレジット表示。規約により必須で、
+       提供されたHTMLをそのまま使うことが求められている。改変しないこと -->
+  <a href="https://developers.rakuten.com/" target="_blank">Supported by Rakuten Developers</a></p>
   <p><a href="/../">現行サイト（v1）はこちら</a></p>
 </footer>
 %(tabbar)s

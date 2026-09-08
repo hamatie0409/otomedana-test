@@ -90,6 +90,10 @@ def layout(title, desc, canonical, body, jsonld=None, breadcrumb=None, og_image=
   本サイトの派生データベースも同ライセンスで提供します。
   <a href="%(repo)s" rel="noopener">生成スクリプト</a>を公開しています。</p>
   <p class="src">価格・在庫は各ストアの情報です。最新の内容は各ストアでご確認ください。</p>
+  <p class="credit">
+  <!-- 楽天ウェブサービスのクレジット表示。規約により必須で、
+       提供されたHTMLをそのまま使うことが求められている。改変しないこと -->
+  <a href="https://developers.rakuten.com/" target="_blank">Supported by Rakuten Developers</a></p>
 </footer>
 <script>window.BASE_PATH=%(basepath)s;</script>\n<script src="/assets/app.js" defer></script>
 </body>
