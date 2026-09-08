@@ -181,6 +181,18 @@ def oembed(status_id, account="i"):
     return d
 
 
+# 名前の区切り。中黒のほかに ＝（サンドリヨンパリカ「紫鳶＝クリノクロア」）や
+# スラッシュを使う作品がある。読み仮名を角括弧で挟む書き方も多く
+# （本文は「紫鳶[シエン]＝クリノクロア」）、そのままでは一致しない。
+NAME_SEP = r"[\s　・･＝=／/]"
+READING = re.compile(r"[\[［][^\]］]{1,12}[\]］]")
+
+
+def flatten(text):
+    """照合用に本文をならす。読み仮名の角括弧を落とし、区切り記号を詰める。"""
+    return re.sub(NAME_SEP, "", READING.sub("", text or ""))
+
+
 def name_variants(name):
     """DBのキャラ名から、投稿本文で使われそうな表記を作る。
 
@@ -193,7 +205,7 @@ def name_variants(name):
     base = re.sub(r"[（(][^）)]*[）)]", "", name).strip()
     out = []
     for v in [base] + kana:
-        v = re.sub(r"[\s・･]", "", v)
+        v = re.sub(NAME_SEP, "", v)
         if len(v) >= 1:
             out.append(v)
     return out
@@ -247,8 +259,8 @@ def name_hit(text, name, title="", latin=""):
     どの投稿にも名前が出てしまう。この場合だけは、名前の直後に CV や年齢といった
     紹介文の目印があるときしか採らない。そうしないと全投稿が主人公の紹介になる。
     """
-    flat = re.sub(r"[\s・･]", "", text)
-    flat_title = re.sub(r"[\s・･]", "", title or "")
+    flat = flatten(text)
+    flat_title = flatten(title)
     best = ""
     for v in name_variants(name):
         if not occurs(flat, v):
@@ -261,7 +273,7 @@ def name_hit(text, name, title="", latin=""):
         return "full" if v == name_variants(name)[0] else "part"
     # 「ダンテ・ファルツォーネ」を「ダンテ」とだけ呼ぶ投稿は多い
     for v in name_variants(name):
-        for part in re.split(r"[\s・･]", re.sub(r"[（(][^）)]*[）)]", "", name or "")):
+        for part in re.split(NAME_SEP, re.sub(r"[（(][^）)]*[）)]", "", name or "")):
             part = part.strip()
             if part and part not in flat_title and occurs(flat, part):
                 best = "part"
@@ -277,9 +289,9 @@ def unambiguous_part(text, c, pool):
     1人にしか当たらないので、曖昧さは無い。姓だけ・名だけが他のキャラと
     衝突するときだけ要確認に残す。
     """
-    flat = re.sub(r"[\s・･]", "", text)
+    flat = flatten(text)
     def toks(name):
-        return [t for t in re.split(r"[\s・･]",
+        return [t for t in re.split(NAME_SEP,
                 re.sub(r"[（(][^）)]*[）)]", "", name or "")) if t]
     hit = [t for t in toks(c["name"]) if occurs(flat, t)]
     if not hit:
