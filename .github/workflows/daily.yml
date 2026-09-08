@@ -27,9 +27,8 @@ jobs:
     timeout-minutes: 150       # 楽天とYahooの取得でそれぞれ約30分かかる
     env:
       RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
+      # sid/pid は公開値なので affiliate_config.py に既定値がある。Secret は不要
       YAHOO_CLIENT_ID: ${{ secrets.YAHOO_CLIENT_ID }}
-      YAHOO_VC_SID: ${{ secrets.YAHOO_VC_SID }}
-      YAHOO_VC_PID: ${{ secrets.YAHOO_VC_PID }}
       GH_TOKEN: ${{ github.token }}
 
     steps:

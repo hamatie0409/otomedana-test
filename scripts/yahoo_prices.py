@@ -47,6 +47,7 @@ import urllib.parse
 import urllib.request
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import affiliate_config as AF
 from common import DATA
 
 DB = os.path.join(DATA, "vndb_otome.db")
@@ -80,18 +81,8 @@ CREATE TABLE IF NOT EXISTS yahoo_fetch_log (
 
 
 def env(name):
-    v = os.environ.get(name, "").strip()
-    if v:
-        return v
-    path = os.path.expanduser("~/.config/otomegamedb/env")
-    if os.path.exists(path):
-        for line in open(path, encoding="utf-8", errors="replace"):
-            if line.strip().startswith("#"):
-                continue
-            k, _, val = line.replace("export ", "", 1).partition("=")
-            if k.strip() == name:
-                return val.strip().strip("\"'")
-    return ""
+    """設定の解決は affiliate_config に任せる（環境変数 → ~/.config/... の順）。"""
+    return getattr(AF, name, "") or os.environ.get(name, "").strip()
 
 
 def affiliate_params():
