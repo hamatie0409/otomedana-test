@@ -1348,7 +1348,7 @@ NONE = os.path.join(CORR, "x_none.tsv")
 # 「紹介」だけで引くと、足がかりが見つかる作品は21作品中8作品（38%）しかない。
 # CV表記を足すと16作品（76%）、【 で始まる定型を足すと18作品（86%）になる。
 # 逆にPV告知やブログ更新も「紹介」を含むので、「紹介」単独はノイズも多い。
-SEED_WORDS = ["CV", "紹介", "登場人物", "プロフィール", "Profile", "キャラクター"]
+SEED_WORDS = ["年齢", "身長", "紹介", "登場人物", "プロフィール", "Profile", "キャラクター"]
 
 
 def cmd_hunt(args):
@@ -1413,7 +1413,17 @@ def cmd_hunt(args):
                   % urllib.parse.quote("%s 公式" % r["title"]))
         q = "from:%s (%s)" % (handle, " OR ".join(SEED_WORDS))
         print("   ① 足がかり: https://x.com/search?q=%s&f=live" % urllib.parse.quote(q))
-        print("   ② 見つけたら: python3 scripts/x_posts.py series <そのURL>")
+        # ①が空振りする作品がある。黒蝶／灰鷹のサイケデリカは
+        # 「【紋白】「セリフ」（CV：日野聡）」というセリフ型で、年齢も身長も
+        # 「紹介」も書かない。その場合はキャラ名そのものが一番強い鍵になる。
+        # 1人ずつ叩くと6リクエストかかるので、OR でまとめて1回にする
+        full = [re.sub(r"[（(][^）)]*[）)]", "", c["name"]).strip()
+                for c in left if c["role"] != "主人公"][:8]
+        if full:
+            q2 = "from:%s (%s)" % (handle, " OR ".join('"%s"' % n for n in full))
+            print("   ② 名前でまとめて: https://x.com/search?q=%s&f=live"
+                  % urllib.parse.quote(q2))
+        print("   ③ 見つけたら窓を広げる: python3 scripts/x_posts.py series <そのURL>")
         # ③ は姓（または最初の語）で引く。セリフ型・キャッチコピー型の作品は
         # 定型の見出しが無いので、これしか手が無い
         # フルネームだと表記ゆれ（中黒の有無・カナ違い）で外れるので、
@@ -1422,7 +1432,7 @@ def cmd_hunt(args):
             base = re.sub(r"[（(][^）)]*[）)]", "", c["name"]).strip()
             key = max(re.split(r"[\s・･]", base) or [base], key=len)
             q3 = "from:%s %s" % (handle, key)
-            print("   ③ %-12s https://x.com/search?q=%s&f=live"
+            print("   ④ %-12s https://x.com/search?q=%s&f=live"
                   % (key, urllib.parse.quote(q3)))
         fresh = [c["name"] for c in left if c["cid"] not in weak]
         upgrade = [c["name"] for c in left if c["cid"] in weak]
