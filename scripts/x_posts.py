@@ -932,7 +932,7 @@ def cmd_sheet(args):
         chars = con.execute("""select cid, name, cv from character
                                where main_vid=? order by role_label desc, cid""",
                             (w["vid"],)).fetchall()
-        left = [c for c in chars if c["cid"] not in got]
+        left = [c for c in chars if c["cid"] not in got and c["cid"] not in skip_char]
         if not left:
             continue
         n += 1
@@ -1375,7 +1375,11 @@ def cmd_hunt(args):
     if args.weak:
         got -= weak
     accounts = {r["vid"]: r.get("account", "") for r in read_tsv(ACCOUNTS)}
-    skip = {r["vid"] for r in read_tsv(NONE)}
+    # x_none.tsv には作品(vid)とキャラ(cid)が混ざって入る。ヒロインは
+    # 紹介ポストが作られないことが多く、作品ごと飛ばすわけにはいかない
+    noneids = {r.get("id") or r.get("vid") for r in read_tsv(NONE)}
+    skip = {i for i in noneids if i and i.startswith("v")}
+    skip_char = {i for i in noneids if i and i.startswith("c")}
     rows = con.execute("""
         select w.vid, w.title, w.year, w.votecount
         from work w join character c on c.main_vid = w.vid
@@ -1441,13 +1445,13 @@ def cmd_none(args):
     """
     if not os.path.exists(NONE):
         with open(NONE, "w", encoding="utf-8") as f:
-            f.write("# 探したが紹介ポストが見つからなかった作品。hunt がここを飛ばす。\n")
-            f.write("# 見つかったら行を消せばまた対象に戻る。\n")
-            f.write("vid\tchecked_at\tnote\n")
+            f.write("# 探したが紹介ポストが見つからなかった作品／キャラ。hunt がここを飛ばす。\n")
+            f.write("# id には vid でも cid でも書ける。見つかったら行を消せば対象に戻る。\n")
+            f.write("id\tchecked_at\tnote\n")
     today = datetime.date.today().isoformat()
     with open(NONE, "a", encoding="utf-8") as f:
-        for vid in args.vids:
-            f.write("%s\t%s\t%s\n" % (vid, today, args.note))
+        for i in args.vids:
+            f.write("%s\t%s\t%s\n" % (i, today, args.note))
     print("%d件を x_none.tsv に記録した" % len(args.vids))
 
 EMBEDS = os.path.join(CORR, "x_embeds.json")
