@@ -349,6 +349,10 @@ def cmd_harvest(args):
         if not hits:
             skipped.append((url, "本文にこの作品のキャラ名なし"))
             continue
+        # 見出しで主題が決まる投稿なら、文中に名前が出るだけの人は落とす
+        subj = [c for c in hits if subject_hit(text, c["name"])]
+        if subj and len(subj) < len(hits):
+            hits = subj
         if len(hits) > args.max_chars:
             # 全キャラを羅列しただけの告知はキャラ紹介ではない
             skipped.append((url, "%d人が並ぶ一覧的な投稿" % len(hits)))
@@ -431,7 +435,12 @@ KIND_PROFILE = re.compile(
     r"|Character\s*Profile"
     r"|年齢\s*[：:]?\s*[\d０-９?？]"
     r"|身長\s*[：:]?\s*[\d０-９]"
-    r"|登場人物情報")
+    r"|登場人物情報"
+    # アンシャンテの5周年連投は「【５周年！　その⑧】…攻略可能キャラクターの
+    # ご紹介。…【イグニス・カリブンクルス（CV.小野友樹）】」という形。
+    # 見出しは連番で、人物の説明は本文にあり、名前とCVは末尾の【】に入る。
+    # 年齢も身長も書かないので、紹介だと名乗っている文そのものを見る
+    r"|攻略(?:可能)?キャラクター|キャラクターのご?紹介|登場人物のご?紹介")
 KIND_BIRTHDAY = re.compile(
     r"HAPPY\s*BIRTHDAY|Joyeux\s+anniversaire|Buon\s+compleanno|誕生祭|誕生日", re.I)
 # 載せたい順。誕生日は最後にする。描き下ろしイラストが付くので見栄えはよいが、
@@ -457,6 +466,33 @@ def has_full_name(text, name):
     return re.sub(r"[\s・･]", "", base) in flat
 
 
+SUBJECT_HEAD = re.compile(r"【[^】]{0,20}(?:紹介|情報|Character|CHARACTER|Profile)[^】]{0,20}】\s*")
+
+
+def subject_hit(text, name):
+    """このポストの『主題』がこのキャラか。
+
+    紹介ポストには他のキャラの名前も出てくる。ジャックジャンヌの
+    睦実介の紹介文は「舞台の華である高科更文を支える器として」と書くので、
+    本文の名前を全部拾うと、高科更文のページに睦実介の紹介が出てしまった。
+
+    ただし主題は書式で決まる。【キャラクター紹介】の直後に置かれた名前か、
+    名前そのものを【】で括ったものが主題で、文中に出る名前は主題ではない。
+    見出しのある投稿にだけ効かせ、見出しが無い投稿は今までどおり扱う。
+    """
+    flat = lambda t: re.sub(r"[\s　]", "", t)
+    for v in name_variants(name):
+        fv = flat(v)
+        if not fv:
+            continue
+        for m in SUBJECT_HEAD.finditer(text):
+            if flat(text[m.end():m.end() + len(v) + 8]).startswith(fv):
+                return True
+        if re.search(r"【\s*%s\s*(?:[（(][^】]*[）)])?\s*】" % re.escape(v), text):
+            return True
+    return False
+
+
 def post_kind(text, name=""):
     """ポストの種類を決める。name を渡すとより正確になる。
 
@@ -470,8 +506,12 @@ def post_kind(text, name=""):
     """
     if KIND_PROFILE.search(text):
         return "プロフィール"
+    # 【緋影】のように名前だけを括る形のほか、
+    # 【イグニス・カリブンクルス（CV.小野友樹）】のようにCVごと括る形もある。
+    # 名前の直後に括弧つきの補足が入ってもよいことにする
     for v in name_variants(name):
-        if ("【%s】" % v) in text and re.search(r"CV|ＣＶ|声優|V\.A\.", text, re.I):
+        if re.search(r"【\s*%s\s*(?:[（(][^】]*[）)])?\s*】" % re.escape(v), text) \
+                and re.search(r"CV|ＣＶ|声優|V\.A\.", text, re.I):
             return "プロフィール"
     if KIND_BIRTHDAY.search(text):
         return "誕生日"
@@ -848,6 +888,10 @@ def cmd_intake(args):
         if not best_hits:
             unknown.append((sid, handle, "本文にキャラ名が出てこない"))
             continue
+        # 投稿本文は txt。text はファイル全文なので取り違えないこと
+        subj = [c for c in best_hits if subject_hit(txt, c["name"])]
+        if subj and len(subj) < len(best_hits):
+            best_hits = subj
         if len(best_hits) > args.max_chars:
             unknown.append((sid, handle, "%d人が並ぶ一覧的な投稿" % len(best_hits)))
             continue
@@ -1133,22 +1177,19 @@ def cmd_series(args):
         if not sid:
             print("×  URLとして読めない: %s" % url)
             continue
-        d = oembed(sid, acct or "i")
-        if d is None:
-            print("×  削除済み・非公開: %s" % url)
-            continue
-        m = JP_DATE.search(d["_text"])
-        if not m:
-            print("×  日付が読めない: %s" % url)
-            continue
-        y, mo, da = (int(x) for x in m.groups())
-        day = datetime.date(y, mo, da)
+        # 投稿日はIDから復元する。本文の日付を拾うと誤る。
+        # アンシャンテの【５周年！　その⑧】は 2024年の投稿だが、本文が
+        # 「2019年10月10日発売済」で始まるため、本文の最初の日付を取ると
+        # 2019年の窓が出てしまい、目的の連投に永久にたどり着かない。
+        # snowflake ならミリ秒まで正確で、oEmbed を叩く必要もない。
+        day = status_time(sid).date()
+        handle = acct or "i"
         # 連投が数日にまたがることもある。ヴィルシュの紹介は6月と7月の
         # 2波に分かれていた。--days で窓を広げる
         a = day - datetime.timedelta(days=args.days - 1)
         b = day + datetime.timedelta(days=args.days)
-        q = "from:%s since:%s until:%s" % (d["_handle"], a.isoformat(), b.isoformat())
-        print("%s が %s〜%s に投稿したもの:" % (d["_handle"], a.isoformat(), b.isoformat()))
+        q = "from:%s since:%s until:%s" % (handle, a.isoformat(), b.isoformat())
+        print("%s が %s〜%s に投稿したもの:" % (handle, a.isoformat(), b.isoformat()))
         print("  https://x.com/search?q=%s&f=live" % urllib.parse.quote(q))
 
 
