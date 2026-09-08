@@ -1116,6 +1116,252 @@ def cmd_gaps(args):
         print("   同じ日を見る: python3 scripts/x_posts.py series %s" % prof["status_url"])
 
 
+# --- ここから cadence ---
+
+# X の投稿IDは snowflake で、上位ビットに投稿時刻(ms)が入っている。
+# oEmbed を叩かなくてもURLだけからミリ秒単位の投稿時刻が復元できる。
+# oEmbed が返す日本語表記の日付は「日」までしか無く、連投の間隔（秒〜分）が
+# 測れない。ここが測れると「バーストなのか日次連載なのか」を判別できる。
+SNOWFLAKE_EPOCH = 1288834974657
+
+
+def status_time(status_id):
+    """投稿IDから投稿時刻(JST)を復元する。ネットワークは使わない。"""
+    ms = (int(status_id) >> 22) + SNOWFLAKE_EPOCH
+    return (datetime.datetime.utcfromtimestamp(ms / 1000.0)
+            + datetime.timedelta(hours=9))
+
+
+def _fmt_gap(sec):
+    if sec < 120:
+        return "%d秒" % sec
+    if sec < 7200:
+        return "%d分" % (sec / 60)
+    if sec < 172800:
+        return "%.1f時間" % (sec / 3600)
+    return "%.2f日" % (sec / 86400)
+
+
+def classify_run(times):
+    """投稿時刻の並びから連投の型と周期を返す。
+
+    実測（手集めした18アカウント116件）ではっきり3つに分かれた。
+
+      バースト型  薄桜鬼9件が1秒以内、psy_otomate 5件が18秒間隔、
+                  CM_otomate 25秒、OtomateWeb 28秒、pf_otomate 3分。
+                  18アカウント中12がこれ。同じ日を見れば全員取れる。
+      日次連載型  OZMAFIA!! 13件が24時間ちょうどで14日間、
+                  norn9_anime 13件が24時間＋30分後の補足投稿。
+      周期連載型  StarrySky_hb がきっかり7.00日おき、
+                  even if TEMPEST が14日/24日/65日（毎回12:00）、
+                  CP_otomate が28日おき。
+
+    後ろ2つは「同じ日」を見ても1件しか出てこない。現に StarrySky は
+    3件中1件、OZMAFIA は13件中1件しか取れていなかった。周期が分かれば
+    残りは検索し直さなくても窓を広げるだけで拾える。
+    """
+    if len(times) < 2:
+        return "単発", None, []
+    gaps = [(times[i + 1] - times[i]).total_seconds()
+            for i in range(len(times) - 1)]
+    span = (times[-1] - times[0]).total_seconds()
+    if span <= 3600:
+        return "バースト", None, gaps
+    # 補足投稿（本編の数十分後に投げる次回予告など）は周期の判定から外す
+    main = [g for g in gaps if g > 3600] or gaps
+    main_sorted = sorted(main)
+    med = main_sorted[len(main_sorted) // 2]
+    # ばらつきが中央値の25%以内なら「等間隔」とみなす。実測の
+    # StarrySky(7.00日×2)・virche(24.0時間)・OZMAFIA(24時間±3%)が通る
+    if med > 0 and all(abs(g - med) <= med * 0.25 for g in main):
+        if med < 129600:                       # 36時間未満
+            return "日次連載", med, gaps
+        return "周期連載", med, gaps
+    return "不定期", med, gaps
+
+
+def cluster_runs(rows, split_days=45):
+    """確定ぶんを「ひとつながりの連投」ごとに割る。
+
+    同じ作品でも、発売前の紹介連投と、数年後の周年企画やFDの追加紹介が
+    混ざる。ピオフィオーレは2017年の連投5件と2021年の1件、大正×対称アリスは
+    2014年と2020年で、まとめて1本の周期とみなすと『周期2170日』になり、
+    検索窓が2002年〜2032年に広がって使いものにならなかった。
+    間が45日以上あいたら別の波として扱う。
+    """
+    runs, cur = [], []
+    for i, item in enumerate(rows):
+        if cur and (item[0] - cur[-1][0]).total_seconds() > split_days * 86400:
+            runs.append(cur)
+            cur = []
+        cur.append(item)
+    if cur:
+        runs.append(cur)
+    return runs
+
+
+def cmd_cadence(args):
+    """確定ぶんの投稿間隔を測り、取りこぼしていそうな作品と次の検索窓を出す。
+
+    gaps は「プロフィール型と誕生日型が混ざっている作品」しか検出できない。
+    だが実際に一番取りこぼすのは、型が揃ったまま件数だけ足りない場合
+    （OZMAFIA!! 13人中1人、StarrySky 4人中3人）で、これは混在しないので
+    gaps に出てこなかった。件数で見て、周期から窓を作る。
+    """
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    got = {}
+    for r in read_tsv(POSTS):
+        _, sid = parse_status(r["status_url"])
+        if sid:
+            got.setdefault(r["vid"], []).append((status_time(sid), r))
+    titles, roster = {}, {}
+    for r in con.execute("select w.vid, w.title, count(c.cid) n "
+                         "from work w join character c on c.main_vid = w.vid "
+                         "group by w.vid"):
+        titles[r["vid"]], roster[r["vid"]] = r["title"], r["n"]
+    out = []
+    for vid, rows in got.items():
+        rows.sort(key=lambda x: x[0])
+        n_char = len({r["cid"] for _, r in rows})
+        total = roster.get(vid, n_char)
+        if n_char >= total and not args.all:
+            continue
+        out.append((total - n_char, vid, n_char, total, cluster_runs(rows)))
+    if not out:
+        print("件数が足りない作品はない")
+        return
+    print("確定ぶんのある作品のうち、まだ埋まっていないもの（残りが多い順）\n")
+    for left, vid, n_char, total, runs in sorted(out, key=lambda x: -x[0]):
+        acct = runs[0][0][1]["account"]
+        got_cids = {r["cid"] for run in runs for _, r in run}
+        print("## %s（%s）%s  %d/%d人"
+              % (titles.get(vid, vid), vid, acct, n_char, total))
+        for run in runs:
+            times = [t for t, _ in run]
+            kind, period, gaps = classify_run(times)
+            t0, t1 = times[0], times[-1]
+            head = "   %s〜%s  %d件  型=%s%s" % (
+                t0.strftime("%Y-%m-%d %H:%M"), t1.strftime("%m-%d %H:%M"),
+                len(run), kind, "  周期=%s" % _fmt_gap(period) if period else "")
+            print(head)
+            if gaps:
+                print("     間隔: %s" % " ".join(_fmt_gap(g) for g in gaps))
+            # 窓の作り方。バーストは同じ日で足りる。周期があるなら、残り人数ぶん
+            # だけ前後に伸ばす。伸ばしすぎても検索結果が読み切れないので上限を置く
+            if kind in ("バースト", "単発"):
+                a = t0.date() - datetime.timedelta(days=1)
+                b = t1.date() + datetime.timedelta(days=2)
+            elif period:
+                pad = min(period * (left + 1), 120 * 86400.0)
+                a = (t0 - datetime.timedelta(seconds=pad)).date()
+                b = (t1 + datetime.timedelta(seconds=pad)).date() + datetime.timedelta(days=1)
+            else:
+                a = t0.date() - datetime.timedelta(days=30)
+                b = t1.date() + datetime.timedelta(days=31)
+            q = "from:%s since:%s until:%s" % (acct.lstrip("@"), a.isoformat(), b.isoformat())
+            print("     窓: https://x.com/search?q=%s&f=live" % urllib.parse.quote(q))
+        miss = [r["character"] for r in con.execute(
+            "select cid, name character from character where main_vid = ?", (vid,))
+            if r["cid"] not in got_cids]
+        if miss:
+            print("   未収集 %d名: %s" % (len(miss), "、".join(miss[:12])
+                                          + ("…" if len(miss) > 12 else "")))
+        print()
+
+# --- ここから hunt / none ---
+
+NONE = os.path.join(CORR, "x_none.tsv")
+
+# 足がかりを見つけるための語。作品ごとに1件見つかればよく、そこから先は
+# cadence が出す日付の窓で連投ごと拾える。
+#
+# 手集めした113件を数えたところ、見出しの語彙はまるで揃っていなかった。
+#   キャラ紹介 / キャラクター紹介 / 攻略キャラクター紹介 / 登場人物情報 /
+#   Character Profile / SubCharacter5 / character紹介 /
+#   【緋影】「セリフ」 / “クールな一匹狼”（キャッチコピーだけ）/ MOZU（名前だけ）
+# 「紹介」だけで引くと、足がかりが見つかる作品は21作品中8作品（38%）しかない。
+# CV表記を足すと16作品（76%）、【 で始まる定型を足すと18作品（86%）になる。
+# 逆にPV告知やブログ更新も「紹介」を含むので、「紹介」単独はノイズも多い。
+SEED_WORDS = ["CV", "紹介", "登場人物", "プロフィール", "Profile", "キャラクター"]
+
+
+def cmd_hunt(args):
+    """作品ごとに「まず何を検索すればいいか」を段取りの順で出す。
+
+    キャラ1人ずつ検索すると、1作品ぶんで7回叩くことになるうえ、連投を
+    途中までしか拾えない（実際にカラーマリスで6人中1人しか取れなかった）。
+    作品ごとに1回で足がかりを見つけ、そこから窓を広げるほうが、
+    リクエストも減って取りこぼしも減る。
+
+      ① 足がかり  from:アカウント (CV OR 紹介 OR …) を1回
+      ② 窓        見つけたURLを cadence／series に渡して同じ波を全部見る
+      ③ 取りこぼし 名前で直接引く（セリフ型・キャッチコピー型はこれしかない）
+    """
+    con = sqlite3.connect(DB)
+    con.row_factory = sqlite3.Row
+    got = {r["cid"] for r in read_tsv(POSTS)}
+    accounts = {r["vid"]: r.get("account", "") for r in read_tsv(ACCOUNTS)}
+    skip = {r["vid"] for r in read_tsv(NONE)}
+    rows = con.execute("""
+        select w.vid, w.title, w.year, w.votecount
+        from work w join character c on c.main_vid = w.vid
+        group by w.vid order by w.votecount desc, w.year desc""").fetchall()
+    n = 0
+    for r in rows:
+        vid = r["vid"]
+        if vid in skip:
+            continue
+        acct = accounts.get(vid, "")
+        if not acct:
+            continue                      # アカウント未特定は先に accounts で埋める
+        chars = con.execute(
+            "select cid, name, role from character where main_vid = ? order by role desc",
+            (vid,)).fetchall()
+        left = [c for c in chars if c["cid"] not in got]
+        if len(left) < args.min_left:
+            continue
+        n += 1
+        if n > args.limit:
+            break
+        handle = acct.split()[0].lstrip("@")
+        print("## %s（%s年）%s  残り%d/%d人  %s"
+              % (r["title"], r["year"], vid, len(left), len(chars), acct))
+        q = "from:%s (%s)" % (handle, " OR ".join(SEED_WORDS))
+        print("   ① 足がかり: https://x.com/search?q=%s&f=live" % urllib.parse.quote(q))
+        print("   ② 見つけたら: python3 scripts/x_posts.py series <そのURL>")
+        # ③ は姓（または最初の語）で引く。セリフ型・キャッチコピー型の作品は
+        # 定型の見出しが無いので、これしか手が無い
+        names = [c["name"].split()[0] for c in left if c["role"] != "主人公"][:3]
+        for nm in names:
+            q3 = "from:%s %s" % (handle, nm)
+            print("   ③ %-12s https://x.com/search?q=%s&f=live"
+                  % (nm, urllib.parse.quote(q3)))
+        print("   未収集: %s" % "、".join(c["name"] for c in left[:12]))
+        print()
+    if n == 0:
+        print("公式アカウントが分かっていて未完了の作品はない")
+
+
+def cmd_none(args):
+    """「探したが紹介ポストが無かった」作品を記録する。
+
+    記録しておかないと、同じ作品を何度も探し直すことになる。3700人ぶんを
+    回すあいだ、これが無いと同じ空振りを繰り返す。公式が紹介ポストを
+    出していない作品は実際にあり（依頼者の手集めでも『該当なし』が7件）、
+    その場合キャラページは今までどおり代表作のパッケージを出す。
+    """
+    if not os.path.exists(NONE):
+        with open(NONE, "w", encoding="utf-8") as f:
+            f.write("# 探したが紹介ポストが見つからなかった作品。hunt がここを飛ばす。\n")
+            f.write("# 見つかったら行を消せばまた対象に戻る。\n")
+            f.write("vid\tchecked_at\tnote\n")
+    today = datetime.date.today().isoformat()
+    with open(NONE, "a", encoding="utf-8") as f:
+        for vid in args.vids:
+            f.write("%s\t%s\t%s\n" % (vid, today, args.note))
+    print("%d件を x_none.tsv に記録した" % len(args.vids))
+
 EMBEDS = os.path.join(CORR, "x_embeds.json")
 
 
@@ -1314,6 +1560,19 @@ def main():
     se.set_defaults(fn=cmd_series)
     gp = sub.add_parser("gaps")
     gp.set_defaults(fn=cmd_gaps)
+    hu = sub.add_parser("hunt")
+    hu.add_argument("--limit", type=int, default=5)
+    hu.add_argument("--min-left", type=int, default=1,
+                    help="未収集がこの人数以上の作品だけ出す。残り1人はたいてい主人公で、"
+                         "紹介ポスト自体が無いことが多い")
+    hu.set_defaults(fn=cmd_hunt)
+    nn = sub.add_parser("none")
+    nn.add_argument("vids", nargs="+")
+    nn.add_argument("--note", default="紹介ポストが見つからなかった")
+    nn.set_defaults(fn=cmd_none)
+    cd = sub.add_parser("cadence")
+    cd.add_argument("--all", action="store_true", help="埋まっている作品も出す")
+    cd.set_defaults(fn=cmd_cadence)
     em = sub.add_parser("embeds")
     em.set_defaults(fn=cmd_embeds)
     ac = sub.add_parser("accounts")
