@@ -268,6 +268,30 @@ def name_hit(text, name, title="", latin=""):
     return best or latin_hit(text, latin, title)
 
 
+def unambiguous_part(text, c, pool):
+    """部分一致でも、当たった語が作品内で1人にしか使われていないなら曖昧ではない。
+
+    イベント告知は「トア（CV:…）とジャスパー（CV:…）とティーノ（CV:…）」の
+    ように名前だけを並べる。1投稿に3人出ると len(hits)>1 になって全員が
+    『部分一致』に落ち、要確認へ回っていた。だがトアもジャスパーも作品内で
+    1人にしか当たらないので、曖昧さは無い。姓だけ・名だけが他のキャラと
+    衝突するときだけ要確認に残す。
+    """
+    flat = re.sub(r"[\s・･]", "", text)
+    def toks(name):
+        return [t for t in re.split(r"[\s・･]",
+                re.sub(r"[（(][^）)]*[）)]", "", name or "")) if t]
+    hit = [t for t in toks(c["name"]) if occurs(flat, t)]
+    if not hit:
+        return False
+    others = set()
+    for o in pool:
+        if o["cid"] == c["cid"]:
+            continue
+        others.update(toks(o["name"]))
+    return all(t not in others for t in hit)
+
+
 def cmd_peek(args):
     """URLを渡すと投稿者と本文を出す。
 
@@ -902,10 +926,14 @@ def cmd_intake(args):
         if len(best_hits) > args.max_chars:
             unknown.append((sid, handle, "%d人が並ぶ一覧的な投稿" % len(best_hits)))
             continue
+        pool = by_vid.get(best_vid, [])
         for c in best_hits:
+            m = best_match
+            if m == "part" and unambiguous_part(txt, c, pool):
+                m = "unique"
             rows.append({"cid": c["cid"], "vid": best_vid, "character": c["name"],
                          "status_url": "https://x.com/%s/status/%s" % (handle, sid),
-                         "match": best_match,
+                         "match": m,
                          "note": ("紹介らしい" if INTRO_HINT.search(txt) else "要確認")
                                  + " ｜ " + txt.strip().replace("\n", " ")[:60]})
 
