@@ -2,6 +2,16 @@
 # x_posts.py verify が oEmbed で実在・投稿者・本文を確かめ、
 # 通ったものだけ x_posts.tsv に、怪しいものは _review_x.tsv に振り分ける。
 cid	vid	character	status_url	match	note
+c37622	v10273	バルドル・フリングホルニ	https://x.com/kami_aso/status/476675090260582400	unique	要確認 ｜ 【GALLERY】神々紹介 バルドル #kamiaso http://t.co/apqwGAldiZ pic.twitt
+c37622	v10273	バルドル・フリングホルニ	https://x.com/kami_aso/status/475216479525171201	unique	要確認 ｜ 【GALLERY】神々紹介⑤ バルドルhttp://t.co/BAZJQEbrba #kamiaso pic.twitt
+c37623	v10273	ロキ・レーヴァテイン	https://x.com/kami_aso/status/479184907302760448	unique	要確認 ｜ 【GALLERY】神々紹介 ロキ#kamiaso http://t.co/apqwGAldiZ pic.twitter.
+c37623	v10273	ロキ・レーヴァテイン	https://x.com/kami_aso/status/477375098798604288	unique	要確認 ｜ 【GALLERY】神々紹介⑥ ロキ  #kamiaso http://t.co/6r9IJy2O3d pic.twitt
+c37623	v10273	ロキ・レーヴァテイン	https://x.com/kami_aso/status/475973172475355136	unique	要確認 ｜ 【GALLERY】神々紹介⑥ ロキ／神化 #kamiaso http://t.co/Q4nVwfXx3y pic.twi
+c37627	v10273	トト・カドゥケウス	https://x.com/kami_aso/status/482865785656705024	unique	要確認 ｜ 【GALLERY】神々紹介⑧ トト http://t.co/xhq0apyK5C  #kamiaso pic.twitt
+c37627	v10273	トト・カドゥケウス	https://x.com/kami_aso/status/481000114450755586	unique	要確認 ｜ 【GALLERY】神々紹介⑧ トト／神化 #kamiaso http://t.co/9yHeq1PaLH pic.twi
+c37629	v10273	アヌビス・マアト	https://x.com/kami_aso/status/481724287506599937	unique	要確認 ｜ 【GALLERY】神々紹介 アヌビス  #kamiaso http://t.co/apqwGAldiZ pic.twit
+c37629	v10273	アヌビス・マアト	https://x.com/kami_aso/status/480273087426867200	unique	要確認 ｜ 【GALLERY】神々紹介⑦ アヌビス http://t.co/XBUTznSx99 #kamiaso pic.twit
+c37629	v10273	アヌビス・マアト	https://x.com/kami_aso/status/478473855413936130	unique	要確認 ｜ 【GALLERY】神々紹介⑦ アヌビス／神化  #kamiaso http://t.co/LFfjbP6u1P pic.
 c30137	v11179	こはる	https://x.com/norn9_anime/status/685000092609191936	手入力	紹介らしい ｜ 【キャラ紹介】こはる（CV藤村 歩）「……わたしは、この船をずっと待ってました……」ずっと一人で暮らしていたため、誰にも
 c30138	v11179	久我 深琴	https://x.com/norn9_anime/status/684276293869768704	手入力	紹介らしい ｜ 【キャラ紹介】久我深琴（CV高垣彩陽）「私たち能力者はこの能力を、平和のために活かす」高飛車なところもあるが、責任感が強
 c30139	v11179	不知火 七海	https://x.com/norn9_anime/status/684648643157045248	手入力	紹介らしい ｜ 【キャラ紹介】不知火七海（CV瀬戸麻沙美）「……私が……あの人の大切なものを奪ったから」自分の感情を表に出したり意志を表
