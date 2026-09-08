@@ -1459,8 +1459,17 @@ def cmd_hunt(args):
             print("   ⚠ 先頭がアニメ/舞台版らしい。ゲーム公式を探す: "
                   "https://x.com/search?q=%s"
                   % urllib.parse.quote("%s 公式" % r["title"]))
+        # Xの検索は最新順なので、キーワードだけで引くと直近のグッズ紹介や
+        # 周年企画が上に来て、発売時の紹介連投まで送りきれない。
+        # ジャックジャンヌで『紹介』を引くとグッズ紹介ばかりが並び、
+        # 2019年の【キャラクター紹介】に永久にたどり着けなかった。
+        # 発売年から2年後を until: に付けて、当時の投稿だけを見る
         q = "from:%s (%s)" % (handle, " OR ".join(SEED_WORDS))
         print("   ① 足がかり: https://x.com/search?q=%s&f=live" % urllib.parse.quote(q))
+        if r["year"]:
+            q1b = "%s until:%d-01-01" % (q, int(r["year"]) + 2)
+            print("   ①' 発売当時に絞る: https://x.com/search?q=%s&f=live"
+                  % urllib.parse.quote(q1b))
         # ①が空振りする作品がある。黒蝶／灰鷹のサイケデリカは
         # 「【紋白】「セリフ」（CV：日野聡）」というセリフ型で、年齢も身長も
         # 「紹介」も書かない。その場合はキャラ名そのものが一番強い鍵になる。
