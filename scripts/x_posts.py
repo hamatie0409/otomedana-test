@@ -387,7 +387,7 @@ def cmd_plan(args):
         # 表記ゆれで外れることが多い
         base = re.sub(r"[（(][^）)]*[）)]", "", r["name"]).strip()
         key = max(re.split(r"[\s・･]", base) or [base], key=len)
-        q = "from:%s %s %s" % (handles[0], key, args.word)
+        q = ("from:%s %s %s" % (handles[0], key, args.word)).strip()
         print("%s\t%s\thttps://x.com/search?q=%s&f=live"
               % (r["cid"], r["name"], urllib.parse.quote(q)))
 
@@ -397,12 +397,42 @@ SITE = os.path.join(ROOT, "docs", "v2")
 # ポストの種類。プロフィール型（年齢・CV・人物の説明が入った紹介）が
 # データベースサイトには一番合う。誕生日ポストは描き下ろしイラストが付く
 # 代わりに、その日の挨拶だけで人物の説明が無いことが多い。
+# プロフィール型の目印。見出しラベルが無くても、年齢や身長のような
+# 「人物のデータ」が入っていれば紹介ポストとみなす。
+# 年齢は「年齢：18歳」と「年齢25歳／178cm」の両方の書き方があり、
+# コロンを必須にしていたせいでスチームプリズンの本編紹介5件を
+# 取りこぼしていた（誕生日ポストのほうが選ばれていた）。
+# 「年齢???」のように伏せる作品もあるので数字以外も受ける。
 KIND_PROFILE = re.compile(
     r"【\s*(?:Character|キャラクター紹介|攻略キャラクター紹介|キャラ紹介|登場人物情報|"
-    r"新キャラクター紹介\S*|攻略キャラ\S*)\s*】|年齢[：:]|登場人物情報")
+    r"新キャラクター紹介\S*|攻略キャラ\S*)\s*】"
+    r"|Character\s*Profile"
+    r"|年齢\s*[：:]?\s*[\d０-９?？]"
+    r"|身長\s*[：:]?\s*[\d０-９]"
+    r"|登場人物情報")
 KIND_BIRTHDAY = re.compile(
     r"HAPPY\s*BIRTHDAY|Joyeux\s+anniversaire|Buon\s+compleanno|誕生祭|誕生日", re.I)
-KIND_ORDER = ["プロフィール", "誕生日", "その他"]
+# 載せたい順。誕生日は最後にする。描き下ろしイラストが付くので見栄えはよいが、
+# 「本日は◯◯の誕生日です」だけで人物の説明が無いことが多く、
+# データベースサイトとしては情報量が最も少ない。
+KIND_ORDER = ["プロフィール", "フルネーム", "その他", "誕生日"]
+
+
+def has_full_name(text, name):
+    """本文にキャラのフルネームが出ているか。
+
+    姓だけ・愛称だけの言及（「本日はシンの日」）と、人物を紹介する体裁で
+    フルネームを書いている投稿を分ける。後者は紹介ポストであることが多い。
+    区切り（空白・中黒）は表記ゆれがあるので詰めて比べる。
+    """
+    if not name:
+        return False
+    flat = re.sub(r"[\s・･]", "", text)
+    base = re.sub(r"[（(][^）)]*[）)]", "", name).strip()
+    parts = [p for p in re.split(r"[\s・･]", base) if p]
+    if len(parts) < 2:
+        return False
+    return re.sub(r"[\s・･]", "", base) in flat
 
 
 def post_kind(text, name=""):
@@ -412,6 +442,9 @@ def post_kind(text, name=""):
     見出しラベルではなくキャラ名そのものを【】でくくる紹介形式がある。
     定型の語（キャラクター紹介など）が無いので、名前を知らないと判定できない。
     誕生日ポストは名前を単独で【】に入れないので、これで取り違えない。
+
+    誕生日の判定を「フルネーム」より先に置く。誕生日ポストもフルネームを
+    書くことが多いので、後に置くと誕生日が上位に紛れ込む。
     """
     if KIND_PROFILE.search(text):
         return "プロフィール"
@@ -420,11 +453,13 @@ def post_kind(text, name=""):
             return "プロフィール"
     if KIND_BIRTHDAY.search(text):
         return "誕生日"
+    if has_full_name(text, name):
+        return "フルネーム"
     return "その他"
 
 
 def best_posts():
-    """キャラごとに1件だけ選ぶ。プロフィール型を優先し、次に誕生日。
+    """キャラごとに1件だけ選ぶ。KIND_ORDER の順（誕生日は最後）。
 
     同じ種類なら本文が長いほうを採る。「本日は◯◯の誕生日です」だけの投稿より、
     人物の説明が入っているほうがページに載せる価値がある。
@@ -886,7 +921,7 @@ def cmd_sheet(args):
         for c in left:
             base = re.sub(r"[（(][^）)]*[）)]", "", c["name"]).strip()
             key = max(re.split(r"[\s・･]", base) or [base], key=len)
-            q = "from:%s %s %s" % (acct, key, args.word)
+            q = ("from:%s %s %s" % (acct, key, args.word)).strip()
             print("   %-24s %s" % (c["name"],
                                    "https://x.com/search?q=%s&f=live" % urllib.parse.quote(q)))
 
@@ -1301,6 +1336,14 @@ def cmd_hunt(args):
     con = sqlite3.connect(DB)
     con.row_factory = sqlite3.Row
     got = {r["cid"] for r in read_tsv(POSTS)}
+    # 誕生日ポストでしか埋まっていない人は「埋まっている」と数えない。
+    # 誕生日は描き下ろしイラストが付く代わりに人物の説明が無いことが多く、
+    # 最終手段として置くもの。紹介ポストが別にあるなら差し替えたい。
+    best = best_posts()
+    weak = {cid for cid, r in best.items()
+            if (r.get("kind") or "その他") in args.weak_kinds}
+    if args.weak:
+        got -= weak
     accounts = {r["vid"]: r.get("account", "") for r in read_tsv(ACCOUNTS)}
     skip = {r["vid"] for r in read_tsv(NONE)}
     rows = con.execute("""
@@ -1332,12 +1375,20 @@ def cmd_hunt(args):
         print("   ② 見つけたら: python3 scripts/x_posts.py series <そのURL>")
         # ③ は姓（または最初の語）で引く。セリフ型・キャッチコピー型の作品は
         # 定型の見出しが無いので、これしか手が無い
-        names = [c["name"].split()[0] for c in left if c["role"] != "主人公"][:3]
-        for nm in names:
-            q3 = "from:%s %s" % (handle, nm)
+        # フルネームだと表記ゆれ（中黒の有無・カナ違い）で外れるので、
+        # 姓名のうち長いほうを1語だけ使う。sheet / plan と同じ扱いにする
+        for c in [c for c in left if c["role"] != "主人公"][:3]:
+            base = re.sub(r"[（(][^）)]*[）)]", "", c["name"]).strip()
+            key = max(re.split(r"[\s・･]", base) or [base], key=len)
+            q3 = "from:%s %s" % (handle, key)
             print("   ③ %-12s https://x.com/search?q=%s&f=live"
-                  % (nm, urllib.parse.quote(q3)))
-        print("   未収集: %s" % "、".join(c["name"] for c in left[:12]))
+                  % (key, urllib.parse.quote(q3)))
+        fresh = [c["name"] for c in left if c["cid"] not in weak]
+        upgrade = [c["name"] for c in left if c["cid"] in weak]
+        if fresh:
+            print("   未収集: %s" % "、".join(fresh[:12]))
+        if upgrade:
+            print("   誕生日どまり（差し替えたい）: %s" % "、".join(upgrade[:12]))
         print()
     if n == 0:
         print("公式アカウントが分かっていて未完了の作品はない")
@@ -1541,8 +1592,10 @@ def main():
     hv.set_defaults(fn=cmd_harvest)
     pl = sub.add_parser("plan")
     pl.add_argument("vid")
-    pl.add_argument("--word", default="誕生",
-                    help="キャラ名に足す語。公式の定型に合わせる（誕生祭／紹介など）")
+    pl.add_argument("--word", default="",
+                    help="キャラ名に足す語。既定は無し（名前だけで引く）。"
+                         "既定を『誕生』にしていたころは誕生日ポストばかり集まっていた。"
+                         "紹介ポストが先に要るので、絞るなら『紹介』を渡す")
     pl.set_defaults(fn=cmd_plan)
     ik = sub.add_parser("intake")
     ik.add_argument("files", nargs="+", help="URLを貼ったテキスト。書式は問わない")
@@ -1551,7 +1604,7 @@ def main():
     sh = sub.add_parser("sheet")
     sh.add_argument("--since", type=int, default=0)
     sh.add_argument("--limit", type=int, default=10)
-    sh.add_argument("--word", default="誕生")
+    sh.add_argument("--word", default="")
     sh.set_defaults(fn=cmd_sheet)
     se = sub.add_parser("series")
     se.add_argument("urls", nargs="+")
@@ -1562,6 +1615,10 @@ def main():
     gp.set_defaults(fn=cmd_gaps)
     hu = sub.add_parser("hunt")
     hu.add_argument("--limit", type=int, default=5)
+    hu.add_argument("--weak", action="store_true",
+                    help="誕生日ポストでしか埋まっていない人も対象に含める")
+    hu.add_argument("--weak-kinds", nargs="*", default=["誕生日"],
+                    help="差し替えたい種類。既定は誕生日だけ")
     hu.add_argument("--min-left", type=int, default=1,
                     help="未収集がこの人数以上の作品だけ出す。残り1人はたいてい主人公で、"
                          "紹介ポスト自体が無いことが多い")
