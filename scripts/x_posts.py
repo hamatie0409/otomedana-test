@@ -491,7 +491,28 @@ KIND_BIRTHDAY = re.compile(
 # 載せたい順。誕生日は最後にする。描き下ろしイラストが付くので見栄えはよいが、
 # 「本日は◯◯の誕生日です」だけで人物の説明が無いことが多く、
 # データベースサイトとしては情報量が最も少ない。
-KIND_ORDER = ["プロフィール", "フルネーム", "その他", "誕生日"]
+# キャラを使ってはいるが人物の説明が無い販促ポスト。
+# 人気投票・ラジオ・ガチャ・CD・グッズ・コラボカフェ・周年SSなど。
+# これらは「紹介ポスト」ではないので、best_posts では採らない。
+KIND_PROMO = re.compile(
+    r"人気投票|レイディオ|レディオ|ラジオ"
+    r"|ガチャ|PickUp\s*ガチャ|BIRTHDAYガチャ"
+    r"|CD情報|キャラクターソング|キャラソン|Character\s*Song|主題歌|ドラマCD"
+    r"|コラボカフェ|コラボ\s*in|メニュウ|メニュー紹介"
+    r"|受注生産|グッズ|アクリル|缶バッジ|LINEスタンプ|通販|予約受付"
+    r"|周年企画SS|周年記念グッズ"
+    r"|イベント情報|ストーリーイベント", re.I)
+# 描き下ろしイラストの配布。人物の説明は無いが、誕生日ポストよりは使える
+KIND_ICON = re.compile(
+    r"アイコン(?:配布|プレゼント|を配布|の配布)|推しアイコン|アイコンプレゼント"
+    r"|壁紙(?:配布|プレゼント)|ヘッダー(?:配布|プレゼント)", re.I)
+# 本編の一場面。人物の説明は無いので誕生日と同じ最終手段
+KIND_CG = re.compile(r"イベントCG\s*紹介|CG\s*紹介", re.I)
+# 載せたい順。誕生日とイベントCGは最後にする。描き下ろしイラストが付くので
+# 見栄えはよいが、人物の説明が無く、データベースサイトとしては情報量が最も少ない。
+# 販促は末尾に置いたうえで best_posts が除外する。
+KIND_ORDER = ["プロフィール", "フルネーム", "その他",
+              "アイコン配布", "誕生日", "イベントCG", "販促"]
 
 
 def has_full_name(text, name):
@@ -551,6 +572,10 @@ def post_kind(text, name=""):
     """
     if KIND_PROFILE.search(text):
         return "プロフィール"
+    # 販促ポストは、キャラ名やCVが書いてあっても人物の説明が無い。
+    # 紹介の見出し（KIND_PROFILE）を持つものだけ先に救い、残りは販促とする
+    if KIND_PROMO.search(text):
+        return "販促"
     # 見出しに「紹介」が入っていてCV表記もあるなら紹介ポストとみなす。
     # 作品ごとに【人物紹介・二】【キャラ紹介】【攻略対象紹介】…と語が違い、
     # 列挙では追いつかない。ビルシャナ戦姫の【人物紹介・一〜九】が
@@ -576,6 +601,12 @@ def post_kind(text, name=""):
             return "プロフィール"
         if not KIND_BIRTHDAY.search(text):
             return "プロフィール"
+    # イベントCGは本編の一場面で人物の説明が無い。誕生日と同じ最終手段。
+    # アイコン配布は描き下ろしが付くぶん誕生日より使える
+    if KIND_CG.search(text):
+        return "イベントCG"
+    if KIND_ICON.search(text):
+        return "アイコン配布"
     if KIND_BIRTHDAY.search(text):
         return "誕生日"
     if has_full_name(text, name):
@@ -603,7 +634,14 @@ def best_posts():
         return (derived, KIND_ORDER.index(r.get("kind") or "その他"),
                 -len(r.get("note") or ""))
 
-    return {cid: sorted(rows, key=rank)[0] for cid, rows in by_cid.items()}
+    out = {}
+    for cid, rows in by_cid.items():
+        # 販促（人気投票・ガチャ・グッズ告知など）は紹介ポストではないので採らない。
+        # 販促しか無いキャラは「未収集」のままにする
+        usable = [r for r in rows if (r.get("kind") or "その他") != "販促"]
+        if usable:
+            out[cid] = sorted(usable, key=rank)[0]
+    return out
 
 
 EMBED_CSS = """
@@ -1697,7 +1735,8 @@ def cmd_verify(args):
 
 def cmd_report(args):
     con = sqlite3.connect(DB)
-    got = {r["cid"] for r in read_tsv(POSTS)}
+    # best_posts と同じ基準で数える。販促しか無いキャラは未収集扱い
+    got = set(best_posts())
     tot = con.execute("select count(*) from character").fetchone()[0]
     rows = con.execute("""
         select case when w.year is null then 'unknown'
