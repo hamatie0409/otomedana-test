@@ -9,6 +9,11 @@
 
 ## 2026-09-10
 
+### 07:23 終遠のヴィルシュを収集（627→628人）
+- なぜ: @virche_otomate に【Character】年齢・人物説明つきの紹介連載があった。本編（ErroR:salvation）7人とFD（EpiC:lycoris）のサブキャラを確保。金色のコルダ4・遙かなる時空の中で6は公式アカウントに紹介も誕生日連載も無い
+- 次: 下天の華／十鬼の絆／月影の鎖／ラディアンテイル／Code:Realize 祝福の未来／マジきゅんっ！ルネッサンス ほか
+- ブランチ: claude/x-character-intro-posts-9fb6df（記録時 HEAD: 4c30c75dd）
+
 ### 07:18 スペードの国のアリスを収集、遙か系を該当なしに記録（614→627人）
 - ブランチ: claude/x-character-intro-posts-9fb6df（記録時 HEAD: 6a852a8de）
 
