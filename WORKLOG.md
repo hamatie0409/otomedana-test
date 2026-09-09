@@ -9,6 +9,11 @@
 
 ## 2026-09-10
 
+### 05:18 神々の悪戯を【CHARACTER】神々紹介に差し替え（5→8人）
+- なぜ: GALLERY更新告知とカウントダウンを拾っていたが、2014年4月に【CHARACTER】神々紹介①〜⑧という人物説明つきの連載があった。ギリシャ/北欧/日本/エジプト神話ごとの設定文が入る本物の紹介ポスト
+- 次: ワンドオブフォーチュン・悪役令嬢海賊・OVER REQUIEMZ・9 R.I.P.・灰鷹・燃えよ乙女道士・AMNESIA・7'scarlet
+- ブランチ: claude/x-character-intro-posts-9fb6df（記録時 HEAD: 3196ef6ef）
+
 ### 05:03 corrections/x_embeds.json を更新（113人→554人）
 - なぜ: 収集結果がサイトに反映される経路は x_posts.tsv → x_posts.py embeds → corrections/x_embeds.json → site2_build.py。この埋め込みJSONが9/9時点の113人ぶんで止まっており、その後の収集・差し替えが1件もサイトに載っていなかった。verify のあとに embeds を回すのを手順に入れる
 - 次: 以後は intake → verify → embeds → commit の順で回す

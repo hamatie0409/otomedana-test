@@ -1,20 +1,14 @@
 # 検証を通ったキャラクター紹介ポスト。x_posts.py verify が書く。
 # 公式アカウントの投稿で、本文にキャラ名が出るものだけが入る。
 cid	vid	character	account	status_url	kind	checked_at	note
-c37620	v10273	アポロン・アガナ・ベレア	@kami_aso	https://x.com/kami_aso/status/1485990870264557574	その他	2026-09-10	紹介らしい ｜ 【GAME】Nintendo Switch用ソフト『神々の悪戯 Unite Edition』発売まであと1日。ギリシャ神
-c37621	v10273	ハデス・アイドネウス	@kami_aso	https://x.com/kami_aso/status/1485628478049431556	フルネーム	2026-09-10	紹介らしい ｜ 【GAME】Nintendo Switch用ソフト『神々の悪戯 Unite Edition』発売まであと2日。ギリシャ神
-c37622	v10273	バルドル・フリングホルニ	@kami_aso	https://x.com/kami_aso/status/476675090260582400	その他	2026-09-10	要確認 ｜ 【GALLERY】神々紹介 バルドル #kamiaso http://t.co/apqwGAldiZ pic.twitt
-c37622	v10273	バルドル・フリングホルニ	@kami_aso	https://x.com/kami_aso/status/475216479525171201	その他	2026-09-10	要確認 ｜ 【GALLERY】神々紹介⑤ バルドルhttp://t.co/BAZJQEbrba #kamiaso pic.twitt
-c37623	v10273	ロキ・レーヴァテイン	@kami_aso	https://x.com/kami_aso/status/479184907302760448	その他	2026-09-10	要確認 ｜ 【GALLERY】神々紹介 ロキ#kamiaso http://t.co/apqwGAldiZ pic.twitter.
-c37623	v10273	ロキ・レーヴァテイン	@kami_aso	https://x.com/kami_aso/status/477375098798604288	その他	2026-09-10	要確認 ｜ 【GALLERY】神々紹介⑥ ロキ  #kamiaso http://t.co/6r9IJy2O3d pic.twitt
-c37623	v10273	ロキ・レーヴァテイン	@kami_aso	https://x.com/kami_aso/status/475973172475355136	その他	2026-09-10	要確認 ｜ 【GALLERY】神々紹介⑥ ロキ／神化 #kamiaso http://t.co/Q4nVwfXx3y pic.twi
-c37624	v10273	戸塚 月人	@kami_aso	https://x.com/kami_aso/status/1485266089533714440	フルネーム	2026-09-10	紹介らしい ｜ 【GAME】Nintendo Switch用ソフト『神々の悪戯 Unite Edition』発売まであと3日。日本神話の
-c37625	v10273	戸塚 尊	@kami_aso	https://x.com/kami_aso/status/1484903704340078594	フルネーム	2026-09-10	紹介らしい ｜ 【GAME】Nintendo Switch用ソフト『神々の悪戯 Unite Edition』発売まであと4日。日本神話の
-c37627	v10273	トト・カドゥケウス	@kami_aso	https://x.com/kami_aso/status/482865785656705024	その他	2026-09-10	要確認 ｜ 【GALLERY】神々紹介⑧ トト http://t.co/xhq0apyK5C  #kamiaso pic.twitt
-c37627	v10273	トト・カドゥケウス	@kami_aso	https://x.com/kami_aso/status/481000114450755586	その他	2026-09-10	要確認 ｜ 【GALLERY】神々紹介⑧ トト／神化 #kamiaso http://t.co/9yHeq1PaLH pic.twi
-c37629	v10273	アヌビス・マアト	@kami_aso	https://x.com/kami_aso/status/481724287506599937	その他	2026-09-10	要確認 ｜ 【GALLERY】神々紹介 アヌビス  #kamiaso http://t.co/apqwGAldiZ pic.twit
-c37629	v10273	アヌビス・マアト	@kami_aso	https://x.com/kami_aso/status/480273087426867200	その他	2026-09-10	要確認 ｜ 【GALLERY】神々紹介⑦ アヌビス http://t.co/XBUTznSx99 #kamiaso pic.twit
-c37629	v10273	アヌビス・マアト	@kami_aso	https://x.com/kami_aso/status/478473855413936130	その他	2026-09-10	要確認 ｜ 【GALLERY】神々紹介⑦ アヌビス／神化  #kamiaso http://t.co/LFfjbP6u1P pic.
+c37620	v10273	アポロン・アガナ・ベレア	@kami_aso	https://x.com/kami_aso/status/455740165072252928	フルネーム	2026-09-10	紹介らしい ｜ 【CHARACTER】神々紹介① アポロン・アガナ・ベレア ギリシャ神話の太陽神。人間に対しても友好的なムードメーカー。
+c37621	v10273	ハデス・アイドネウス	@kami_aso	https://x.com/kami_aso/status/455743922090700800	フルネーム	2026-09-10	紹介らしい ｜ 【CHARACTER】神々紹介② ハデス・アイドネウス ギリシャ神話の冥府の王。ゼウスの兄でアポロンの伯父。 他者との関
+c37622	v10273	バルドル・フリングホルニ	@kami_aso	https://x.com/kami_aso/status/456371063392178176	フルネーム	2026-09-10	紹介らしい ｜ 【CHARACTER】神々紹介⑤ バルドル・フリングホルニ  北欧神話の光の神。人をひきつける魅力を持ち、その能力は神を
+c37623	v10273	ロキ・レーヴァテイン	@kami_aso	https://x.com/kami_aso/status/456379633227681792	フルネーム	2026-09-10	紹介らしい ｜ 【CHARACTER】神々紹介⑥ ロキ・レーヴァテイン北欧神話の炎の神。無邪気で邪悪、笑顔で容赦のない悪戯をする。 トリ
+c37624	v10273	戸塚 月人	@kami_aso	https://x.com/kami_aso/status/455997333214203904	フルネーム	2026-09-10	紹介らしい ｜ 【CHARACTER】神々紹介③　戸塚月人日本神話の月の神、ツクヨミ。何事にも鈍感で頓着しない性格。人間に対しても興味が
+c37625	v10273	戸塚 尊	@kami_aso	https://x.com/kami_aso/status/456010630244229120	フルネーム	2026-09-10	紹介らしい ｜ 【CHARACTER】神々紹介④　戸塚 尊日本神話の海の神、スサノオ。学園生活には協力的ではない。気性は荒くケンカっ早い
+c37627	v10273	トト・カドゥケウス	@kami_aso	https://x.com/kami_aso/status/456772366182277120	フルネーム	2026-09-10	紹介らしい ｜ 【CHARACTER】神々紹介⑧ トト・カドゥケウスエジプト神話の叡智の神。学園では神々の指導にあたるがあまり協力的では
+c37629	v10273	アヌビス・マアト	@kami_aso	https://x.com/kami_aso/status/456758821411500033	フルネーム	2026-09-10	紹介らしい ｜ 【CHARACTER】神々紹介⑦　 アヌビス・マアトエジプト神話の死の神。人間不信で警戒心が強く、彼の姿を見かける事はほ
 c33330	v10289	関羽	@juza_otomate	https://x.com/juza_otomate/status/1519859013013233664	プロフィール	2026-09-10	要確認 ｜ 【登場人物・九】関羽（かんう）　※主人公。名前変更可。猫族の少女。完全な猫族ではなく人間と猫族の間に生まれた混血。類稀な
 c33330	v10289	関羽	@juza_otomate	https://x.com/juza_otomate/status/1517322297589313536	プロフィール	2026-09-10	紹介らしい ｜ 【登場人物・二】張飛（ちょうひ）　CV.#岡本信彦劉備、関羽と兄弟同然に育ってきた猫族の少年。物事をあまり深く考えること
 c33330	v10289	関羽	@juza_otomate	https://x.com/juza_otomate/status/1516959906854711296	プロフィール	2026-09-10	紹介らしい ｜ 【登場人物・一】劉備（りゅうび）　CV.#石田彰猫族の長。十五歳という年齢の割りに心も体もとても幼くまるで子供のよう。兄
