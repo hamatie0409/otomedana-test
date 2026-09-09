@@ -556,7 +556,7 @@ def post_kind(text, name=""):
     # 列挙では追いつかない。ビルシャナ戦姫の【人物紹介・一〜九】が
     # 列挙漏れでフルネーム扱いになっていた
     if re.search(r"【[^】]{0,14}紹介[^】]{0,14}】", text) \
-            and re.search(r"CV|ＣＶ|声[：:]|声優|V\.A\.", text, re.I):
+            and re.search(r"C\.?V|ＣＶ|声[：:]|声優|V\.A\.", text, re.I):
         return "プロフィール"
     # 【緋影】のように名前だけを括る形のほか、
     # 【イグニス・カリブンクルス（CV.小野友樹）】のようにCVごと括る形もある。
@@ -572,7 +572,7 @@ def post_kind(text, name=""):
         # Cendrillon palikA の「【紫鳶[シエン]＝クリノクロア】▼透京唯一の逃亡者」
         # のようにCVを書かず惹句だけ添える形もあるので、
         # 誕生日ポストでないことを条件に、見出しが名前そのものなら紹介とする
-        if re.search(r"CV|ＣＶ|声優|V\.A\.", text, re.I):
+        if re.search(r"C\.?V|ＣＶ|声優|V\.A\.", text, re.I):
             return "プロフィール"
         if not KIND_BIRTHDAY.search(text):
             return "プロフィール"
