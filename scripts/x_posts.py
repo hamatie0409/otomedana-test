@@ -501,7 +501,11 @@ KIND_PROMO = re.compile(
     r"|コラボカフェ|コラボ\s*in|メニュウ|メニュー紹介"
     r"|受注生産|グッズ|アクリル|缶バッジ|LINEスタンプ|通販|予約受付"
     r"|周年企画SS|周年記念グッズ"
-    r"|イベント情報|ストーリーイベント", re.I)
+    r"|イベント情報|ストーリーイベント"
+    # 季節・記念日のメッセージ。キャラのイラストと台詞は付くが人物の説明は無い
+    r"|(?:Summer|Winter|Spring|Autumn|New\s*Year|Special|Anniversary|Christmas|Valentine)"
+    r"\s*Message"
+    r"|お祝いメッセージ|メッセージ動画", re.I)
 # 描き下ろしイラストの配布。人物の説明は無いが、誕生日ポストよりは使える
 KIND_ICON = re.compile(
     r"アイコン(?:配布|プレゼント|を配布|の配布)|推しアイコン|アイコンプレゼント"
