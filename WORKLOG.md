@@ -9,6 +9,11 @@
 
 ## 2026-09-10
 
+### 05:03 corrections/x_embeds.json を更新（113人→554人）
+- なぜ: 収集結果がサイトに反映される経路は x_posts.tsv → x_posts.py embeds → corrections/x_embeds.json → site2_build.py。この埋め込みJSONが9/9時点の113人ぶんで止まっており、その後の収集・差し替えが1件もサイトに載っていなかった。verify のあとに embeds を回すのを手順に入れる
+- 次: 以後は intake → verify → embeds → commit の順で回す
+- ブランチ: claude/x-character-intro-posts-9fb6df（記録時 HEAD: 6a9d68fb5）
+
 ### 00:00 その他ポストの点検を継続（白と黒のアリス・悠久のティアブレイドほか）
 - なぜ: 白と黒のアリスは【キャラクター紹介／白サイド】に誕生日・職業・趣味入りの完全版があり、キャスト一覧ポストから差し替え（主人公ルナ含む7人）。悠久のティアブレイドは主人公イヴにロウの回が誤配されていたので削除。レッドベルの慟哭は季節メッセージとCD告知しか無く該当なしに記録
 - 次: 神々の悪戯・ワンドオブフォーチュン・悪役令嬢海賊・OVER REQUIEMZ・9 R.I.P.・灰鷹・燃えよ乙女道士・AMNESIA・7'scarlet の点検
