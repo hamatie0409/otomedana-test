@@ -500,7 +500,8 @@ KIND_BIRTHDAY = re.compile(
 KIND_PROMO = re.compile(
     r"人気投票|レイディオ|レディオ|ラジオ"
     r"|ガチャ|PickUp\s*ガチャ|BIRTHDAYガチャ"
-    r"|CD情報|キャラクターソング|キャラソン|Character\s*Song|主題歌|ドラマCD"
+    r"|CD情報|キャラクターソング|キャラソン|Character\s*Song|主題歌|ドラマ\s*[CＣ][DＤ]"
+    r"|製品情報|商品情報|発売中！|好評発売中"
     r"|コラボカフェ|コラボ\s*in|メニュウ|メニュー紹介"
     r"|受注生産|グッズ|アクリル|缶バッジ|LINEスタンプ|通販|予約受付"
     r"|周年企画SS|周年記念グッズ"
@@ -559,7 +560,15 @@ def subject_hit(text, name):
         if not fv:
             continue
         for m in SUBJECT_HEAD.finditer(text):
-            if flat(text[m.end():m.end() + len(v) + 8]).startswith(fv):
+            after = flat(text[m.end():m.end() + len(v) + 24])
+            if after.startswith(fv):
+                return True
+            # 「白うさぎ：スノウ（CV.増田俊樹）」のように、名前の前に
+            # 肩書きや二つ名が入る形式もある。見出し直後の1行のうち、
+            # 区切り記号（：・／―など）の直後に来る名前も主題とみなす
+            head = after.split("#")[0]
+            if re.search(r"(?:^|[：:／/\-―－—•・|｜▼◆■●★☆])%s(?![^\s（(])"
+                         % re.escape(fv), head):
                 return True
         if re.search(r"【\s*%s\s*(?:[（(][^】]*[）)])?\s*】" % re.escape(v), text):
             return True
