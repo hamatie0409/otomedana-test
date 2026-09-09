@@ -476,7 +476,10 @@ KIND_PROFILE = re.compile(
     # ご紹介。…【イグニス・カリブンクルス（CV.小野友樹）】」という形。
     # 見出しは連番で、人物の説明は本文にあり、名前とCVは末尾の【】に入る。
     # 年齢も身長も書かないので、紹介だと名乗っている文そのものを見る
-    r"|攻略(?:可能)?キャラクター|キャラクターのご?紹介|登場人物のご?紹介")
+    r"|攻略(?:可能)?キャラクター|キャラクターのご?紹介|登場人物のご?紹介"
+    # イケメン戦国の「◤ 武将プロフィール紹介 ◢」のように、
+    # 【】ではなく別の装飾で括る見出しもある。語そのものを見る
+    r"|\S{0,4}プロフィール紹介")
 KIND_BIRTHDAY = re.compile(
     r"HAPPY\s*BIRTHDAY|Joyeux\s+anniversaire|Buon\s+compleanno|誕生祭|誕生日", re.I)
 # 載せたい順。誕生日は最後にする。描き下ろしイラストが付くので見栄えはよいが、
@@ -552,9 +555,20 @@ def post_kind(text, name=""):
     # 【緋影】のように名前だけを括る形のほか、
     # 【イグニス・カリブンクルス（CV.小野友樹）】のようにCVごと括る形もある。
     # 名前の直後に括弧つきの補足が入ってもよいことにする
+    # 見出しの照合は本文をならしてから行う。
+    # 「【紫鳶[シエン]＝クリノクロア】」のように読み仮名や区切り記号が
+    # 挟まると、生の本文のままでは DB の名前と一致しない
+    flat = flatten(text)
     for v in name_variants(name):
-        if re.search(r"【\s*%s\s*(?:[（(][^】]*[）)])?\s*】" % re.escape(v), text) \
-                and re.search(r"CV|ＣＶ|声優|V\.A\.", text, re.I):
+        if not re.search(r"【\s*%s\s*(?:[（(][^】]*[）)])?\s*】" % re.escape(v), flat):
+            continue
+        # CV表記があれば紹介とみなす。
+        # Cendrillon palikA の「【紫鳶[シエン]＝クリノクロア】▼透京唯一の逃亡者」
+        # のようにCVを書かず惹句だけ添える形もあるので、
+        # 誕生日ポストでないことを条件に、見出しが名前そのものなら紹介とする
+        if re.search(r"CV|ＣＶ|声優|V\.A\.", text, re.I):
+            return "プロフィール"
+        if not KIND_BIRTHDAY.search(text):
             return "プロフィール"
     if KIND_BIRTHDAY.search(text):
         return "誕生日"
