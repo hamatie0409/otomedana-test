@@ -1,6 +1,17 @@
 # 検証を通ったキャラクター紹介ポスト。x_posts.py verify が書く。
 # 公式アカウントの投稿で、本文にキャラ名が出るものだけが入る。
 cid	vid	character	account	status_url	kind	checked_at	note
+c47449	v1015	月森 蓮	@corda_official	https://x.com/corda_official/status/889355277417435137	フルネーム	2026-09-10	要確認 ｜ 本日は、『金色のコルダ２ ff』に登場するキャラクター「月森 蓮」をご紹介します。&mdash; 「金色のコルダ」シリー
+c47450	v1015	土浦 梁太郎	@corda_official	https://x.com/corda_official/status/889751421129707520	フルネーム	2026-09-10	要確認 ｜ 本日は、『金色のコルダ２ ff』に登場するキャラクター「土浦梁太郎」をご紹介します。&mdash; 「金色のコルダ」シリ
+c47451	v1015	志水 桂一	@corda_official	https://x.com/corda_official/status/890117017524736004	フルネーム	2026-09-10	要確認 ｜ 本日は、『金色のコルダ２ ff』に登場するキャラクター「志水桂一」をご紹介します。&mdash; 「金色のコルダ」シリー
+c47452	v1015	火原 和樹	@corda_official	https://x.com/corda_official/status/890487781977276417	フルネーム	2026-09-10	要確認 ｜ 本日は、『金色のコルダ２ ff』に登場するキャラクター「火原和樹」をご紹介します。&mdash; 「金色のコルダ」シリー
+c47453	v1015	柚木 梓馬	@corda_official	https://x.com/corda_official/status/890852548239777792	フルネーム	2026-09-10	要確認 ｜ 本日は、『金色のコルダ２ ff』に登場するキャラクター「柚木梓馬」をご紹介します。&mdash; 「金色のコルダ」シリー
+c47454	v1015	金澤 紘人	@corda_official	https://x.com/corda_official/status/893008728273731584	フルネーム	2026-09-10	要確認 ｜ 本日は、『金色のコルダ２ ff』に登場するキャラクター「金澤紘人」をご紹介します。&mdash; 「金色のコルダ」シリー
+c47455	v1015	王崎 信武	@corda_official	https://x.com/corda_official/status/893385985429389312	フルネーム	2026-09-10	要確認 ｜ 本日は、『金色のコルダ２ ff』に登場するキャラクター「王崎信武」をご紹介します。&mdash; 「金色のコルダ」シリー
+c47456	v1015	加地 葵	@corda_official	https://x.com/corda_official/status/891925080854245376	フルネーム	2026-09-10	要確認 ｜ 本日は、『金色のコルダ２ ff』に登場するキャラクター「加地 葵」をご紹介します。&mdash; 「金色のコルダ」シリー
+c47457	v1015	衛藤 桐也	@corda_official	https://x.com/corda_official/status/892297286230745088	フルネーム	2026-09-10	要確認 ｜ 本日は、『金色のコルダ２ ff』に登場するキャラクター「衛藤桐也」をご紹介します。&mdash; 「金色のコルダ」シリー
+c47459	v1015	冬海 笙子	@corda_official	https://x.com/corda_official/status/892650572070780928	フルネーム	2026-09-10	要確認 ｜ 本日は、『金色のコルダ２ ff』に登場するキャラクター「冬海笙子」をご紹介します。&mdash; 「金色のコルダ」シリー
+c47460	v1015	天羽 菜美	@corda_official	https://x.com/corda_official/status/894465034872434688	フルネーム	2026-09-10	要確認 ｜ 本日は、『金色のコルダ２ ff』に登場するキャラクター「天羽菜美」をご紹介します。&mdash; 「金色のコルダ」シリー
 c37620	v10273	アポロン・アガナ・ベレア	@kami_aso	https://x.com/kami_aso/status/455740165072252928	フルネーム	2026-09-10	紹介らしい ｜ 【CHARACTER】神々紹介① アポロン・アガナ・ベレア ギリシャ神話の太陽神。人間に対しても友好的なムードメーカー。
 c37621	v10273	ハデス・アイドネウス	@kami_aso	https://x.com/kami_aso/status/455743922090700800	フルネーム	2026-09-10	紹介らしい ｜ 【CHARACTER】神々紹介② ハデス・アイドネウス ギリシャ神話の冥府の王。ゼウスの兄でアポロンの伯父。 他者との関
 c37622	v10273	バルドル・フリングホルニ	@kami_aso	https://x.com/kami_aso/status/456371063392178176	フルネーム	2026-09-10	紹介らしい ｜ 【CHARACTER】神々紹介⑤ バルドル・フリングホルニ  北欧神話の光の神。人をひきつける魅力を持ち、その能力は神を
@@ -52,6 +63,29 @@ c33352	v12714	諸葛亮	@juza_otomate	https://x.com/juza_otomate/status/15191342
 c51458	v12807	熊代 大地	@colorfulstep_hb	https://x.com/colorfulstep_hb/status/457827725978238978	フルネーム	2026-09-10	紹介らしい ｜ 【製品情報】ドラマＣＤ『放課後colorful＊step～Basketball club』好評発売中！バスケ部員が彼氏と
 c51459	v12807	橘 コウ	@colorfulstep_hb	https://x.com/colorfulstep_hb/status/457827725978238978	フルネーム	2026-09-10	紹介らしい ｜ 【製品情報】ドラマＣＤ『放課後colorful＊step～Basketball club』好評発売中！バスケ部員が彼氏と
 c51460	v12807	佐鷺 遙	@colorfulstep_hb	https://x.com/colorfulstep_hb/status/457827725978238978	フルネーム	2026-09-10	紹介らしい ｜ 【製品情報】ドラマＣＤ『放課後colorful＊step～Basketball club』好評発売中！バスケ部員が彼氏と
+c48088	v13072	如月 響也	@corda_official	https://x.com/corda_official/status/1112187762529046530	販促	2026-09-10	要確認 ｜ 3月31日は、如月響也の誕生日です。15周年を迎え、ゲーム・イベント・グッズなど展開を続ける『金色のコルダ』シリーズの情
+c48090	v13072	如月 律	@corda_official	https://x.com/corda_official/status/1136467747498389506	販促	2026-09-10	要確認 ｜ 6月6日は如月 律の誕生日です。15周年を迎え、ゲーム・イベント・グッズなど展開を続ける『金色のコルダ』シリーズの情報は
+c48094	v13072	榊 大地	@corda_official	https://x.com/corda_official/status/1211119647761846272	誕生日	2026-09-10	要確認 ｜ 12月29日は榊 大地の誕生日です。ネオロマンスシリーズは25周年を迎えました！『金色のコルダ』シリーズの情報も、ネオロ
+c48094	v13072	榊 大地	@corda_official	https://x.com/corda_official/status/1078848081939054593	誕生日	2026-09-10	要確認 ｜ 12月29日は、榊 大地の誕生日です。ナンパな性格だが、優しくて頼りになる先輩・大地と恋愛できるPS Vita版「金色の
+c48096	v13072	水嶋 悠人	@corda_official	https://x.com/corda_official/status/1124508949686902786	販促	2026-09-10	要確認 ｜ 5月4日は水嶋悠人の誕生日です。15周年を迎え、ゲーム・イベント・グッズなど展開を続ける『金色のコルダ』シリーズの情報は
+c48101	v13072	火積 司郎	@corda_official	https://x.com/corda_official/status/1148064160653160448	販促	2026-09-10	要確認 ｜ 7月8日は火積司郎の誕生日です。15周年を迎え、ゲーム・イベント・グッズなど展開を続ける『金色のコルダ』シリーズの情報は
+c48104	v13072	水嶋 新	@corda_official	https://x.com/corda_official/status/887933932196347904	その他	2026-09-10	要確認 ｜ 本日は、『金色のコルダ２ ff』で新たな恋愛対象キャラクターとして登場する「不動翔麻」をご紹介します。&mdash; 「
+c48104	v13072	水嶋 新	@corda_official	https://x.com/corda_official/status/1201697563205726209	誕生日	2026-09-10	要確認 ｜ 12月3日は水嶋 新の誕生日です。ネオロマンスシリーズは25周年を迎えました！『金色のコルダ』シリーズの情報も、ネオロマ
+c48104	v13072	水嶋 新	@corda_official	https://x.com/corda_official/status/1069425993910239232	誕生日	2026-09-10	要確認 ｜ 12月3日は、水嶋 新の誕生日です。甘え上手で楽しいことが大好きな新と恋愛できるPS Vita版「金色のコルダ３ フルボ
+c48107	v13072	東金 千秋	@corda_official	https://x.com/corda_official/status/1178867128134443008	誕生日	2026-09-10	要確認 ｜ 10月1日は東金千秋の誕生日です。ネオロマンスシリーズは25周年を迎えました！『金色のコルダ』シリーズの情報も、ネオロマ
+c48107	v13072	東金 千秋	@corda_official	https://x.com/corda_official/status/1046595559346253824	誕生日	2026-09-10	要確認 ｜ 10月1日は、東金千秋の誕生日です。華やかで自信家な神南高校管弦楽部部長・東金と恋愛できるPS Vita版「金色のコルダ
+c48108	v13072	土岐 蓬生	@corda_official	https://x.com/corda_official/status/1164009226676711424	販促	2026-09-10	要確認 ｜ 8月21日は土岐蓬生の誕生日です。15周年を迎え、ゲーム・イベント・グッズなど展開を続ける『金色のコルダ』シリーズの情報
+c48109	v13072	冥加 玲士	@corda_official	https://x.com/corda_official/status/1194812193767772161	誕生日	2026-09-10	要確認 ｜ 11月14日は冥加玲士の誕生日です。ネオロマンスシリーズは25周年を迎えました！『金色のコルダ』シリーズの情報も、ネオロ
+c48109	v13072	冥加 玲士	@corda_official	https://x.com/corda_official/status/1062540623826378752	誕生日	2026-09-10	要確認 ｜ 11月14日は、冥加玲士の誕生日です。過去に因縁があるらしく、主人公に憎しみの眼差しを向ける冥加と恋愛できるPS Vit
+c48110	v13072	天宮 静	@corda_official	https://x.com/corda_official/status/1230326207092121601	誕生日	2026-09-10	要確認 ｜ 2月20日は天宮 静の誕生日です。ネオロマンスシリーズは25周年を迎えました！『金色のコルダ』シリーズの情報も、ネオロマ
+c48110	v13072	天宮 静	@corda_official	https://x.com/corda_official/status/1098054634961281024	誕生日	2026-09-10	要確認 ｜ 2月20日は、天宮 静の誕生日です。天才的なピアノ奏者で、どこか神秘的で浮世離れしている天宮と恋愛できるPS Vita版
+c48112	v13072	七海 宗介	@corda_official	https://x.com/corda_official/status/1221628897537732609	誕生日	2026-09-10	要確認 ｜ 1月27日は七海宗介の誕生日です。ネオロマンスシリーズは25周年を迎えました！『金色のコルダ』シリーズの情報も、ネオロマ
+c48112	v13072	七海 宗介	@corda_official	https://x.com/corda_official/status/1089357325218074626	誕生日	2026-09-10	要確認 ｜ 1月27日は、七海宗介の誕生日です。健気でおとなしく、自分の演奏技術に悩む七海と恋愛できるPS Vita版「金色のコルダ
+c48119	v13072	芹沢 睦	@corda_official	https://x.com/corda_official/status/1188289212820443136	誕生日	2026-09-10	要確認 ｜ 10月27日は芹沢 睦の誕生日です。ネオロマンスシリーズは25周年を迎えました！『金色のコルダ』シリーズの情報も、ネオロ
+c48119	v13072	芹沢 睦	@corda_official	https://x.com/corda_official/status/1056017645437366272	誕生日	2026-09-10	要確認 ｜ 10月27日は、芹沢 睦の誕生日です。執事のように丁寧だけど実は一癖あって……そんな芹沢が登場するPS Vita版「金色
+c48126	v13072	長嶺 雅紀	@corda_official	https://x.com/corda_official/status/1215468304816594944	誕生日	2026-09-10	要確認 ｜ 1月10日は長嶺雅紀の誕生日です。ネオロマンスシリーズは25周年を迎えました！『金色のコルダ』シリーズの情報も、ネオロマ
+c48126	v13072	長嶺 雅紀	@corda_official	https://x.com/corda_official/status/1083196732568231936	誕生日	2026-09-10	要確認 ｜ 1月10日は、長嶺雅紀の誕生日です。理知的で落ち着いているが、時に強引な振る舞いで主人公を翻弄する長嶺と恋愛できるPS
+c48133	v13072	氷渡 貴史	@corda_official	https://x.com/corda_official/status/1144802669866803201	販促	2026-09-10	要確認 ｜ 6月29日は氷渡貴史の誕生日です。15周年を迎え、ゲーム・イベント・グッズなど展開を続ける『金色のコルダ』シリーズの情報
 c21426	v13101	志奴 要	@Rejet_info	https://x.com/Rejet_info/status/2047329651937399146	誕生日	2026-09-10	要確認 ｜ 【HAPPY BIRTHDAY！】本日4/24は志奴要(BAD MEDICINE)のお誕生日です🎂おめでとうございます！
 c21427	v13101	凪原 大貴	@Rejet_info	https://x.com/Rejet_info/status/2002393562844205214	誕生日	2026-09-10	要確認 ｜ 【HAPPY BIRTHDAY！】本日12/21は凪原大貴(BAD MEDICINE)のお誕生日です🎂おめでとうございま
 c21428	v13101	葛葉 翔	@Rejet_info	https://x.com/Rejet_info/status/2086829930227331583	誕生日	2026-09-10	要確認 ｜ 【HAPPY BIRTHDAY！】本日8/11は葛葉翔(BAD MEDICINE)のお誕生日です🎂おめでとうございます！
@@ -628,6 +662,7 @@ c104706	v34020	キア・ネルティ	@tsuitsuiotomate	https://x.com/tsuitsuiotom
 c104706	v34020	キア・ネルティ	@tsuitsuiotomate	https://x.com/tsuitsuiotomate/status/1646815559974273025	プロフィール	2026-09-10	紹介らしい ｜ 【キャラクター紹介】何でも忘れる少年・キアとの会話シーンをご紹介✨主人公がキアに会うのはこの時で2回目ですが、平然と名前
 c126156	v34020	エリック・マーベイル	@tsuitsuiotomate	https://x.com/tsuitsuiotomate/status/1647874192212361216	プロフィール	2026-09-10	紹介らしい ｜ 【見どころ紹介】ツイツイは、騎士だけでなくサブキャラクターたちもとっても個性的！今回はエリックやベネティーが登場するシー
 c90035	v34022	ピーター・フラージュ	@CP_otomate	https://x.com/CP_otomate/status/1253568090295525376	フルネーム	2026-09-10	紹介らしい ｜ 【SubCharacter5】ピーター・フラージュ（CV.岡本信彦)婚活シェアハウスTV番組『PARASITE HOUS
+c47458	v3631	吉羅 暁彦	@corda_official	https://x.com/corda_official/status/894828500183429120	フルネーム	2026-09-10	要確認 ｜ 本日は、『金色のコルダ２ ff』に登場するキャラクター「吉羅暁彦」をご紹介します。&mdash; 「金色のコルダ」シリー
 c123164	v38068	天堂 紅華	@9RIP_otomate	https://x.com/9RIP_otomate/status/1954724448944198080	フルネーム	2026-09-10	紹介らしい ｜ ￣￣￣￣￣￣￣￣￣￣￣プレイ動画◆紅華の特徴＿＿＿＿＿＿＿＿＿＿＿天堂 紅華（CV：#増田俊樹 ）👻インスタでは記事内で
 c123165	v38068	伊音 響	@9RIP_otomate	https://x.com/9RIP_otomate/status/1955086841448894720	フルネーム	2026-09-10	紹介らしい ｜ ￣￣￣￣￣￣￣￣￣￣プレイ動画◆響の特徴＿＿＿＿＿＿＿＿＿＿伊音 響（CV：#土岐隼一 ）👻インスタでは記事内で詳細な情
 c123166	v38068	秋月 香羊	@9RIP_otomate	https://x.com/9RIP_otomate/status/1955449224872485218	フルネーム	2026-09-10	紹介らしい ｜ ￣￣￣￣￣￣￣￣￣￣￣プレイ動画◆香羊の特徴＿＿＿＿＿＿＿＿＿＿＿秋月 香羊（CV：#鈴木崚汰 ）👻インスタでは記事内で
