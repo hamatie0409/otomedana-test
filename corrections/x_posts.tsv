@@ -1,6 +1,9 @@
 # 検証を通ったキャラクター紹介ポスト。x_posts.py verify が書く。
 # 公式アカウントの投稿で、本文にキャラ名が出るものだけが入る。
 cid	vid	character	account	status_url	kind	checked_at	note
+c58604	v10044	甲斐 裕次郎	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2092809331393614212	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 ぎゅ～っと！ ドキドキサバイバル Tie break ♡ game』🎉本日8/27は甲斐裕次郎の誕生日
+c58605	v10044	平古場 凛	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2028666675898335478	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 ぎゅ～っと！ ドキドキサバイバル Tie break ♡ game』🎉3/3は平古場 凛の誕生日🎉スキ
+c58631	v10044	南 健太郎	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2072877992645218390	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日7/3は南 健太郎の誕生日🎉帰り道に
 c47449	v1015	月森 蓮	@corda_official	https://x.com/corda_official/status/889355277417435137	フルネーム	2026-09-10	要確認 ｜ 本日は、『金色のコルダ２ ff』に登場するキャラクター「月森 蓮」をご紹介します。&mdash; 「金色のコルダ」シリー
 c47450	v1015	土浦 梁太郎	@corda_official	https://x.com/corda_official/status/889751421129707520	フルネーム	2026-09-10	要確認 ｜ 本日は、『金色のコルダ２ ff』に登場するキャラクター「土浦梁太郎」をご紹介します。&mdash; 「金色のコルダ」シリ
 c47451	v1015	志水 桂一	@corda_official	https://x.com/corda_official/status/890117017524736004	フルネーム	2026-09-10	要確認 ｜ 本日は、『金色のコルダ２ ff』に登場するキャラクター「志水桂一」をご紹介します。&mdash; 「金色のコルダ」シリー
@@ -180,6 +183,23 @@ c36153	v1629	狐邑 祐一	@hiiro_otomate	https://x.com/hiiro_otomate/status/189
 c36154	v1629	大蛇 卓	@hiiro_otomate	https://x.com/hiiro_otomate/status/1900471976189145411	プロフィール	2026-09-10	紹介らしい ｜ 【⛓攻略キャラクター紹介】大蛇 卓（CV.#平川大輔）￣￣￣￣￣￣￣￣￣￣￣＜2025年5月15日発売予定＞⛓詳しくはこ
 c36155	v1629	犬戒 慎司	@hiiro_otomate	https://x.com/hiiro_otomate/status/1902283909037224294	プロフィール	2026-09-10	紹介らしい ｜ 【⛓攻略キャラクター紹介】犬戒 慎司（CV.#下和田ヒロキ）￣￣￣￣￣￣￣￣￣￣￣￣￣￣＜2025年5月15日発売予定＞
 c36156	v1629	狗谷 遼	@hiiro_otomate	https://x.com/hiiro_otomate/status/1904095844309086660	プロフィール	2026-09-10	紹介らしい ｜ 【⛓攻略キャラクター紹介】狗谷 遼（CV.#野宮一範）￣￣￣￣￣￣￣￣￣￣￣＜2025年5月15日発売予定＞⛓詳しくはこ
+c58540	v16438	大石 秀一郎	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2049685181741547826	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日4/30は大石秀一郎の誕生日🎉副部長
+c58542	v16438	乾 貞治	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2062006368735727811	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日6/3は乾 貞治の誕生日🎉データ収集
+c58544	v16438	桃城 武	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2080125763337015740	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日7/23は桃城 武の誕生日🎉学園祭本
+c58545	v16438	海堂 薫	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2053671440801554444	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日5/11は海堂 薫の誕生日🎉ネコ好き
+c58588	v16438	忍足 侑士	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2033740106100838716	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 ぎゅ～っと！ ドキドキサバイバル Tie break ♡ game』🎉3/17は忍足謙也の誕生日🎉ぜひ
+c58591	v16438	芥川 慈郎	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2051497114660925654	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日5/5は芥川慈郎の誕生日🎉宍戸先輩に
+c58595	v16438	幸村 精市	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2029391452237906393	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 ぎゅ～っと！ ドキドキサバイバル Tie break ♡ game』🎉3/5は幸村精市の誕生日🎉お花が
+c58596	v16438	真田 弦一郎	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2057295315221495961	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 ぎゅ～っと！ ドキドキサバイバル Tie break ♡ game』🎉本日5/21は真田弦一郎の誕生日
+c58597	v16438	柳 蓮二	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2062368753749270752	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日6/4は柳 蓮二の誕生日🎉データで先
+c58601	v16438	丸井 ブン太	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2046166991048933712	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』 🎉本日4/20は丸井ブン太の誕生日🎉 食
+c58608	v16438	遠山 金太郎	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2039175923069845753	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日4/1は遠山金太郎の誕生日🎉たこ焼き
+c58609	v16438	白石 蔵ノ介	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2043886965133631541	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日4/14は白石蔵ノ介の誕生日🎉学園祭
+c58624	v16438	橘 桔平	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2088460681674969131	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 ぎゅ～っと！ ドキドキサバイバル Tie break ♡ game』🎉本日8/15は橘 桔平の誕生日🎉
+c58625	v16438	神尾 アキラ	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2092446937970880515	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日8/26は神尾アキラの誕生日🎉学園祭
+c58627	v16438	赤澤 吉朗	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2084112017842180335	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日8/3は赤澤𠮷朗の誕生日🎉カレーは辛
+c58629	v16438	観月 はじめ	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2059469653202882601	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日5/27は観月はじめの誕生日🎉ストレ
+c58633	v16438	亜久津 仁	@Prince_KONAMI	https://x.com/Prince_KONAMI/status/2039538309433565632	誕生日	2026-09-10	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日4/2は亜久津 仁の誕生日🎉モンブラ
 c62702	v1715	相馬 主計	@HakuokiShinkai	https://x.com/HakuokiShinkai/status/1541345598116401152	フルネーム	2026-09-10	紹介らしい ｜ シリーズ最新作『薄桜鬼 真改 天雲ノ抄』キャラクター紹介⑪攻略対象キャラクター⚔相馬主計(CV．#梶裕貴)⏰2022年1
 c62703	v1715	坂本 龍馬	@HakuokiShinkai	https://x.com/HakuokiShinkai/status/1541345595616481281	フルネーム	2026-09-10	紹介らしい ｜ シリーズ最新作『薄桜鬼 真改 天雲ノ抄』キャラクター紹介⑫攻略対象キャラクター⚔坂本龍馬(CV．#小野大輔)⏰2022年
 c62704	v1715	伊庭 八郎	@HakuokiShinkai	https://x.com/HakuokiShinkai/status/1541345599001448448	フルネーム	2026-09-10	紹介らしい ｜ シリーズ最新作『薄桜鬼 真改 天雲ノ抄』キャラクター紹介⑩攻略対象キャラクター⚔伊庭八郎(CV．#宮野真守)⏰2022年
