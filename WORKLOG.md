@@ -9,6 +9,11 @@
 
 ## 2026-09-10
 
+### 17:00 天涯ニ舞ウ粋ナ花・下天の華・緋色の欠片を収集し、紹介ポストの無い4作品をx_none.tsvに記録した（621→631人）
+- なぜ: subject_hit が「サブキャラクターの宮ノ杜守に」のような『の』でつながる書式を主題と見なせず取りこぼしていた。名前の後ろに助詞が来る形も許すよう広げた
+- 次: 楽天・Yahooの価格取得が終わったらサイトを再生成する。X収集は未着手の作品を続ける
+- ブランチ: claude/x-character-intro-posts-9fb6df（記録時 HEAD: 478c46af9）
+
 ### 16:27 収集したXポスト617人ぶんを main にマージした
 - なぜ: マージ前に main の状態を backup.py とタグ backup/main-before-xposts-merge で固定した。ブランチが main の2コミット（Yahoo!ショッピング価格・affiliate_config）より前に分岐していたため、そのまま main に入れると yahoo_prices.py が消える差分になる。先に main をブランチへ取り込み（衝突6件：WORKLOGは両方のログを残し、docs/4件+traits.jsonはmain側を採ってから再生成）、docs/v2 を作り直したうえで fast-forward した
 - 次: 価格が PRICE_TTL_HOURS=24 を過ぎて非表示になっている。表示を戻すには価格を取り直してから site2_build.py を回す。未着手の作品の収集も継続
