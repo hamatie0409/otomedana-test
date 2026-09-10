@@ -594,6 +594,10 @@ def subject_hit(text, name):
         if not fv:
             continue
         for m in SUBJECT_HEAD.finditer(text):
+            # 【キャラクター紹介：狐射堂 遙（CV：村瀬 歩）】のように、
+            # 見出しの中に名前を入れる書式もある。
+            if fv in flatten_name(m.group(0)):
+                return True
             # 先に記号のゆれを潰してから区切る。「レジス・ド・ルペルティエ」の
             # 中黒で切ってしまわないようにするため、この順番でないといけない。
             win = flatten_name(text[m.end():m.end() + SUBJECT_SPAN + len(v) * 2])
