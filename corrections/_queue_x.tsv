@@ -4,6 +4,7 @@
 cid	vid	character	status_url	match	note
 c58604	v10044	甲斐 裕次郎	https://x.com/Prince_KONAMI/status/2092809331393614212	full	要確認 ｜ 『テニスの王子様 ぎゅ～っと！ ドキドキサバイバル Tie break ♡ game』🎉本日8/27は甲斐裕次郎の誕生日
 c58605	v10044	平古場 凛	https://x.com/Prince_KONAMI/status/2028666675898335478	full	要確認 ｜ 『テニスの王子様 ぎゅ～っと！ ドキドキサバイバル Tie break ♡ game』🎉3/3は平古場 凛の誕生日🎉スキ
+c58614	v10044	忍足 謙也	https://x.com/Prince_KONAMI/status/2033740106100838716	unique	誕生日ポスト（謙也。侑士と姓が同じなので取り違えに注意）
 c58631	v10044	南 健太郎	https://x.com/Prince_KONAMI/status/2072877992645218390	full	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日7/3は南 健太郎の誕生日🎉帰り道に
 c47449	v1015	月森 蓮	https://x.com/corda_official/status/889355277417435137	full	要確認 ｜ 本日は、『金色のコルダ２ ff』に登場するキャラクター「月森 蓮」をご紹介します。&mdash; 「金色のコルダ」シリー
 c47449	v1015	月森 蓮	https://x.com/neo_romance/status/856342107782434817	full	要確認 ｜ 【月森】君からもらったプレゼント、さっそく使わせてもらっている。温かい光がとても心地いいな……ありがとう。4月24日は月
@@ -269,7 +270,6 @@ c58541	v16438	不二 周助	https://x.com/Prince_KONAMI/status/20275795164205425
 c58542	v16438	乾 貞治	https://x.com/Prince_KONAMI/status/2062006368735727811	full	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日6/3は乾 貞治の誕生日🎉データ収集
 c58544	v16438	桃城 武	https://x.com/Prince_KONAMI/status/2080125763337015740	full	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日7/23は桃城 武の誕生日🎉学園祭本
 c58545	v16438	海堂 薫	https://x.com/Prince_KONAMI/status/2053671440801554444	full	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日5/11は海堂 薫の誕生日🎉ネコ好き
-c58588	v16438	忍足 侑士	https://x.com/Prince_KONAMI/status/2033740106100838716	unique	要確認 ｜ 『テニスの王子様 ぎゅ～っと！ ドキドキサバイバル Tie break ♡ game』🎉3/17は忍足謙也の誕生日🎉ぜひ
 c58591	v16438	芥川 慈郎	https://x.com/Prince_KONAMI/status/2051497114660925654	full	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日5/5は芥川慈郎の誕生日🎉宍戸先輩に
 c58592	v16438	鳳 長太郎	https://x.com/Prince_KONAMI/status/2022506082061443308	full	要確認 ｜ 『テニスの王子様 も～っと 学園祭の王子様 ♡-40 and more...』🎉本日2/14は鳳 長太郎の誕生日🎉こだわ
 c58595	v16438	幸村 精市	https://x.com/Prince_KONAMI/status/2029391452237906393	full	要確認 ｜ 『テニスの王子様 ぎゅ～っと！ ドキドキサバイバル Tie break ♡ game』🎉3/5は幸村精市の誕生日🎉お花が
@@ -632,7 +632,12 @@ c29027	v22022	仙道 清春	https://x.com/vitamin_d3p/status/1625687145041252353
 c29028	v22022	斑目 瑞希	https://x.com/vitamin_d3p/status/1013074915795308545	full	紹介らしい ｜ ＼HAPPY BIRTHDAY／今日7月1日は斑目瑞希(CV:菅沼久義)のお誕生日！ミズキ！ とってもとっても、おめでト
 c70375	v22311	木南 瑞希	https://x.com/matatabi_soft/status/1593552778088960000	full	要確認 ｜ 【Happy birthday to you!!】今日は神凪ノ杜の主人公、木南瑞希のお誕生日タビ！原画の豌豆まめ丸が主人
 c70376	v22311	仁科 直	https://x.com/matatabi_soft/status/1500759689327689737	full	紹介らしい ｜ 【Happy birthday to you!!】3月5日は仁科直（CV.梅原裕一郎）のお誕生日だったタビ！お誕生日おめ
+c70377	v22311	沢木 宋太	https://x.com/matatabi_soft/status/1152138606846201858	full	紹介らしい ｜ 【神凪ノ杜　登場人物紹介】●妖狐奇譚攻略対象キャラ沢木 宋太（CV.八代拓）「懐かしいなあ。また会えて嬉しいよ」http
 c70379	v22311	市丸	https://x.com/matatabi_soft/status/1509841802085670925	full	紹介らしい ｜ 【Happy birthday to you!!】今日は市丸（CV.興津和幸）のお誕生日タビ！原画の豌豆まめ丸がお誕生日
+c70379	v22311	市丸	https://x.com/matatabi_soft/status/1152138677792804864	full	紹介らしい ｜ 【神凪ノ杜　登場人物紹介】●妖狐奇譚攻略対象キャラ市丸（CV.興津和幸）「よろず妖屋の仕事は慈善活動ではない。人助けがし
+c70381	v22311	旭	https://x.com/matatabi_soft/status/1154678574412005376	full	紹介らしい ｜ 【神凪ノ杜　登場人物紹介】●龍神奇譚攻略対象キャラ旭（CV.江口拓也）「大丈夫です。……俺がいます」https://t.
+c70382	v22311	日向	https://x.com/matatabi_soft/status/1154678870517223426	full	紹介らしい ｜ 【神凪ノ杜　登場人物紹介】●龍神奇譚攻略対象キャラ日向（CV.柿原徹也）「誰だ！　今すぐこいつから離れろ！」https:
+c70383	v22311	東雲	https://x.com/matatabi_soft/status/1154679000637288448	full	紹介らしい ｜ 【神凪ノ杜　登場人物紹介】●龍神奇譚攻略対象キャラ東雲（CV.松岡禎丞）「さて、さっそくだが可愛い娘さん。君の名前を聞い
 c68368	v22597	仙波 ワタル	https://x.com/triP_OTOMATE/status/1275338781650857986	full	紹介らしい ｜ 【キャラクター情報】人気モデルの仙波ワタルは自信家なプレイボーイ！女性との噂が絶えない彼が、主人公の瞳でどのように“トリ
 c68370	v22597	榊原 ユウ	https://x.com/triP_OTOMATE/status/1276438084670779392	full	紹介らしい ｜ 【キャラクター情報】コウの双子の弟の榊原ユウは人気急上昇中の男の娘！ミステリアスで小悪魔な彼が、主人公の瞳でどのように“
 c68371	v22597	榊原 コウ	https://x.com/triP_OTOMATE/status/1276437930651709444	full	紹介らしい ｜ 【キャラクター情報】ユウの双子の兄の榊原コウは生意気な完璧アイドル！負けず嫌いでひねくれ者の彼が、主人公の瞳でどのように
@@ -992,8 +997,23 @@ c130154	v38124	ミラ	https://x.com/My9_otomate/status/1764532475542565325	full	
 c130155	v38124	甘城 奏汰	https://x.com/My9_otomate/status/1764531720546607471	full	紹介らしい ｜ 【キャラ紹介】『My9Swallows TOPSTARS LEAGUE』⚾️けだるそうな実力派🎤甘城 奏汰CV:#八代拓
 c130156	v38124	司良堂 達治	https://x.com/My9_otomate/status/1764532223800467652	full	紹介らしい ｜ 【キャラ紹介】『My9Swallows TOPSTARS LEAGUE』⚾️皆の頼れるアニキ分🎤司良堂 達治CV:#羽多
 c130157	v38124	柊 翔琉	https://x.com/My9_otomate/status/1764531218194813371	full	紹介らしい ｜ 【キャラ紹介】『My9Swallows TOPSTARS LEAGUE』⚾️頑張りすぎるエース🎤柊 翔琉CV:#松岡禎丞
+c120958	v40519	矢代	https://x.com/uchronia_jp/status/1776082336448164118	full	紹介らしい ｜ 〖 キャラクター紹介PV2〗矢代｜YashiroCV. #小林千晃「愛されたいと思ってた？」YouTube版🎬 http
+c120958	v40519	矢代	https://x.com/uchronia_jp/status/2061644981438447638	full	要確認 ｜ ／　お誕生日おめでとう、矢代！＼本日、6月2日は矢代（やしろ）の誕生日！RiRi描きおろしの誕生日お祝いイラストをお届け
+c120959	v40519	帷	https://x.com/uchronia_jp/status/1712452394087526577	full	紹介らしい ｜ 【サブキャラクター紹介5】潮路｜ShiojiCV.吉村和紘◆帷の右腕花街で働く男衆であり、不知火（しらぬい）のNo.2。
+c120959	v40519	帷	https://x.com/uchronia_jp/status/2086649744315793443	full	要確認 ｜ ／　お誕生日おめでとう、帷！＼本日、8月10日は帷（とばり）の誕生日！RiRi氏描きおろしの誕生日お祝いイラストをお届け
 c120960	v40519	淡雪	https://x.com/uchronia_jp/status/1779094912585421300	full	要確認 ｜ 『泡沫のユークロニア（#ユークロ）』メインキャラクターをあらためてご紹介❸✦隷属欲強め保護者淡雪（あわゆき）声：斉藤壮馬
+c120961	v40519	依	https://x.com/uchronia_jp/status/1712451854452596952	full	紹介らしい ｜ 【サブキャラクター紹介3】藍白｜AijiroCV.戸谷菊之介◆依の副官依の副官を務める青年。それなりに優秀で要領はいいが
+c120961	v40519	依	https://x.com/uchronia_jp/status/1775795446830780417	full	紹介らしい ｜ 〖 キャラクター紹介PV2 〗依｜YoriCV. #江口拓也これは秘密の話なんだけど、キミのことが心配だから教えるよ。Y
 c120962	v40519	露草	https://x.com/uchronia_jp/status/1779102674719568299	full	要確認 ｜ 『泡沫のユークロニア（#ユークロ）』メインキャラクターをあらためてご紹介❺✦訳ありカラクリ師露草（つゆくさ）声：松岡禎丞
+c120962	v40519	露草	https://x.com/uchronia_jp/status/1775433056280776917	full	紹介らしい ｜ 〖 キャラクター紹介PV2 〗露草｜TsuyukusaCV.  #松岡禎丞今ならわかるよ。この方法がやっぱり正しかったん
+c105862	v42433	リアン	https://x.com/RT_x_info/status/1882443178847916298	full	要確認 ｜ 🎪 1/24 is Liyan&#39;s birthday! 🎪《神出鬼没な幻獣フェンリル》リアン ／ #渡辺紘リアン
+c96725	v42433	ヴィリオ	https://x.com/RT_x_info/status/1826273056337096769	full	要確認 ｜ 🎪 8/22 is Vilio&#39;s birthday! 🎪《【特別】なドラゴン》ヴィリオ ／ #内田雄馬ヴィリオ
+c96726	v42433	ザフォラ	https://x.com/RT_x_info/status/1858887966665699493	full	要確認 ｜ 🎪 11/20 is Zafora&#39;s birthday! 🎪《クルトラの迷宮守》ザフォラ ／ #榎木淳弥ザフォ
+c96727	v42433	パスハリア	https://x.com/RT_x_info/status/1845842008101060668	full	要確認 ｜ 🎪 10/15 is Paschalia&#39;s birthday! 🎪《上級精霊との契約者》パスハリア ／ #梅原
+c96728	v42433	イーオン	https://x.com/RT_x_info/status/1902012123280007400	full	要確認 ｜ 🎪 3/19 is Ion&#39;s birthday! 🎪《王子付きの近衛兵》イーオン ／ #阿座上洋平イーオン誕生
+c96729	v42433	ジーニア	https://x.com/RT_x_info/status/1911434211308851302	full	要確認 ｜ 🎪 4/14 is Jinnia&#39;s birthday! 🎪《自由を愛する貴族様》ジーニア ／ #近藤隆ジーニア
+c96730	v42433	ティファリア	https://x.com/RT_x_info/status/1892227656717934777	full	要確認 ｜ 🎪 2/20 is Tifalia&#39;s birthday! 🎪《【普通】の少女》ティファリアティファリア誕生日お
+c96731	v42433	ラディ	https://x.com/RT_x_info/status/1923393012283179508	full	要確認 ｜ 🎪 5/17 is Radie&#39;s birthday! 🎪《大精霊が創った幻獣》ラディ ／ #岡本信彦ラディ誕生
 c39831	v4542	ソロ・モーン	https://x.com/WOF_R_official/status/1674616244916621312	full	紹介らしい ｜ 📢イベントCG紹介⑭🤍ソロ・モーン（CV. #立花慎之介）ソロはじっと私を見つめていた。夕日を背負った彼の表情には影が落
 c39831	v4542	ソロ・モーン	https://x.com/WOF_R_official/status/1667004841808527363	full	紹介らしい ｜ 【Ｒ２からの新攻略キャラクターをご紹介】🤍ソロ・モーン　CV：立花慎之介#ワンド #オトメイト pic.twitter.
 c128196	v45894	天峰 ミカ	https://x.com/D3P_otome/status/1697451714452873712	full	紹介らしい ｜ 11/30発売予定 #デスペラドロップス🌃メインキャラ紹介🌃無実で逃亡者となった主人公天峰ミカCV：#岡本美歌※苗字固定
@@ -1107,6 +1127,9 @@ c142358	v52771	月城 茅	https://x.com/samudari_ml/status/2087381056878211321	f
 c142359	v52771	空閑  円	https://x.com/samudari_ml/status/2092454489420943665	unique	要確認 ｜ ◤キャラクターPickup║空閑巴◢　個別ルートテーマ ❯❯❯「強さ」- - - - - - - - - - - - -
 c142360	v52771	日向野  駿	https://x.com/samudari_ml/status/2089917774386643170	full	要確認 ｜ ◤キャラクターPickup║日向野駿◢　個別ルートテーマ ❯❯❯「未来」- - - - - - - - - - - - 
 c142361	v52771	海瀬 隼人	https://x.com/samudari_ml/status/2089192996596285737	full	要確認 ｜ ◤キャラクターPickup║海瀬隼人◢　個別ルートテーマ ❯❯❯「後悔」- - - - - - - - - - - - 
+c137375	v53877	石蕗	https://x.com/uchronia_jp/status/1726436493324161029	full	紹介らしい ｜ 【サブキャラクター紹介8】石蕗｜TsuwabukiCV.阿座上洋平◆黒鶴の士官依の兄。真面目で堅物と思われがちだが、柔軟
+c137377	v53877	鳴神	https://x.com/uchronia_jp/status/1712451307695645133	full	紹介らしい ｜ 【サブキャラクター紹介1】鳴神｜NarukamiCV.日野 聡◆主人公の昔馴染み凍玻璃に暮らす青年。主人公とは幼い頃から
+c137377	v53877	鳴神	https://x.com/uchronia_jp/status/1764485933003341994	full	紹介らしい ｜ 【サブキャラクター紹介｜その他1】顔馴染みにお医者さん。凍玻璃（いてはり）に暮らす人々をご紹介。◆鳴神　CV. #日野聡
 c149423	v54934	リーズ・ルネ・シャナ	https://x.com/CC_otomate/status/2075127820578173205	full	紹介らしい ｜ 【SPECIAL】『CRAZY CHA!N -エルピスの鎖-』⛓￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣　    ―― 発売記
 c149423	v54934	リーズ・ルネ・シャナ	https://x.com/CC_otomate/status/2086648735053062597	full	要確認 ｜ 【SPECIAL】⛓￣￣￣￣￣￣￣￣￣￣￣￣￣　　　　 特別企画 彼に聞きたいことアンケート＿＿＿＿＿＿＿＿＿＿＿＿＿⛓
 c149480	v54934	レクス・ド・クラーシェル	https://x.com/CC_otomate/status/2075128068797284578	full	紹介らしい ｜ 【SPECIAL】『CRAZY CHA!N -エルピスの鎖-』⛓￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣￣　　   ―― 発
