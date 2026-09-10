@@ -540,7 +540,40 @@ def has_full_name(text, name):
     return re.sub(r"[\s・･]", "", base) in flat
 
 
-SUBJECT_HEAD = re.compile(r"【[^】]{0,20}(?:紹介|情報|Character|CHARACTER|Profile)[^】]{0,20}】\s*")
+# 見出しから何文字以内に名前があれば主題とみなすか。
+# 『あやかしごはん ～おかわりっ！～ for S』のような作品名が挟まる例が
+# いちばん長く、それが収まる幅にしてある。
+SUBJECT_SPAN = 46
+
+
+def flatten_name(t):
+    """空白・中黒・記号のゆれを消す。DBは「ヴィンス ヴィヴィアン」、
+    本文は「ヴィンス・ヴィヴィアン」と書き分けられている。"""
+    return re.sub(r"[\s　・･=＝]", "", t)
+
+
+# 主題の名前が始まってよい位置。名前に使えない文字の並びの直後と、
+# 助詞「の」の直後（「サブキャラクターの宮ノ杜守に」）。
+# 記号・絵文字・囲み文字はアカウントごとに違うので、列挙せず
+# 「名前に使える文字以外」でまとめて区切る。
+SUBJECT_SPLIT = re.compile("[^0-9A-Za-z\u3041-\u3096\u30a1-\u30fa\u30fc\u4e00-\u9fff]+|\u306e(?=\\S)")
+
+
+# 名前の前に付く飾り。「✧ レジス」「■ティレル」「①アポロン」など、
+# 公式アカウントは名前の頭に記号や絵文字を置く。ここを削ってから比べる。
+DECOR = re.compile(r"^[^0-9A-Za-z\u3041-\u3096\u30a1-\u30fa\u30fc\u4e00-\u9fff]+")
+
+
+def strip_decor(t):
+    return DECOR.sub("", t)
+
+
+SUBJECT_HEAD = re.compile(
+    r"(?:【[^】]{0,20}(?:紹介|情報|Character|CHARACTER|Profile)[^】]{0,20}】\s*"
+    # 「本日の村民紹介は久石珠萩之介さんです。燐さんの後ろに隠れ……」のように
+    # 見出しを【】で括らず、地の文で主題を宣言する書式もある。
+    # 主題はこの「紹介は」の直後で、あとに出る名前は別人。
+    r"|[^\n。]{0,12}紹介は\s*)")
 
 
 def subject_hit(text, name):
@@ -550,32 +583,23 @@ def subject_hit(text, name):
     睦実介の紹介文は「舞台の華である高科更文を支える器として」と書くので、
     本文の名前を全部拾うと、高科更文のページに睦実介の紹介が出てしまった。
 
-    ただし主題は書式で決まる。【キャラクター紹介】の直後に置かれた名前か、
-    名前そのものを【】で括ったものが主題で、文中に出る名前は主題ではない。
-    見出しのある投稿にだけ効かせ、見出しが無い投稿は今までどおり扱う。
+    主題は書式で決まる。見出しのあと SUBJECT_SPAN 文字以内で、
+    行頭・区切り記号の直後・助詞「の」の直後のいずれかから名前が始まって
+    いれば主題。説明文の途中に出てくる名前（「〜である高科更文を支える」）は
+    区切りの直後に来ないので主題にならない。
+    名前そのものを【】で括る形式も主題とみなす。
     """
-    flat = lambda t: re.sub(r"[\s　]", "", t)
     for v in name_variants(name):
-        fv = flat(v)
+        fv = flatten_name(v)
         if not fv:
             continue
         for m in SUBJECT_HEAD.finditer(text):
-            after = flat(text[m.end():m.end() + len(v) + 24])
-            if after.startswith(fv):
-                return True
-            # 「白うさぎ：スノウ（CV.増田俊樹）」のように、名前の前に
-            # 肩書きや二つ名が入る形式もある。見出し直後の1行のうち、
-            # 区切り記号（：・／―など）の直後に来る名前も主題とみなす
-            head = after.split("#")[0]
-            # 「サブキャラクターの宮ノ杜守に新年の挨拶を」のように、
-            # 見出しの直後が説明句で、その「の」を受けて名前が来る形もある。
-            # 名前のうしろは助詞や句読点でもよい。「宮ノ杜守に」で切れる。
-            # ただし「ノアール」のような別名に食い込まないよう、
-            # 続けてよい文字はこの一覧に限る。
-            if re.search(r"(?:^|[：:／/\-―－—•・|｜▼◆■●★☆の])%s"
-                         r"(?![^\s（(、。，．！？♪…はがをにへともでやかの])"
-                         % re.escape(fv), head):
-                return True
+            # 先に記号のゆれを潰してから区切る。「レジス・ド・ルペルティエ」の
+            # 中黒で切ってしまわないようにするため、この順番でないといけない。
+            win = flatten_name(text[m.end():m.end() + SUBJECT_SPAN + len(v) * 2])
+            for seg in SUBJECT_SPLIT.split(win[:SUBJECT_SPAN + len(fv)]):
+                if seg.startswith(fv):
+                    return True
         if re.search(r"【\s*%s\s*(?:[（(][^】]*[）)])?\s*】" % re.escape(v), text):
             return True
     return False
@@ -1013,8 +1037,14 @@ def cmd_intake(args):
             continue
         # 投稿本文は txt。text はファイル全文なので取り違えないこと
         subj = [c for c in best_hits if subject_hit(txt, c["name"])]
-        if subj and len(subj) < len(best_hits):
+        if subj:
             best_hits = subj
+        elif SUBJECT_HEAD.search(txt):
+            # 見出しで主題を宣言している投稿なのに、候補の誰も主題ではない。
+            # 主題はDBに載っていないサブキャラで、本文に出てきただけの
+            # 別キャラに貼ってしまうところだった（百目ノ花贄の村民紹介）。
+            unknown.append((sid, handle, "主題が別のキャラ（DB未収録）"))
+            continue
         if len(best_hits) > args.max_chars:
             unknown.append((sid, handle, "%d人が並ぶ一覧的な投稿" % len(best_hits)))
             continue
