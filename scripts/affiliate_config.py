@@ -103,3 +103,16 @@ RAKUTEN_USED_SHOPCODES = {
     "auc-rally",
     "geoonlinestore",   # ゲオ
 }
+
+# --- Yahoo!ショッピング ---------------------------------------------------
+# バリューコマースの sid / pid。Yahoo!ショッピングAPIの affiliate_id は
+# この2つから組み立てる。**どちらも生成されるリンクに必ず現れる公開値**
+# （ck.jp.ap.valuecommerce.com のURLに sid= pid= として出る）なので、
+# 楽天のアフィリエイトIDと同じくここに既定値として書いておく。
+# こうしておくと GitHub Actions に置く Secret は YAHOO_CLIENT_ID だけで済む。
+YAHOO_VC_SID = _env("YAHOO_VC_SID", "3650752")
+YAHOO_VC_PID = _env("YAHOO_VC_PID", "892694875")
+
+# Yahoo!デベロッパーネットワークのClient ID（商品検索APIに必要）。
+# **これは公開値ではないので既定値を書かない。** 環境変数か設定ファイルから読む。
+YAHOO_CLIENT_ID = _env("YAHOO_CLIENT_ID")
