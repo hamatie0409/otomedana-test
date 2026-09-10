@@ -573,7 +573,10 @@ SUBJECT_HEAD = re.compile(
     # 「本日の村民紹介は久石珠萩之介さんです。燐さんの後ろに隠れ……」のように
     # 見出しを【】で括らず、地の文で主題を宣言する書式もある。
     # 主題はこの「紹介は」の直後で、あとに出る名前は別人。
-    r"|[^\n。]{0,12}紹介は\s*)")
+    r"|[^\n。]{0,12}紹介は\s*"
+    # ◤キャラクター紹介◢ のように、【】ではなく別の括りを使う書式もある。
+    r"|[◤◢◆■●★☆＼／\\/]{1,3}[^\n]{0,16}(?:紹介|情報|Character|CHARACTER|Profile)"
+    r"[^\n]{0,6}[◤◢◆■●★☆＼／\\/]{1,3}\s*)")
 
 
 def subject_hit(text, name):
@@ -589,6 +592,15 @@ def subject_hit(text, name):
     区切りの直後に来ないので主題にならない。
     名前そのものを【】で括る形式も主題とみなす。
     """
+    # oEmbed の本文は改行が消える。「殺戮のマッドハッター」と「ギラン・ギノー」が
+    # つながって区切りが見つからない。中黒を含む名前は十分に特徴的なので、
+    # 見出しのすぐあとに中黒つきのまま現れれば主題とみなす。
+    dotted = re.sub(r"[\s　]", "", name)
+    if "・" in dotted:
+        for m in SUBJECT_HEAD.finditer(text):
+            if dotted in text[m.end():m.end() + SUBJECT_SPAN + len(dotted) * 2]:
+                return True
+
     for v in name_variants(name):
         fv = flatten_name(v)
         if not fv:
