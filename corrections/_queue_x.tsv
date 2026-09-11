@@ -2,6 +2,13 @@
 # x_posts.py verify が oEmbed で実在・投稿者・本文を確かめ、
 # 通ったものだけ x_posts.tsv に、怪しいものは _review_x.tsv に振り分ける。
 cid	vid	character	status_url	match	note
+c113840	v10005	鴻上 大和	https://x.com/volkoi_official/status/2078857400329662468	full	要確認 ｜ 本日 #7月20日 は #誓いのキスは突然に Love Ring の #鴻上大和 の誕生日です👑#お誕生日おめでとう 動
+c113843	v10005	佐伯 孝正	https://x.com/volkoi_official/status/2019224250935308333	full	要確認 ｜ 本日 #2月5日 は #誓いのキスは突然に Love Ring の #佐伯孝正 の誕生日です👑#お誕生日おめでとう 動画
+c113846	v10005	円山 崇生	https://x.com/volkoi_official/status/1976672013566783931	full	要確認 ｜ 本日 #10月11日 は #誓いのキスは突然に Love Ring の #円山崇生 の誕生日です👑#お誕生日おめでとう 
+c113847	v10005	梶間 勇太	https://x.com/volkoi_official/status/2057114120382824573	full	要確認 ｜ 本日 #5月21日 は #誓いのキスは突然に Love Ring の #梶間勇太 の誕生日です👑#お誕生日おめでとう 動
+c113851	v10005	垣内 彰斗	https://x.com/volkoi_official/status/1991884317732257867	full	要確認 ｜ 本日 #11月22日 は #誓いのキスは突然に Love Ring の #垣内彰斗 の誕生日です👑#お誕生日おめでとう 
+c113898	v10005	宇都宮 遥	https://x.com/volkoi_official/status/2070522477512392754	full	要確認 ｜ 本日 #6月27日 は #誓いのキスは突然に Love Ring の #宇都宮遥 の誕生日です👑#お誕生日おめでとう 動
+c113899	v10005	菊島 環	https://x.com/volkoi_official/status/2038994727870275967	full	要確認 ｜ 本日 #4月1日 は #誓いのキスは突然に Love Ring の #菊島環 の誕生日です👑#お誕生日おめでとう 動画を
 c58604	v10044	甲斐 裕次郎	https://x.com/Prince_KONAMI/status/2092809331393614212	full	要確認 ｜ 『テニスの王子様 ぎゅ～っと！ ドキドキサバイバル Tie break ♡ game』🎉本日8/27は甲斐裕次郎の誕生日
 c58605	v10044	平古場 凛	https://x.com/Prince_KONAMI/status/2028666675898335478	full	要確認 ｜ 『テニスの王子様 ぎゅ～っと！ ドキドキサバイバル Tie break ♡ game』🎉3/3は平古場 凛の誕生日🎉スキ
 c58614	v10044	忍足 謙也	https://x.com/Prince_KONAMI/status/2033740106100838716	unique	誕生日ポスト（謙也。侑士と姓が同じなので取り違えに注意）
@@ -95,6 +102,15 @@ c26764	v11639	羽柴 秀吉	https://x.com/geten_official/status/1639280920489512
 c26768	v11639	徳川 家康	https://x.com/geten_official/status/1638918539070562304	full	要確認 ｜ ／『#下天の華』シリーズ10周年🎆  カウントダウン🐦  with 琥狗ハヤテ先生描き下ろしイラスト＼徳川家康「恐れも、
 c26771	v11639	森 蘭丸	https://x.com/geten_official/status/1638556141645955073	full	要確認 ｜ ／『#下天の華』シリーズ10周年🎆  カウントダウン🪢  with 琥狗ハヤテ先生描き下ろしイラスト＼森 蘭丸「――すみ
 c26772	v11639	織田 信行	https://x.com/geten_official/status/1637831372663586817	full	要確認 ｜ ／『#下天の華』シリーズ10周年🎆  カウントダウン🍃  with 琥狗ハヤテ先生描き下ろしイラスト＼織田信行「風が立つ
+c140903	v11839	北大路悠月	https://x.com/volkoi_official/status/2051497114358653054	full	要確認 ｜ 本日 #5月5日 は #眠らぬ街のシンデレラ Secret Night の #北大路悠月 の誕生日です👑#お誕生日おめで
+c140904	v11839	廣瀬遼一	https://x.com/volkoi_official/status/1996037550428078233	full	要確認 ｜ 本日 #12月3日 は #眠らぬ街のシンデレラ Secret Night の #廣瀬遼一 の誕生日です👑#お誕生日おめで
+c140905	v11839	藍島ノエル	https://x.com/volkoi_official/status/2075777100553105461	full	要確認 ｜ 本日 #7月11日 は #眠らぬ街のシンデレラ Secret Night の #藍島ノエル の誕生日です👑#お誕生日おめ
+c140907	v11839	國府田千早	https://x.com/volkoi_official/status/1968182309376626788	full	要確認 ｜ 本日 #9月17日 は #眠らぬ街のシンデレラ Secret Night の #國府田千早 の誕生日です👑#お誕生日おめ
+c140908	v11839	影山未来	https://x.com/volkoi_official/status/2038632347378364683	full	要確認 ｜ 本日 #3月31日 は #眠らぬ街のシンデレラ Secret Night の #影山未来 の誕生日です👑#お誕生日おめで
+c140909	v11839	北大路皐月	https://x.com/volkoi_official/status/2053127860315914690	full	要確認 ｜ 本日 #5月10日 は #眠らぬ街のシンデレラ Secret Night の #北大路皐月 の誕生日です👑#お誕生日おめ
+c140937	v11839	Jinnai Atsushi	https://x.com/volkoi_official/status/1855807664485273881	full	手動 ｜ 公式表記は「陣内敦志」でDBはローマ字表記だが同一人物
+c140938	v11839	椎名響	https://x.com/volkoi_official/status/2086618536198459602	full	要確認 ｜ 本日 #8月10日 は #眠らぬ街のシンデレラ Secret Night の #椎名響 の誕生日です👑#お誕生日おめでと
+c140939	v11839	Konno Trevor	https://x.com/volkoi_official/status/1907991516095598807	full	手動 ｜ 公式表記は「トレヴァー紺野」でDBのローマ字表記と姓名の順が逆だが同一人物
 c29057	v11985	朝比奈 司	https://x.com/vitamin_d3p/status/1029382370753998848	full	紹介らしい ｜ ＼HAPPY BIRTHDAY／今日8月15日は朝比奈司(CV：吉野裕行)のお誕生日！ツカサ、おめでトゲー♪#Vitam
 c29058	v11985	赤桐 瑛太	https://x.com/vitamin_d3p/status/1014886747153543169	full	紹介らしい ｜ ＼HAPPY BIRTHDAY／今日7月6日は赤桐瑛太(CV:岸尾だいすけ)のお誕生日！エイタ、おめでトゲー♪#Vita
 c29059	v11985	灰羽 カオル	https://x.com/vitamin_d3p/status/980097550714843139	full	紹介らしい ｜ ＼HAPPY BIRTHDAY／今日4月1日は灰羽カオル(CV:菅沼久義)のお誕生日！カオル、おめでトゲー♪▼バースデー
@@ -147,6 +163,7 @@ c48090	v13072	如月 律	https://x.com/corda_official/status/1136467747498389506
 c48094	v13072	榊 大地	https://x.com/corda_official/status/1211119647761846272	full	要確認 ｜ 12月29日は榊 大地の誕生日です。ネオロマンスシリーズは25周年を迎えました！『金色のコルダ』シリーズの情報も、ネオロ
 c48094	v13072	榊 大地	https://x.com/corda_official/status/1078848081939054593	full	要確認 ｜ 12月29日は、榊 大地の誕生日です。ナンパな性格だが、優しくて頼りになる先輩・大地と恋愛できるPS Vita版「金色の
 c48096	v13072	水嶋 悠人	https://x.com/corda_official/status/1124508949686902786	full	要確認 ｜ 5月4日は水嶋悠人の誕生日です。15周年を迎え、ゲーム・イベント・グッズなど展開を続ける『金色のコルダ』シリーズの情報は
+c48098	v13072	八木沢 雪広	https://x.com/corda_official/status/1036448699554168832	full	要確認 ｜ 9月3日は、八木沢雪広の誕生日です。温和で部員からの信頼も厚い至誠館吹奏楽部部長の八木沢と恋愛できるPS Vita版「金
 c48101	v13072	火積 司郎	https://x.com/corda_official/status/1148064160653160448	full	要確認 ｜ 7月8日は火積司郎の誕生日です。15周年を迎え、ゲーム・イベント・グッズなど展開を続ける『金色のコルダ』シリーズの情報は
 c48104	v13072	水嶋 新	https://x.com/corda_official/status/887933932196347904	unique	要確認 ｜ 本日は、『金色のコルダ２ ff』で新たな恋愛対象キャラクターとして登場する「不動翔麻」をご紹介します。&mdash; 「
 c48104	v13072	水嶋 新	https://x.com/corda_official/status/1201697563205726209	full	要確認 ｜ 12月3日は水嶋 新の誕生日です。ネオロマンスシリーズは25周年を迎えました！『金色のコルダ』シリーズの情報も、ネオロマ
@@ -184,6 +201,11 @@ c35727	v13994	朔夜	https://x.com/MariaCrown_info/status/645779320913289216	ful
 c35728	v13994	大月 忍	https://x.com/MariaCrown_info/status/646139538432102400	full	紹介らしい ｜ 皆様こんにちは、MariaCrownです！本日のカウントダウンイラストキャラクターは大月忍（CV：須賀紀哉）です。 pi
 c35729	v13994	神楽屋 彰人	https://x.com/MariaCrown_info/status/646499849110556672	full	紹介らしい ｜ 皆様こんにちは、MariaCrownです！本日のカウントダウンイラストキャラクターは神楽屋彰人（CV：髭内悪太）です。 
 c35730	v13994	桜華屋 時雨	https://x.com/MariaCrown_info/status/646863213624037376	full	紹介らしい ｜ 皆様こんにちは、MariaCrownです！本日のカウントダウンイラストキャラクターは桜華屋時雨（CV：ほうでん亭ガツ）で
+c113105	v14501	大河内 湊	https://x.com/volkoi_official/status/1430817295476133890	full	要確認 ｜ 本日から期間限定でアイコンが変わります♪8月にお誕生日を迎えた #上司と秘密の2LDK の大河内湊さんが登場です！#ボル
+c113106	v14501	桐島 薫	https://x.com/volkoi_official/status/929574481172893696	unique	要確認 ｜ 本日は11月12日、何の日かご存知ですよねみなさん？そうです、薫さんの誕生日です！薫さんからひと言いただいておりますよ～
+c113107	v14501	早川 秀星	https://x.com/volkoi_official/status/910687232633167872	unique	要確認 ｜ 皆さまおはようございます！先ほどのツイートでもあげましたが本日は秀星さんのお誕生日でございますっ🎉秀星さん、おめでとうご
+c113108	v14501	湯浅 千晶	https://x.com/volkoi_official/status/968063339380097025	unique	要確認 ｜ 本日は2月26日、千晶さんの誕生日、みなさん覚えていましたよね？ひと言いただいておりますよ！#上司と2LDK pic.t
+c113110	v14501	城戸 紡	https://x.com/volkoi_official/status/1508353197068357635	full	要確認 ｜ 本日から期間限定でアイコンが変わります♪#2LDK から4月にお誕生日を迎える城戸紡さんが登場です！#ボル恋&mdash
 c14696	v14649	逆巻アヤト	https://x.com/OtomateWeb/status/2018867100907929673	full	紹介らしい ｜ 【🥀キャラクター紹介】🦇逆巻アヤトＣＶ： #緑川光「……オイ、チチナシ。礼とか言うんなら、今夜は付き合ってもらうからな」
 c14697	v14649	逆巻カナト	https://x.com/OtomateWeb/status/2019229490870632665	full	紹介らしい ｜ 【🥀キャラクター紹介】🦇逆巻カナトＣＶ： #梶裕貴「だって、ヴァンパイアになっちゃえばずっと僕といられるんですよ」🔗公式
 c14698	v14649	逆巻ライト	https://x.com/OtomateWeb/status/2019591878916886563	full	紹介らしい ｜ 【🥀キャラクター紹介】🦇逆巻ライトＣＶ： #平川大輔「いいからいいから～。遠慮しないでさ。ほら、あーん」🔗公式サイトht
@@ -196,6 +218,14 @@ c20755	v14649	無神 アズサ	https://x.com/OtomateWeb/status/19978486088431168
 c26334	v14649	月浪 カルラ	https://x.com/OtomateWeb/status/2024302918619517335	full	紹介らしい ｜ 【🥀キャラクター紹介】🦇月浪カルラＣＶ： #森川智之「フッ……顔が、赤いぞ？」🔗公式サイトhttps://t.co/RC
 c26334	v14649	月浪 カルラ	https://x.com/OtomateWeb/status/1998210998365204766	full	紹介らしい ｜ 【🥀キャラクター紹介】🦇月浪カルラＣＶ.  #森川智之知性と理性を兼ね備えたドＳ吸血鬼の王鬼畜なヴァンパイア兄弟の非道な
 c26335	v14649	月浪 シン	https://x.com/OtomateWeb/status/2024665308393590815	full	紹介らしい ｜ 【🥀キャラクター紹介】🦇月浪シンＣＶ： #森久保祥太郎「……確かに美味しそうだね。アンタの唇についてるヤツとか特に……」
+c170275	v14677	菱倉修一	https://x.com/volkoi_official/status/1939338075013775839	full	要確認 ｜ 本日 #6月30日 は #スイートルームで悪戯なキス の #菱倉修一 の誕生日です👑#お誕生日おめでとう 動画を是非チェ
+c170276	v14677	ルーク・フォースター	https://x.com/volkoi_official/status/1994209628352094689	full	要確認 ｜ 本日 #11月28日 は #スイートルームで悪戯なキス の #ルーク・フォースター の誕生日です👑#お誕生日おめでとう 
+c170277	v14677	藍原光	https://x.com/volkoi_official/status/2003843128193581432	full	要確認 ｜ 本日 #12月25日 は #スイートルームで悪戯なキス の #藍原光 の誕生日です👑#お誕生日おめでとう 動画を是非チェ
+c96341	v14677	一ノ宮 英介	https://x.com/volkoi_official/status/2010648439408017436	full	要確認 ｜ #1月11日 は #スイートルームで悪戯なキス の #一ノ宮英介 の誕生日です👑#お誕生日おめでとう 動画を是非チェック
+c96342	v14677	王 蒼龍	https://x.com/volkoi_official/status/1891140483063206270	full	要確認 ｜ 本日 #2月17日 は #スイートルームで悪戯なキス の #王蒼龍 の誕生日です👑#お誕生日おめでとう 動画を是非チェッ
+c96343	v14677	馬場 三成	https://x.com/volkoi_official/status/1954377169519415788	full	要確認 ｜ 本日 #8月10日 は #スイートルームで悪戯なキス の #馬場三成 の誕生日です👑#お誕生日おめでとう 動画を是非チェ
+c96344	v14677	木崎 桜汰	https://x.com/volkoi_official/status/1910709424232022156	full	要確認 ｜ 本日 #4月12日 は #スイートルームで悪戯なキス の #木崎桜汰 の誕生日です👑#お誕生日おめでとう 動画を是非チェ
+c96345	v14677	貴志 衛	https://x.com/volkoi_official/status/1969597462907146306	full	要確認 ｜ 本日 #9月21日 は #スイートルームで悪戯なキス の #貴志衛 の誕生日です👑#お誕生日おめでとう 動画を是非チェッ
 c24978	v14759	朱音 凜	https://x.com/ayakashigohan/status/2051497119106949252	手入力	手で指定 ｜ DBに朱音凜が3件重複登録されており自動判定不可。CV（友永朱音）が一致する「あやかし編主人公」の紹介ポストを充てた
 c24979	v14759	朱音 凜	https://x.com/ayakashigohan/status/2051497119106949252	手入力	手で指定 ｜ DBに朱音凜が3件重複登録されており自動判定不可。CV（友永朱音）が一致する「あやかし編主人公」の紹介ポストを充てた
 c24980	v14759	朱音 凜	https://x.com/ayakashigohan/status/2051497119106949252	手入力	手で指定 ｜ DBに朱音凜が3件重複登録されており自動判定不可。CV（友永朱音）が一致する「あやかし編主人公」の紹介ポストを充てた
@@ -458,6 +488,11 @@ c39087	v18163	鷺澤 累	https://x.com/nilad_otomate/status/1914257807940935822	
 c48968	v18164	リーゼ	https://x.com/Verite_otomate/status/790486897772507137	full	紹介らしい ｜ 【隠しキャラクター紹介⑥】エルザ（CV:石井ゆかり）※オリジナルキャラクター※平民出身のエルザに、リーゼ（主人公）は親近
 c50766	v18164	ロベスピエール	https://x.com/Verite_otomate/status/789273515446837248	full	紹介らしい ｜ 【隠しキャラクター紹介⑤】サン・ジュスト（CV：田丸篤志）フランス革命時、ロベスピエールの右腕として活躍した人。革命の大
 c54535	v18164	ロゼール 伯爵	https://x.com/Verite_otomate/status/791219393149620224	full	紹介らしい ｜ 【隠しキャラクター紹介⑧】ロゼール伯爵（CV：藤 真秀）※オリジナルキャラクター＆隠し攻略対象※謎多き錬金術師です。#ヴ
+c123236	v18369	後藤 誠二	https://x.com/volkoi_official/status/2029210254479872105	full	要確認 ｜ 本日 #3月5日 は #恋人は公安刑事 の #後藤誠二 の誕生日です👑#お誕生日おめでとう 動画を是非チェックしてくださ
+c123237	v18369	加賀 兵吾	https://x.com/volkoi_official/status/1986452488313278801	full	要確認 ｜ 本日 #11月7日 は #恋人は公安刑事 の #加賀兵吾 の誕生日です👑#お誕生日おめでとう 動画を是非チェックしてくだ
+c123238	v18369	石神 秀樹	https://x.com/volkoi_official/status/2097339176655925601	full	要確認 ｜ 本日 #9月9日 は #恋人は公安刑事 の #石神秀樹 の誕生日です👑#お誕生日おめでとう 動画を是非チェックしてくださ
+c123239	v18369	颯馬 周介	https://x.com/volkoi_official/status/2013084003293622645	full	要確認 ｜ 本日 #1月19日 は #恋人は公安刑事 の #颯馬周介 の誕生日です👑#お誕生日おめでとう 動画を是非チェックしてくだ
+c123240	v18369	東雲 歩	https://x.com/volkoi_official/status/2077770233956212977	full	要確認 ｜ 本日 #7月17日 は #恋人は公安刑事 の #東雲歩 の誕生日です👑#お誕生日おめでとう 動画を是非チェックしてくださ
 c42154	v18432	鉤貫 レム	https://x.com/DwD_info/status/798903457277054976	full	要確認 ｜ 【HAPPY BIRTHDAY】本日11月17日は四皇學園生徒会会長・鉤貫レム様の誕生日！ 冷酷無比なアクマのレム様です
 c42154	v18432	鉤貫 レム	https://x.com/DwD_info/status/931175023502643201	unique	要確認 ｜ 🎂💙Happy Birthday Rem💙🎂本日11月17日は、冷酷無比に見えて心優しい魔界のプリンス、レムのお誕生日で
 c42156	v18432	立華 リンド	https://x.com/DwD_info/status/837316585589194753	full	要確認 ｜ 【HAPPY BIRTHDAY】本日3月3日はひなまつり、そしてリンド兄さんの誕生日です！最近のイベントでは不遇な場面も
@@ -589,9 +624,14 @@ c4790	v2021	七海 哉太	https://x.com/StarrySky_hb/status/2032396255935226183	
 c4791	v2021	東月 錫也	https://x.com/StarrySky_hb/status/2034932965336084848	手入力	紹介らしい ｜ 【Nintendo Switch】『Starry☆Sky〜Spring Memories〜』🌸CHARACTER🌸東月錫
 c4791	v2021	東月 錫也	https://x.com/StarrySky_hb/status/2072153231371759820	full	誕生日ポスト（7/1）
 c4796	v2022	金久保 誉	https://x.com/StarrySky_hb/status/2054758600673788413	full	誕生日ポスト（5/14）
+c4797	v2022	宮地 龍之介	https://x.com/StarrySky_hb/status/1852908560436412768	full	要確認 ｜ ℍ𝔸ℙℙ𝕐 𝔹𝕀ℝ𝕋ℍ𝔻𝔸𝕐本日は #StarrySky 夏組宮地 龍之介の誕生日！おめでとうございます･:*°:･#H
+c4798	v2022	木ノ瀬 梓	https://x.com/StarrySky_hb/status/943410888668676096	full	要確認 ｜ 【Happy Birthday Azusa Kinose！】本日12月20日は木ノ瀬梓の誕生日！　木ノ瀬梓のSNS用アイ
 c4799	v2023	水嶋 郁	https://x.com/StarrySky_hb/status/2064180697187680304	full	誕生日ポスト（6/9）
 c4800	v2023	陽日 直獅	https://x.com/StarrySky_hb/status/2087011130539716632	full	誕生日ポスト（8/11）
+c4801	v2023	星月 琥太郎	https://x.com/StarrySky_hb/status/1845298418547294547	full	要確認 ｜ ℍ𝔸ℙℙ𝕐 𝔹𝕀ℝ𝕋ℍ𝔻𝔸𝕐本日は #StarrySky 秋組星月琥太郎の誕生日！お誕生日おめでとう… ☾#HappyB
+c4802	v2024	天羽 翼	https://x.com/StarrySky_hb/status/827359762274611200	full	要確認 ｜ 【Happy Birthday Tsubasa Amaha！】本日2月3日は天羽翼の誕生日！　天羽翼のSNS用アイコンを
 c4804	v2024	不知火 一樹	https://x.com/StarrySky_hb/status/2045698909977370899	unique	誕生日ポスト（4/19）
+c4806	v2024	青空 颯斗	https://x.com/StarrySky_hb/status/1173068922708316160	full	要確認 ｜ 本日は乙女座の男の子・青空颯斗の誕生日です。+*ﾟ｡☆ 9.15 Happy Birthday Hayato Aozor
 c28300	v20277	シンデレラ	https://x.com/taishoalice/status/510367679463436288	手入力	紹介らしい ｜ “現実主義なシンデレラ”シンデレラ（cv：平川大輔）「……ったく。こういう時は素直に受け取って礼を言うのが可愛いんじゃね
 c28300	v20277	シンデレラ	https://x.com/taishoalice/status/870261587109531648	full	要確認 ｜ シンデレラ「ガラスの靴を履いたお姫様。オレの真実の姿を見抜いてくれたお姫様。これからは、お姫様としてだけじゃなく、オレの
 c28302	v20277	赤ずきん	https://x.com/taishoalice/status/510374882895360001	手入力	紹介らしい ｜ “クールな一匹狼”赤ずきん（cv：前野智昭）「戻りましょう。身体が冷えてしまいますよ」　#対称アリス pic.twitt
@@ -748,6 +788,12 @@ c74611	v22987	春玄	https://x.com/birushana_info/status/1906543724206633315	ful
 c74611	v22987	春玄	https://x.com/birushana_info/status/1774089952395219217	full	紹介らしい ｜ 【FD二周年記念・壁紙③】武蔵坊弁慶（cv.#梅原裕一郎）春玄（cv.#斉藤壮馬）※壁紙サイズ：1920×1080／23
 c74611	v22987	春玄	https://x.com/birushana_info/status/1453194749360365571	full	要確認 ｜ 【人物紹介・五】春玄（しゅんげん） ／ 声：斉藤壮馬共生共死×幼馴染「お前が喜ぶことや望むことは　どんなことだって俺のこ
 c121869	v23025	獅堂 和臣	https://x.com/volkoi_official/status/2086694034417102981	full	要確認 ｜ 本日 #8月10日 は #マスカレード・キス～危険な駆け引き～ の #獅堂和臣 の誕生日です👑#お誕生日おめでとう 動画
+c95669	v24231	高堂 宗近	https://x.com/volkoi_official/status/1972315369789592056	full	要確認 ｜ 本日 #9月29日 は #スタットコール救命恋愛24時 の #高堂宗近 の誕生日です👑#お誕生日おめでとう 動画を是非チ
+c95670	v24231	江國 楓	https://x.com/volkoi_official/status/2035189666098684373	full	要確認 ｜ 本日 #3月21日 は #スタットコール救命恋愛24時 の #江國楓 の誕生日です👑#お誕生日おめでとう 動画を是非チェ
+c95671	v24231	宝生 哲也	https://x.com/volkoi_official/status/1973764915404910719	full	要確認 ｜ 本日 #10月3日 は #スタットコール救命恋愛24時 の #宝生哲也 の誕生日です👑#お誕生日おめでとう 動画を是非チ
+c95672	v24231	霞 俊希	https://x.com/volkoi_official/status/2016711175460049291	full	要確認 ｜ 本日 #1月29日 は #スタットコール救命恋愛24時 の #霞俊希 の誕生日です👑#お誕生日おめでとう 動画を是非チェ
+c95673	v24231	京極 千太郎	https://x.com/volkoi_official/status/2094802460028150226	full	要確認 ｜ 本日 #9月2日 は #スタットコール救命恋愛24時 の #京極千太郎 の誕生日です👑#お誕生日おめでとう 動画を是非チ
+c95674	v24231	松永 栄一	https://x.com/volkoi_official/status/2006742214299279565	full	要確認 ｜ 本日 #1月2日 は #スタットコール救命恋愛24時 の #松永栄一 の誕生日です👑#お誕生日おめでとう 動画を是非チェ
 c83402	v24240	ミシェル・アレックス	https://x.com/Enchanteotomate/status/1844218052461859318	full	紹介らしい ｜ 【５周年！　その⑤】2019年10月10日発売済『幻奏喫茶アンシャンテ』攻略可能キャラクターのご紹介。自他共に認める、チ
 c83402	v24240	ミシェル・アレックス	https://x.com/Enchanteotomate/status/1849737723222909426	full	紹介らしい ｜ 【X用アイコンの配布①】2024年10月10日にて、本作は５周年を迎えたため記念アイコンを制作させていただきました。よろ
 c83403	v24240	カヌス・エスパーダ	https://x.com/Enchanteotomate/status/1844218448295121160	full	紹介らしい ｜ 【５周年！　その⑥】2019年10月10日発売済『幻奏喫茶アンシャンテ』攻略可能キャラクターのご紹介。妖精界・メディオ出
@@ -1193,6 +1239,9 @@ c141100	v52275	山瀬 大蔵	https://x.com/BYAKKO_otomate/status/192294026561608
 c141101	v52275	神崎 宗十郎	https://x.com/BYAKKO_otomate/status/1923302411978080326	full	紹介らしい ｜ 【発売間近！キャラクター紹介⑤】神崎宗十郎／かんざきそうじゅうろう声：#安元洋貴2025年5月29日発売予定―ご予約受付
 c141102	v52275	秋月 栄次郎	https://x.com/BYAKKO_otomate/status/1923302653561385382	full	紹介らしい ｜ 【発売間近！キャラクター紹介⑥】秋月栄次郎／あきづきえいじろう声：#興津和幸2025年5月29日発売予定―ご予約受付中ー
 c149421	v52279	玉彗	https://x.com/Mk_otomate/status/2046786065898623002	full	紹介らしい ｜ ＜#マツリカk FD 🍑発売カウントダウン✨＞＼発売まで、あと01日！！／『マツリカの炯-kEi- 天命華燭伝』2026
+c116628	v5258	和泉崇嗣	https://x.com/StarrySky_hb/status/2037469681133728153	full	紹介らしい ｜ 【Nintendo Switch】『Starry☆Sky〜Spring Memories〜』🌸～After Spring
+c116629	v5258	忍成ハル	https://x.com/StarrySky_hb/status/2037469681133728153	full	紹介らしい ｜ 【Nintendo Switch】『Starry☆Sky〜Spring Memories〜』🌸～After Spring
+c116629	v5258	忍成ハル	https://x.com/StarrySky_hb/status/796286448903168000	full	紹介らしい ｜ 忍成ハル（CV：小西克幸）教育実習生として星月学園にやってきた忍成。物腰柔らかでとっても優しい性格です。和泉とはとっても
 c142354	v52771	月城 葦夜	https://x.com/samudari_ml/status/2091729711776833665	full	要確認 ｜ ◤キャラクターPickup║月城葦夜◢　個別ルートテーマ ❯❯❯「思い出」- - - - - - - - - - - -
 c142355	v52771	花丘 槙尾	https://x.com/samudari_ml/status/2084119566817321183	full	要確認 ｜ ◤キャラクターPickup║花丘槙尾◢　個別ルートテーマ ❯❯❯「嘘」- - - - - - - - - - - - -
 c142356	v52771	善知鳥 全	https://x.com/samudari_ml/status/2084844342343008397	full	要確認 ｜ ◤キャラクターPickup║善知鳥全◢　個別ルートテーマ ❯❯❯「信頼」- - - - - - - - - - - - 
@@ -1272,6 +1321,7 @@ c25583	v7203	岬 虎太郎	https://x.com/Rejet_info/status/1991884309330833889	f
 c25584	v7203	百瀬 歩夢	https://x.com/Rejet_info/status/2093715296599392384	full	要確認 ｜ 【HAPPY BIRTHDAY！】本日8/30は百瀬歩夢(TOKYOヤマノテBOYS)のお誕生日です🎂おめでとうございま
 c25585	v7204	桐嶋 伊織	https://x.com/Rejet_info/status/2032471751649882588	full	要確認 ｜ 【HAPPY BIRTHDAY！】本日3/14は桐嶋伊織(TOKYOヤマノテBOYS)のお誕生日です🎂おめでとうございま
 c25587	v7204	九条 拓海	https://x.com/Rejet_info/status/872047694562418689	full	紹介らしい ｜ ＼サンプルボイス公開中！／【TYB for V MAIN DISC】九条拓海（CV:遊佐浩二）「俺は、君を、守れるなら…
+c4811	v7553	神楽坂 四季	https://x.com/StarrySky_hb/status/1202453253092302850	full	要確認 ｜ 本日は蛇遣座の男の子・神楽坂四季の誕生日です。+*ﾟ｡☆12.5 Happy Birthday Shiki Kagura
 c39280	v7634	宮ノ杜 茂	https://x.com/hw_series/status/1180013452842000385	full	要確認 ｜ 【誕生日】明日拾月伍日は三男・宮ノ杜茂様のお誕生日です。茂「ついに俺もひとつ歳を取るワケね……嫌だねぇ、歳取るのって。　
 c39281	v7634	宮ノ杜 進	https://x.com/hw_series/status/1219470905287438336	full	要確認 ｜ 【誕生日】本日は四男・宮ノ杜進様のお誕生日です。進「今日は自分の誕生日なんですよ。　この格好は以前御杜さんの格好をした時
 c39282	v7634	宮ノ杜 博	https://x.com/hw_series/status/1171361911318802434	full	要確認 ｜ 【誕生日】本日は伍男・宮ノ杜博様のお誕生日です。博「今日はおれの誕生日！　何歳になっても祝って貰えると　嬉しいよね！　出
