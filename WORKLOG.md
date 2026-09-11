@@ -7,6 +7,76 @@
 コミットメッセージが「何を変えたか」なら、こちらは「なぜそうしたか」と
 「次に何をするつもりだったか」を残す場所。
 
+## 2026-09-12
+
+### 03:33 Xのキャラクター紹介ポストを1096人まで集めた（992→1096人）
+- なぜ: ボルテージ作品13本が別会社のブランド @AmuLit_JP に紐づいていて、正しい公式（ボル恋シリーズ公式 @volkoi_official）を引けていなかった。ここが最大の取りこぼしだった
+- 次: クインロゼ作品（怪談ロマンス・里見八犬伝・黒雪姫・シンデレラ三部作ほか約100人）は公式アカウントが消滅していて手が無い。残りはアカウント未登録の作品を1本ずつ当たる
+- ブランチ: claude/x-character-intro-posts-9fb6df（記録時 HEAD: d6028be72）
+
+**集めた内訳**（作品 / アカウント / 追加人数）
+
+うたの☆プリンスさまっ♪ @utapri_official 22、
+スイートルームで悪戯なキス @volkoi_official 8、
+あの夜からキミに恋してた @volkoi_official 8、
+誓いのキスは突然に @volkoi_official 7、
+数乱digit @suran_digit 7、
+眠らぬ街のシンデレラ @volkoi_official 7、
+スタットコール 救命恋愛24時 @volkoi_official 6、
+Starry☆Sky（各季）@StarrySky_hb 8、
+恋人は公安刑事 @volkoi_official 5、
+うっかり婚 @volkoi_official 5、
+上司と秘密の２LDK @volkoi_official 5、
+神々の悪戯（Ludere deorum / InFinite）@kami_aso 3、
+BELIEVER! @D3P_otome 1、
+君に惑い、君に溺れる。 @KK_otomate 3、
+CRAZY CHA!N -エルピスの鎖- @CC_otomate 3、
+ゴシックマーダー @orange_GM01 4、
+百目ノ花贄 @hyakunie 1、
+恋してしまった星の王子 @volkoi_official 1
+
+**直したアカウントの誤り**
+
+ボルテージ作品6本（誓いのキスは突然に／眠らぬ街のシンデレラ／スイートルームで悪戯なキス／
+上司と秘密の２LDK／恋人は公安刑事／スタットコール／うっかり婚／あの夜からキミに恋してた／
+恋してしまった星の王子／特別捜査★密着24時）を @AmuLit_JP・@AmuLit_Global から
+@volkoi_official（ボル恋シリーズ公式）へ差し替えた。@AmuLit はアイディアファクトリーの
+ブランドで別会社、しかも2023年開設なので2011〜2018年の作品の投稿があるはずがなかった。
+
+**x_posts.py に足したもの**
+
+- 全角英字を半角に落としてから名前を照合する（`narrow`）。
+  「Ｇｏｄ」「ＹＯＦＹ」がDBの「God」「YOFY」と一致しなかった
+- 1アカウントが複数作を兼ねるとき、部分一致より完全一致の作品を優先する。
+  @utapri_official がシリーズ7作を兼ねていて、「日向大和」の投稿が
+  「日向龍也」に部分一致した作品に取られ、主題判定で落ちていた
+
+**取り違えを1件止めた**
+
+@OtomateWeb の「◆ミツチの参謀『大蛇 -おろち-』2810歳」を、ヒイロノカケラの
+「大蛇 凌」に貼りそうになった。姓が同じだけの別作品のキャラ。取り込み後に
+本文を読んで気づいて消した。1アカウントが多数の作品を兼ねると起きやすい。
+
+**調べたが紹介ポストが無かったアカウント**（今回あらたに確認したぶん）
+
+@hana_otomate、@RDF_x_official、@hana_awase、@sweetclown_1009、@Apocaly_otomate、
+@dramaticcreate、@colorfulstep_hb、@TeamAsahina、@hanakare_ml、@happinet_game、
+@apple_p_DC2、@D3P_FR、@hiiro_otomate（緋色の欠片2・白華の檻ぶん）、
+@HakuokiShinkai（薄桜鬼SSLぶん）、@p_reve（クランク・イン／爽海バッカニアーズぶん）、
+@triP_OTOMATE（Tlicolity Eyesぶん）、@AmuLit_JP、@corda_official（八木沢以外）
+
+**公式アカウントが無いことを確かめた作品**
+
+クインロゼ（QuinRose）作品すべて。怪談ロマンス5本・里見八犬伝3本・黒雪姫2本・
+シンデレラ三部作・Romeo & Juliet・大正鬼譚ほかで約100人。倒産していて
+公式アカウントは残っておらず、bot と個人の感想アカウントしか出てこない。
+Jewelic Nightmare、MARGINAL#4（アニメ公式しかない）、Cafe Cuillere も同様。
+
+**残っている当てのある道**
+
+- 文字化化は @HomicipherMZBK が公式（八名木Games）。まだ引いていない
+- 2012年以降でアカウント未登録の作品は124本・約800人。ここが引き続き本丸
+
 ## 2026-09-11
 
 ### 16:30 このセッションの作業内容と、検索した作品・アカウントの一覧
