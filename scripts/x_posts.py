@@ -188,9 +188,20 @@ NAME_SEP = r"[\s　・･＝=／/]"
 READING = re.compile(r"[\[［][^\]］]{1,12}[\]］]")
 
 
+# 全角英数を半角に落とす。公式アカウントは装飾のつもりで
+# 「ＹＯＦＹ」「Ｇｏｄ」のようにラテン文字を全角で書くことがあり、
+# DBの「YOFY」「God」とそのままでは一致しない。
+# 仮名や記号は触らない（NFKC だと絵文字まわりの見た目が変わる）。
+WIDE_ASCII = {c: c - 0xFEE0 for c in range(0xFF01, 0xFF5F)}
+
+
+def narrow(text):
+    return (text or "").translate(WIDE_ASCII)
+
+
 def flatten(text):
     """照合用に本文をならす。読み仮名の角括弧を落とし、区切り記号を詰める。"""
-    return re.sub(NAME_SEP, "", READING.sub("", text or ""))
+    return re.sub(NAME_SEP, "", READING.sub("", narrow(text)))
 
 
 def name_variants(name):
@@ -200,7 +211,7 @@ def name_variants(name):
     読み仮名が括弧で付いていることがある。そのままでは本文と一致しないので、
     括弧の中と外を別々の表記として扱う。
     """
-    name = (name or "").strip()
+    name = narrow(name).strip()
     kana = re.findall(r"[（(]([^）)]+)[）)]", name)
     base = re.sub(r"[（(][^）)]*[）)]", "", name).strip()
     out = []
@@ -548,8 +559,9 @@ SUBJECT_SPAN = 46
 
 def flatten_name(t):
     """空白・中黒・記号のゆれを消す。DBは「ヴィンス ヴィヴィアン」、
-    本文は「ヴィンス・ヴィヴィアン」と書き分けられている。"""
-    return re.sub(r"[\s　・･=＝]", "", t)
+    本文は「ヴィンス・ヴィヴィアン」と書き分けられている。
+    全角英字（「Ｇｏｄ」）も半角に落としてから比べる。"""
+    return re.sub(r"[\s　・･=＝]", "", narrow(t))
 
 
 # 主題の名前が始まってよい位置。名前に使えない文字の並びの直後と、
@@ -1064,7 +1076,14 @@ def cmd_intake(args):
             part = [c for c in pool if name_hit(txt, c["name"], t, c["name_latin"]) == "part"]
             hits, match = (full, "full") if full else (part,
                           "unique" if len(part) == 1 else "part")
-            if len(hits) > len(best_hits) or best_vid is None and hits:
+            # 1アカウントがシリーズ7作を兼ねることがある（うたプリの
+            # @utapri_official）。件数だけで選ぶと、姓が同じ別人に部分一致した
+            # 作品が先に当たって主題判定を落とす。完全一致のほうを必ず優先する。
+            rank = {"full": 2, "unique": 1, "part": 0}
+            if not hits:
+                continue
+            if (best_vid is None or (rank[match], len(hits))
+                    > (rank[best_match], len(best_hits))):
                 best_vid, best_hits, best_match = vid, hits, match
         if not best_hits:
             unknown.append((sid, handle, "本文にキャラ名が出てこない"))
