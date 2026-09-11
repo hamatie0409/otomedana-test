@@ -9,6 +9,156 @@
 
 ## 2026-09-11
 
+### 16:30 このセッションの作業内容と、検索した作品・アカウントの一覧
+
+一日ぶんをまとめて残す。個別の判断理由は下の各エントリにある。
+
+**やったこと**
+
+1. 楽天とYahoo!ショッピングから価格を取得（JAN 1,601件 → 楽天531作品 / Yahoo 1,243JAN）
+2. 収集方法の欠陥を3つ見つけて全面的にやり直した（685人 → 992人・26.7%）
+3. 手順を `.claude/skills/x-character-intro` にスキルとして登録し、2回追記した
+4. 誤配分の点検スクリプトを作り、見つかった取り違えを直した
+
+**収集の推移**（人数は `x_posts.py report` の「収集済み」）
+
+| 時刻 | 内容 | 人数 |
+|---|---|---|
+| 22:26 | 主題判定を作り直した | 685 → 707 |
+| 22:30 | キャラ名検索方式に切り替えた | 707 → 712 |
+| 22:47 | 「無し」判定27件を取り消して調べ直した | 712 → 727 |
+| 23:24 | DesperaDrops・空蝉の廻ほか | 727 → 742 |
+| 00:37 | 闇色の魔珠・蝶々事件ラブソディックほか | 742 → 772 |
+| 05:28 | OZMAFIA!!・TOKYOヤマノテBOYS・月影の鎖 | 772 → 789 |
+| 06:57 | DIABOLIK LOVERS・ビタミン・カエル畑ほか | 789 → 863 |
+| 07:19 | 魔界ナイトメアほかキャラ名検索 | 863 → 892 |
+| 08:02 | ゆのはな・帝國カレイド・STORM LOVER・夏空のモノローグ | 892 → 941 |
+| 08:57 | 泡沫のユークロニア・神凪ノ杜・ラディアンテイル | 941 → 958 |
+| 10:52 | 忍び、恋うつつ・アルカナ・ファミリア・ソラ*ユメほか | 958 → 992 |
+
+**収集できた作品**（作品 / アカウント / 追加人数）
+
+22:26〜23:24 —
+冬園サクリフィス @fuyuzono_otome 6、Honey Vibes @HoneyV_otome 6、
+MIX DUNK @MIX_otomate 4、Le Mirage Mystique @Le_Mirage_jp 4、
+君に惑い、君に溺れる。 @KK_otomate 2、CRAZY CHA!N @CC_otomate 4、
+百目ノ花贄 @hyakunie 2、明治東亰恋伽 @meikoi_staff 8、
+戦場の円舞曲 @waltz_otomate 7、DesperaDrops @D3P_otome 7、
+空蝉の廻 @matatabi_soft 4、神凪ノ杜 @matatabi_soft 3、
+絶対階級学園 @Daisy2official 2
+
+00:37 —
+恋の花咲く百花園 @takuyo_koihana 5、闇色の魔珠 @d_majyu 5、
+蝶々事件ラブソディック @CCJLS_otomate 4、バディコレクション @BuddyCollection 4、
+私立ベルばら学園 @berubaragakuen 4、嘘月シャングリラ @usotsuki_info 3、
+片恋いコントラスト @triP_OTOMATE 2、蛇香のライラ @triP_OTOMATE 1、
+Tlicolity Eyes @triP_OTOMATE 1、Side Kicks! @eXtend_SK 1
+
+05:28 —
+OZMAFIA!! @ponipachet 11、TOKYOヤマノテBOYS HONEY MILK @Rejet_info 2、
+TOKYOヤマノテBOYS SUPER MINT @Rejet_info 2、月影の鎖 錯乱パラノイア @getsuei_kanko 2
+
+06:57 —
+ブラック ウルヴス サーガ @OtomateWeb 9、逢魔が刻 @eXtend_info 6、
+Princess Arthur @PA_otomate 6、DIABOLIK LOVERS DARK FATE @OtomateWeb 6、
+ビタミンR @vitamin_d3p 6、カエル畑DEつかまえて☆彡 @kaeru_kouhoubu 6、
+ひめひび Another Princess Days @takuyo_himeawb 5、VitaminZ @vitamin_d3p 5、
+Money Parasite @money_parasite 4、VitaminX DetectiveB6 @vitamin_d3p 4、
+Vamwolf Cross† @D3P_otome 3、少女首領の推理領域 @orange_GM01 3、
+BELIEVER! @D3P_otome 3、VitaminX Destination @vitamin_d3p 2、
+アブナイ恋の捜査室 EH @KOHEI110ban 2、熱血異能部活譚 Trigger Kiss @Trigger_Kiss 2、
+クランク・イン @p_reve 2、カエル畑DEつかまえて・夏 @kaeru_kouhoubu 1、
+マスカレード・キス @volkoi_official 1、大正×対称アリス H&T @taishoalice 1、
+Vinculum Hearts @OPERAHOUSE_info 1
+
+07:19 —
+魔界王子と魅惑のナイトメア @makai_nightmare 5、
+薄桜鬼異聞 ベレジンスキーの魔女 @WitchB_otomate 4、
+DistortedCode @distoco 4、Sullyland Nursery Rhyme @SN_otomate 4、
+Le Mirage Mystique @Le_Mirage_jp 1、MIX DUNK @MIX_otomate 1
+
+08:02 —
+夏空のモノローグ @ntzr_otomate 6、学園CLUB @OPERAHOUSE_info 6、
+ゆのはな SpRING! @ys_otomate 5、帝國カレイド @OPERAHOUSE_info 5、
+妖かし恋戯曲 @OPERAHOUSE_info 4、STORM LOVER @st_louis_high 4、
+Vinculum Hearts @OPERAHOUSE_info 4、にゃんらぶ @OPERAHOUSE_info 4、
+Spiral Memoria @OPERAHOUSE_info 4、STORM LOVER 2nd @st_louis_high 3、
+D.C. Girl's Symphony @sanctuary_info 2、STORM LOVER 夏恋!! @st_louis_high 1
+
+08:57 —
+ラディアンテイル ～ファンファーレ！～ @RT_x_info 8、神凪ノ杜 @matatabi_soft 4、
+泡沫のユークロニア @uchronia_jp 3、泡沫のユークロニア -trail- @uchronia_jp 2、
+テニスの王子様 ドキドキサバイバル @Prince_KONAMI 1
+
+10:52 —
+忍び、恋うつつ @nin_koi 10、アルカナ・ファミリア 2 @arpacako 9、
+ソラ*ユメ @__sora_yume__ 6、未然探偵 @orange_GM01 3、
+Starry☆Sky（春/夏/秋/冬）@StarrySky_hb 4、SympathyKiss @SK_otomate 1、
+トラブル・マギア @T_Magia_otomate 1
+
+**新しく登録した公式アカウント**
+
+| 作品 | アカウント |
+|---|---|
+| アルカナ・ファミリア 2 / 幽霊船の魔術師 / フェスタ・レガーロ! | @arpacako |
+| 忍び、恋うつつ / 甘蜜花絵巻 | @nin_koi |
+| イケメン幕末◆運命の恋 | @ikemenBM |
+
+既存の誤りも直した。@Haruka6Official（実在しない）→ @neo_romance（遙か6作品）、
+ラディアンテイル @aksysgames → @RT_x_info。
+
+**調べたが紹介ポストが無かったアカウント**
+
+@matori_hime、@sinigami_k、@lovequiz_v、@BAW_otomate、@mono_magia、
+@gesotenbygmo、@AngeR_official、@getsuei_kanko、@AmuLit_JP、@p_reve、
+@karin_ent、@honeybee_asgard、@IDOLLU_official、@pripia_official、@eXtend_SK、
+@takuyo_gokoro、@rootrexx、@korosuto、@neo_romance、@NEOA_otomate、
+@angelique_kt、@sanctuary_info、@D3P_otome、@eXtend_info、@birth_song_info、
+@hatsukare_psp、@HakuokiShinkai、@girlsside573、@vitamin_d3p、@Rejet_info、
+@ponipachet、@cz_x_official、@haikara_otomate、@AmnOtomate、@StarrySky_hb、
+@KOHEI110ban
+
+条件つきで外したもの。
+@gunneko_info は4月馬鹿の嘘企画しか無い。@makai_nightmare は7人・15人まとめの
+集合紹介のみ。@akasuna_info はサブキャラ紹介のみ。@koipri_v は名前が画像の中。
+@info_yoiyo（宵夜森ノ姫）はグッズ紹介のみ。@ikemenBM はガチャ・配信の告知のみ。
+
+@StarrySky_hb、@arpacako、@nin_koi、@Prince_KONAMI は紹介ポストが無いことを
+確かめたうえで誕生日ポストを採った。
+
+**公式アカウントを探して見つからなかった作品**
+
+三国恋戦記（非公式アカウントのみ）、MARGINAL#4（キャラ個別のなりきりアカウントのみ）、
+Jewelic Nightmare、里見八犬伝（舞台・漫画の公式しか無い）
+
+**直した誤配分**
+
+| ポスト | 誤 | 正 |
+|---|---|---|
+| 百目ノ花贄 村民紹介 | 燐 / 奏雨 | 主題がDB未収録のサブキャラなので除外 |
+| 蒼黒の楔 凛・ケテル | 春日珠紀 | 除外 |
+| 君は雪間に希う 里 | 与市 | 除外 |
+| 陰キャラブコメ 大橋大河 | ash | 除外 |
+| テニプリ 3/17 忍足謙也 | 忍足侑士 | 忍足謙也 |
+| Starry☆Sky 4/19 不知火一樹 | 星月琥太郎 | 不知火一樹 |
+| D.C. GS 9/16 四之宮稜平 | 航平にも同じポスト | 双子まとめポストに差し替え |
+| ラディアンテイル リアン・ジーニア | 誕生日ポスト | 攻略キャラクター紹介 |
+
+**x_posts.py に足した主題判定**
+
+- `◤◢` など記号で括る見出し
+- 【】の中にキャラ名を入れる書式
+- 見出しのあとに `●区分` を挟む書式（神凪ノ杜）
+- `本日◯月◯日は◯◯の` を主題宣言として読む（`BIRTHDAY_HEAD`）
+
+**分かったこと**
+
+- `from:アカウント 紹介` は新しい4件しか返らない。言い回しを変えて複数回引かないと
+  古いキャラ紹介の連投が埋もれる。ラディアンテイルで実際に取りこぼした
+- JavaScript の `window.scrollBy` では X が追加読み込みしない。実ホイールが要る
+- 未収集キャラのうち、アカウント未登録の作品にいる人が2012年以降で124作品795人。
+  ここが残りの本丸
+
 ### 15:06 検索の取りこぼしと誕生日ポストの取り違えをスキルに書き足した
 - なぜ: 同じ失敗を次回もやるのを防ぐため。アカウント内検索が新しい4件しか返らないことと、誕生日ポストの主題判定が特に危ういことは、手順に書いておかないと必ず再発する
 - 次: 誕生日で登録している291人のうち未点検のアカウントを、言い回し指定で順に洗い直す
